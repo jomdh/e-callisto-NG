@@ -64,6 +64,23 @@ class Station(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class Schedule(SQLModel, table=True):
+    """A recording schedule for one instrument.
+
+    ``kind`` = ``sun`` (sunrise->sunset, station coordinates) or ``fixed``
+    (``start_utc``/``stop_utc`` HH:MM). ``margin_minutes`` trims a sun window.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    instrument_id: int = Field(foreign_key="instrument.id", index=True)
+    kind: str = "sun"
+    margin_minutes: int = 0
+    start_utc: str = "00:00"  # fixed mode
+    stop_utc: str = "23:59"  # fixed mode
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class FrequencyProgram(SQLModel, table=True):
     """A named frequency plan: a list of channel frequencies (MHz).
 

@@ -2,6 +2,20 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.1.3 -- 2026-06-25 (Milestone M3)
+
+Plan what and when to observe.
+
+- **Frequency programs.** Define which channels to observe by hand, or
+  auto-generate a program from a spectral overview -- the suite picks the
+  quietest (least-interference) channel in each step.
+- **Sun-relative scheduling.** Set a schedule that follows the Sun for your
+  station's coordinates (computed with proper astronomy, no external calendar
+  tools), with adjustable margins; preview today's recording window.
+
+Internal: astropy sunrise/transit/sunset, frequency-program model + generator,
+schedule model + preview; 58 tests; sprints S012-S013.
+
 ## v0.1.2 -- 2026-06-25 (Milestone M2)
 
 See and retrieve your data in the browser.

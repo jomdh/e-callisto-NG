@@ -6,17 +6,17 @@ this scans in under a minute. Milestones are seeded from
 
 ## In progress
 
-### M3 — Programs & scheduling  (IN PROGRESS)
+### M4 — Distribution & health  (IN PROGRESS)
 
-Frequency-program editor + overview-based generation; sun-relative scheduler.
+Upload transports + uploader service + dispatch modes; health checks + alerts.
 
 | Sprint | Item | State |
 | -- | -- | -- |
-| S012 | Frequency programs (model, CRUD, overview-based generation) | next |
-| S013 | Sun-relative scheduler (astropy ephemeris) + schedule model | planned |
+| S014 | Upload transports (FTP/SFTP) + uploader + targets + dispatch modes | next |
+| S015 | Health checks + alerts + system status | planned |
 
-Completion criteria: an operator defines a frequency program and a sun-relative
-schedule that drives recording. Closes at v0.1.3.
+Completion criteria: recorded files upload to a configured target (immediate or
+scheduled); the dashboard shows health. Closes at v0.1.4.
 
 Sprint plans: `sprints/SPRINT_PLAN_NNN.md`; logbooks: `logbook/SPRINT_LOG_NNN.md`.
 
@@ -38,9 +38,13 @@ S005-S009.
 Live WebSocket waterfall island; data browser with quicklooks + download.
 S010-S011.
 
+### M3 — Programs & scheduling  (v0.1.3, 2026-06-25)
+
+Frequency programs (manual + overview-generated quiet-channel selection);
+sun-relative scheduler (astropy) with preview. S012-S013.
+
 ## Planned
 
-- **M4** — Distribution & health (uploader, dispatch modes, health/alerts).
 - **M5** — Calibration & diagnostics; packaging (.deb + SD image).
 - **M6+** — SDR classes (class-2 host-DSP, class-3 FPGA drivers) on the M0 seams.
 
