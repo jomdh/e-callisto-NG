@@ -64,6 +64,37 @@ class Station(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class UploadTarget(SQLModel, table=True):
+    """Where finished files are sent, and when.
+
+    ``protocol`` = local / ftp. ``dispatch`` = immediate / scheduled / manual.
+    Credentials are stored here; encrypting them at rest is tracked as B2.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    protocol: str = "local"
+    host: str = ""  # ftp host, or destination dir for local
+    base_path: str = "/"
+    username: str = ""
+    password: str = ""
+    dispatch: str = "manual"  # immediate / scheduled / manual
+    gzip: bool = True
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
+class UploadJob(SQLModel, table=True):
+    """Tracks whether a file has been uploaded to a target."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    target_id: int = Field(foreign_key="uploadtarget.id", index=True)
+    filename: str = Field(index=True)
+    state: str = "done"  # done / error
+    error: str = ""
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class Schedule(SQLModel, table=True):
     """A recording schedule for one instrument.
 

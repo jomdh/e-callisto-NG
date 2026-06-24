@@ -5,7 +5,9 @@ commit hash and date.
 
 ## Open
 
-_None._
+| ID | Bug | Found | Notes |
+| -- | -- | -- | -- |
+| B2 | Upload-target credentials (`UploadTarget.password`) stored in plaintext in SQLite. | S014 | DESIGN 10 requires encryption at rest. Add a machine-bound key + encrypt/decrypt on the credential fields; never return plaintext via the API. Target M4 refinement or M5 hardening. |
 
 ## Resolved
 
