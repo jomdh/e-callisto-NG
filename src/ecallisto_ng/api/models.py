@@ -64,6 +64,21 @@ class Station(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class FrequencyProgram(SQLModel, table=True):
+    """A named frequency plan: a list of channel frequencies (MHz).
+
+    ``frequencies_json`` stores the channel list as a JSON array of floats.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    frequencies_json: str = "[]"
+    start_mhz: float = 45.0
+    stop_mhz: float = 870.0
+    source: str = "manual"  # manual / generated
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class Instrument(SQLModel, table=True):
     """A receiver controlled by this station."""
 
