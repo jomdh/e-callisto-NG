@@ -2,6 +2,18 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.1.2 -- 2026-06-25 (Milestone M2)
+
+See and retrieve your data in the browser.
+
+- **Live waterfall.** Open an instrument's live page and watch its spectrogram
+  scroll in real time as it records, rendered in your browser.
+- **Data browser.** Browse recorded FITS files with quicklook thumbnails, sizes,
+  and observation times; download any file with one click.
+
+Internal: WebSocket frame hub (recorder -> browser), scan-based file catalog,
+lazy Pillow quicklooks, path-traversal-safe downloads; 50 tests; sprints S010-S011.
+
 ## v0.1.1 -- 2026-06-25 (Milestone M1)
 
 The station is now operated from a browser.

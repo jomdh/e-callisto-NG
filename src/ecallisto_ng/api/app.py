@@ -18,6 +18,7 @@ from ecallisto_ng import __version__
 from ecallisto_ng.api import models  # noqa: F401 -- register tables
 from ecallisto_ng.api.db import get_engine, init_db
 from ecallisto_ng.api.routes import auth as auth_routes
+from ecallisto_ng.api.routes import data as data_routes
 from ecallisto_ng.api.routes import instruments as instrument_routes
 from ecallisto_ng.api.routes import live as live_routes
 from ecallisto_ng.api.routes import portal as portal_routes
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     app.include_router(portal_routes.router)
     app.include_router(wizard_routes.router)
     app.include_router(live_routes.router)
+    app.include_router(data_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:

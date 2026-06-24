@@ -6,18 +6,17 @@ this scans in under a minute. Milestones are seeded from
 
 ## In progress
 
-### M2 — Live & data  (IN PROGRESS)
+### M3 — Programs & scheduling  (IN PROGRESS)
 
-Real-time WebSocket waterfall island, live viewer, data browser + quicklooks +
-download.
+Frequency-program editor + overview-based generation; sun-relative scheduler.
 
 | Sprint | Item | State |
 | -- | -- | -- |
-| S010 | Live recorder + WebSocket frame hub + waterfall island | next |
-| S011 | File catalog + data browser + quicklooks + download | planned |
+| S012 | Frequency programs (model, CRUD, overview-based generation) | next |
+| S013 | Sun-relative scheduler (astropy ephemeris) + schedule model | planned |
 
-Completion criteria: an operator watches a live waterfall and browses/downloads
-recorded files from the browser. Closes at v0.1.2.
+Completion criteria: an operator defines a frequency program and a sun-relative
+schedule that drives recording. Closes at v0.1.3.
 
 Sprint plans: `sprints/SPRINT_PLAN_NNN.md`; logbooks: `logbook/SPRINT_LOG_NNN.md`.
 
@@ -34,13 +33,13 @@ FastAPI + SQLite, argon2 auth + RBAC + sessions, instrument CRUD + record
 control, server-rendered portal on the M3 design system, first-run wizard.
 S005-S009.
 
+### M2 — Live & data  (v0.1.2, 2026-06-25)
+
+Live WebSocket waterfall island; data browser with quicklooks + download.
+S010-S011.
+
 ## Planned
 
-- **M3** — Programs & scheduling (freq-program editor + overview generation,
-  sun-relative scheduler).
-- **M2** — Live & data (WebSocket waterfall island, live viewer, data browser).
-- **M3** — Programs & scheduling (freq-program editor + overview generation,
-  sun-relative scheduler).
 - **M4** — Distribution & health (uploader, dispatch modes, health/alerts).
 - **M5** — Calibration & diagnostics; packaging (.deb + SD image).
 - **M6+** — SDR classes (class-2 host-DSP, class-3 FPGA drivers) on the M0 seams.
