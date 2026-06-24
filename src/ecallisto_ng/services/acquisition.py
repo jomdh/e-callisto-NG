@@ -11,12 +11,12 @@ web layer arrives in M2; this is the file-at-a-time baseline.
 from __future__ import annotations
 
 import itertools
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from ecallisto_ng.core.contracts import InstrumentDriver, OutputWriter
 from ecallisto_ng.core.recording import Recording, RecordingMeta
-from ecallisto_ng.core.spectra import Channel
+from ecallisto_ng.core.spectra import Channel, SpectrumFrame
 
 
 def record(
@@ -28,8 +28,13 @@ def record(
     *,
     sweeps_per_second: float,
     max_frames: int,
+    on_frame: Callable[[SpectrumFrame], None] | None = None,
 ) -> Path:
-    """Record ``max_frames`` sweeps and write one product; return its path."""
+    """Record ``max_frames`` sweeps and write one product; return its path.
+
+    ``on_frame`` is called for each frame as it arrives (e.g. to publish it
+    live) -- it must not block.
+    """
     if max_frames < 1:
         raise ValueError("max_frames must be >= 1")
 
@@ -37,8 +42,13 @@ def record(
     driver.identify()
     driver.configure(channels, sweeps_per_second)
     driver.start()
+    collected: list[SpectrumFrame] = []
     try:
-        frames = tuple(itertools.islice(driver.stream(), max_frames))
+        for frame in itertools.islice(driver.stream(), max_frames):
+            if on_frame is not None:
+                on_frame(frame)
+            collected.append(frame)
+        frames = tuple(collected)
     finally:
         driver.stop()
         driver.close()

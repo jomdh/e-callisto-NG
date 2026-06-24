@@ -84,6 +84,14 @@ class RecorderService:
             if existing and existing.status.state is RecorderState.RECORDING:
                 raise RuntimeError("already recording")
 
+        from ecallisto_ng.core.spectra import SpectrumFrame
+        from ecallisto_ng.services.hub import get_hub
+
+        hub = get_hub()
+
+        def _publish(frame: SpectrumFrame) -> None:
+            hub.publish(instrument_id, frame)
+
         def _run() -> None:
             try:
                 path = record(
@@ -94,6 +102,7 @@ class RecorderService:
                     out_dir,
                     sweeps_per_second=sweep_rate_hz,
                     max_frames=max_frames,
+                    on_frame=_publish,
                 )
                 self._finish(instrument_id, str(path), None)
             except Exception as exc:  # noqa: BLE001 - report any failure
