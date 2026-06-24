@@ -2,6 +2,26 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.1.5 -- 2026-06-25 (Milestone M5, v0.1 release)
+
+Calibrate, diagnose, and install.
+
+- **Optional calibration.** Attach calibration coefficients to produce solar-flux
+  (SFU) or antenna-temperature (Kelvin) FITS instead of raw counts. Off by
+  default -- raw is always the default unless you explicitly calibrate.
+- **Device diagnostics.** Probe an instrument from the portal/API to confirm it
+  responds and report its model, firmware, and capabilities.
+- **Install on a station.** A systemd service and an install script set the suite
+  up on any Debian/Raspberry Pi OS machine (a `.deb` recipe is outlined for later).
+
+This is the **v0.1 release** -- a station can be installed, set up in the browser,
+record real Callisto data to FITS, watch it live, schedule it to the Sun, browse
+and upload it, and monitor health.
+
+Internal: pure calibration math (SFU/Kelvin) applied in the writer, diagnostics
+endpoint, packaging (systemd + install.sh); 69 tests; sprints S016-S017.
+Merged 0.1-dev -> main.
+
 ## v0.1.4 -- 2026-06-25 (Milestone M4)
 
 Get your data off the station and keep an eye on it.

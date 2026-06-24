@@ -6,20 +6,19 @@ this scans in under a minute. Milestones are seeded from
 
 ## In progress
 
-### M5 — Calibration & diagnostics + packaging  (IN PROGRESS)
+## v0.1 released (all selected milestones M0-M5 complete)
 
-Calibration (SFU/Kelvin, optional), diagnostics endpoints, and packaging
-(.deb + systemd units).
+`main` is at **v0.1.5**. A station installs, runs the wizard, records real
+Callisto data to FITS, streams it live, schedules to the Sun, browses/uploads it,
+monitors health, optionally calibrates, and self-diagnoses. 17 sprints, 5 ADRs,
+69 tests, tags v0.1.0-v0.1.5.
 
-| Sprint | Item | State |
-| -- | -- | -- |
-| S016 | Calibration (coefficient sets, SFU/Kelvin in the writer) | next |
-| S017 | Diagnostics + packaging (.deb + systemd); version close, merge to main | planned |
+## Next (post-v0.1)
 
-Completion criteria: optional calibration produces SFU/Kelvin FITS; the suite
-installs via `.deb` with systemd units. Closes v0.1 (merge to main).
-
-Sprint plans: `sprints/SPRINT_PLAN_NNN.md`; logbooks: `logbook/SPRINT_LOG_NNN.md`.
+- **M6+** — SDR classes (class-2 host-DSP, class-3 FPGA) on the M0 seams.
+- **Refinements** — credential encryption (B2), real NTP probe, auto-dispatch
+  (immediate/scheduled uploads), bench-tool UI (noise figure), full `.deb`/SD
+  image, the full multi-step wizard, CSP middleware.
 
 ## Completed
 
@@ -49,9 +48,10 @@ sun-relative scheduler (astropy) with preview. S012-S013.
 Upload transports (local/FTP) + uploader (gzip, job tracking) + targets;
 system health page + alerts. S014-S015.
 
-## Planned
+### M5 — Calibration & diagnostics + packaging  (v0.1.5, 2026-06-25)
 
-- **M6+** — SDR classes (class-2 host-DSP, class-3 FPGA drivers) on the M0 seams.
+Optional SFU/Kelvin calibration in the writer; device diagnostics endpoint;
+systemd + install-script packaging. S016-S017.
 
 ## Conventions
 

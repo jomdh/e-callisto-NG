@@ -130,3 +130,33 @@ def stop_instrument(instrument_id: int) -> dict[str, bool]:
 def instrument_status(instrument_id: int) -> dict[str, object]:
     st = get_recorder().status(instrument_id)
     return {"state": st.state, "last_file": st.last_file, "error": st.error}
+
+
+@router.get("/{instrument_id}/diagnose", dependencies=[Depends(_operator)])
+def diagnose_instrument(
+    instrument_id: int, db: DbSession = Depends(get_session)
+) -> dict[str, object]:
+    """Probe the device: connect, identify, report info + capabilities."""
+    inst = _get(db, instrument_id)
+    driver = build_driver(
+        inst.instrument_class, inst.address, inst.focus_code, inst.channels
+    )
+    try:
+        driver.connect()
+        info = driver.identify()
+        caps = driver.capabilities
+    except Exception as exc:  # noqa: BLE001 - report any probe failure
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, f"probe failed: {exc}"
+        ) from exc
+    finally:
+        driver.close()
+    return {
+        "model": info.model,
+        "firmware": info.firmware,
+        "instrument_class": caps.instrument_class,
+        "bit_depth": caps.bit_depth,
+        "max_channels": caps.max_channels,
+        "supports_overview": caps.supports_overview,
+        "supports_calibration": caps.supports_calibration,
+    }
