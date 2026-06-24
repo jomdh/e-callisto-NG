@@ -12,12 +12,14 @@ dependency-free.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
 
 import numpy as np
 from astropy.io import fits
 
+from ecallisto_ng.core.calibration import to_kelvin, to_sfu
 from ecallisto_ng.core.recording import Recording
 from ecallisto_ng.core.units import UnitLevel
 
@@ -27,6 +29,20 @@ _BUNIT = {
     UnitLevel.SFU: "sfu",
     UnitLevel.KELVIN: "K",
 }
+
+
+def _calibrate(values: Sequence[int], recording: Recording) -> list[int]:
+    """Per-channel calibrated samples, or raw if uncalibrated (DESIGN 6b)."""
+    raw = list(values)
+    cal = recording.calibration
+    if recording.unit is UnitLevel.RAW or cal is None:
+        return raw
+    coeffs = cal.channels
+    if recording.unit is UnitLevel.SFU:
+        return [to_sfu(v, coeffs[i]) for i, v in enumerate(raw)]
+    if recording.unit is UnitLevel.KELVIN:
+        return [to_kelvin(v, coeffs[i]) for i, v in enumerate(raw)]
+    return raw
 
 
 class StandardFitsWriter:
@@ -52,7 +68,8 @@ class StandardFitsWriter:
 
         # (time, freq) -> transpose, then flip freq so low is on top.
         samples = np.array(
-            [f.values for f in recording.frames], dtype=np.uint8
+            [_calibrate(f.values, recording) for f in recording.frames],
+            dtype=np.uint8,
         )
         image = samples.T[::-1, :]
 

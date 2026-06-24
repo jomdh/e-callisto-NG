@@ -6,6 +6,7 @@ every other package depends on it. See DESIGN section 5a.
 
 from __future__ import annotations
 
+from ecallisto_ng.core.calibration import Calibration, ChannelCal
 from ecallisto_ng.core.contracts import (
     CONTRACT_VERSION,
     InstrumentDriver,
@@ -32,8 +33,10 @@ __all__ = [
     "InstrumentDriver",
     "OutputWriter",
     "UploadTransport",
+    "Calibration",
     "Capabilities",
     "Channel",
+    "ChannelCal",
     "Housekeeping",
     "InstrumentInfo",
     "Recording",

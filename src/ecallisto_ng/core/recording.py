@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.spectra import Channel, SpectrumFrame
 from ecallisto_ng.core.units import UnitLevel
 
@@ -41,3 +42,4 @@ class Recording:
     frames: tuple[SpectrumFrame, ...]
     sample_rate_hz: float
     unit: UnitLevel = UnitLevel.RAW
+    calibration: Calibration | None = None
