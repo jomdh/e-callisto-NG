@@ -10,6 +10,7 @@ from sqlmodel import select
 from ecallisto_ng.api import auth
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import Instrument, Station, User
+from ecallisto_ng.api.setup import is_configured
 from ecallisto_ng.api.templating import templates
 
 router = APIRouter(tags=["portal"])
@@ -22,8 +23,12 @@ def _station(db: DbSession) -> Station:
 
 @router.get("/", response_class=HTMLResponse)
 def index(
-    request: Request, user: User | None = Depends(auth.optional_user)
+    request: Request,
+    user: User | None = Depends(auth.optional_user),
+    db: DbSession = Depends(get_session),
 ) -> object:
+    if not is_configured(db):
+        return RedirectResponse("/wizard", status_code=303)
     if user is not None:
         return RedirectResponse("/portal", status_code=303)
     return templates.TemplateResponse(request, "portal/login.html", {})

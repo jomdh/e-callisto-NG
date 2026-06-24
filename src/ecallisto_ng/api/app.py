@@ -20,6 +20,7 @@ from ecallisto_ng.api.db import get_engine, init_db
 from ecallisto_ng.api.routes import auth as auth_routes
 from ecallisto_ng.api.routes import instruments as instrument_routes
 from ecallisto_ng.api.routes import portal as portal_routes
+from ecallisto_ng.api.routes import wizard as wizard_routes
 from ecallisto_ng.api.templating import STATIC_DIR
 
 
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_routes.router)
     app.include_router(instrument_routes.router)
     app.include_router(portal_routes.router)
+    app.include_router(wizard_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:

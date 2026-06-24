@@ -15,6 +15,7 @@ def _make_operator() -> None:
 
 
 def test_login_page_renders(client: TestClient) -> None:
+    _make_operator()  # configured -> / shows login (not the wizard)
     resp = client.get("/")
     assert resp.status_code == 200
     assert "Sign in" in resp.text
