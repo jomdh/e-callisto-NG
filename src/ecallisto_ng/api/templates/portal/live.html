@@ -1,0 +1,21 @@
+{% extends "portal/base.html" %}
+{% block title %}Live -- {{ instrument.name }}{% endblock %}
+{% block body %}
+<div class="topbar">
+  <span class="brand">e-Callisto NG</span>
+  <span><a href="/portal">&larr; dashboard</a></span>
+</div>
+<div class="portal-main">
+  <h2>Live &mdash; {{ instrument.name }}</h2>
+  <p class="muted">
+    <span id="live-status">connecting&hellip;</span>
+    &middot; {{ instrument.channels }} channels
+  </p>
+  <div class="card" style="padding:0;overflow:hidden">
+    <canvas id="waterfall" width="800" height="320"
+            data-instrument="{{ instrument.id }}"
+            style="display:block;width:100%;background:#000"></canvas>
+  </div>
+</div>
+<script src="/static/js/waterfall.js"></script>
+{% endblock %}

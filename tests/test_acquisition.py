@@ -1,0 +1,77 @@
+"""End-to-end record loop: driver -> FITS on disk, for fake and Callisto."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from astropy.io import fits
+
+from ecallisto_ng.core import Channel, RecordingMeta
+from ecallisto_ng.drivers.callisto import (
+    CallistoConfig,
+    CallistoDriver,
+    SimulatedCallisto,
+)
+from ecallisto_ng.drivers.fake import FakeDriver
+from ecallisto_ng.services.acquisition import record
+from ecallisto_ng.writers.fits import StandardFitsWriter
+
+
+def _channels(n: int) -> tuple[Channel, ...]:
+    return tuple(Channel(frequency_mhz=45.0 + i) for i in range(n))
+
+
+def test_record_with_fake_driver(tmp_path: Path) -> None:
+    meta = RecordingMeta(instrument="FAKESTN", focus_code=1)
+    path = record(
+        FakeDriver(channels=16),
+        StandardFitsWriter(),
+        _channels(16),
+        meta,
+        tmp_path,
+        sweeps_per_second=4.0,
+        max_frames=10,
+    )
+    assert path.exists()
+    with fits.open(path) as hdul:
+        assert hdul[0].data.shape == (16, 10)  # (freq, time)
+        assert hdul[0].header["INSTRUME"] == "FAKESTN"
+        assert hdul[0].header["CDELT1"] == 0.25
+
+
+def test_record_with_callisto_sim(tmp_path: Path) -> None:
+    driver = CallistoDriver(
+        SimulatedCallisto("1.8"), config=CallistoConfig(focuscode=2)
+    )
+    meta = RecordingMeta(instrument="CALSTN", focus_code=2)
+    path = record(
+        driver,
+        StandardFitsWriter(),
+        _channels(32),
+        meta,
+        tmp_path,
+        sweeps_per_second=4.0,
+        max_frames=8,
+    )
+    assert path.exists()
+    with fits.open(path) as hdul:
+        assert hdul[0].data.shape == (32, 8)
+        # B1: time axis is 1/sweeps-per-second regardless of channel count
+        assert hdul[0].header["CDELT1"] == 0.25
+        assert hdul[0].header["INSTRUME"] == "CALSTN"
+
+
+def test_record_rejects_zero_frames(tmp_path: Path) -> None:
+    try:
+        record(
+            FakeDriver(channels=4),
+            StandardFitsWriter(),
+            _channels(4),
+            RecordingMeta(instrument="X"),
+            tmp_path,
+            sweeps_per_second=4.0,
+            max_frames=0,
+        )
+    except ValueError:
+        return
+    raise AssertionError("max_frames=0 should be rejected")

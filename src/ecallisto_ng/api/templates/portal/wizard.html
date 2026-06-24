@@ -1,0 +1,38 @@
+{% extends "portal/base.html" %}
+{% block title %}Set up -- e-Callisto NG{% endblock %}
+{% block body %}
+<div class="login-wrap">
+  <form class="card" style="max-width:480px;width:100%" method="post" action="/wizard">
+    <h1>Welcome to e-Callisto NG</h1>
+    <p class="muted">First-run setup for this station.</p>
+
+    <h3>Administrator</h3>
+    <label for="admin_username">Username</label>
+    <input id="admin_username" name="admin_username" required>
+    <label for="admin_password">Password</label>
+    <input id="admin_password" name="admin_password" type="password" required>
+
+    <h3>Station</h3>
+    <label for="station_name">Station name</label>
+    <input id="station_name" name="station_name" value="station" required>
+    <label for="observatory">Observatory</label>
+    <input id="observatory" name="observatory">
+    <label for="latitude_deg">Latitude (deg, +N / -S)</label>
+    <input id="latitude_deg" name="latitude_deg" type="number" step="any" value="0">
+    <label for="longitude_deg">Longitude (deg, +E / -W)</label>
+    <input id="longitude_deg" name="longitude_deg" type="number" step="any" value="0">
+    <label for="altitude_m">Altitude (m)</label>
+    <input id="altitude_m" name="altitude_m" type="number" step="any" value="0">
+
+    <h3>First instrument (optional)</h3>
+    <label for="instrument_name">Instrument name</label>
+    <input id="instrument_name" name="instrument_name" placeholder="e.g. CALLISTO-01">
+    <label for="channels">Channels</label>
+    <input id="channels" name="channels" type="number" value="200">
+
+    <div style="margin-top:1.25rem">
+      <button class="btn" type="submit">Finish setup</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

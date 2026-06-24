@@ -9,10 +9,10 @@ Design references: DESIGN sections 5a (instrument classes), 6b (units).
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class UnitLevel(str, Enum):
+class UnitLevel(StrEnum):
     """How values in a spectrum should be interpreted.
 
     ``RAW`` is always the default: persisted science data is raw ADC unless
@@ -27,7 +27,7 @@ class UnitLevel(str, Enum):
     KELVIN = "kelvin"  # calibrated antenna temperature
 
 
-class ProcessingLocation(str, Enum):
+class ProcessingLocation(StrEnum):
     """Where the signal processing that yields spectra happens."""
 
     HOST = "host"  # host-driven sweep or host DSP (class 1 / class 2)
@@ -35,7 +35,7 @@ class ProcessingLocation(str, Enum):
     HYBRID = "hybrid"
 
 
-class LinkKind(str, Enum):
+class LinkKind(StrEnum):
     """The medium a driver uses to reach its instrument."""
 
     SERIAL = "serial"  # COM-over-USB (class 1 e-Callisto)
@@ -43,7 +43,7 @@ class LinkKind(str, Enum):
     NETWORK = "network"  # TCP/Ethernet (class 3 FPGA appliance)
 
 
-class InstrumentClass(str, Enum):
+class InstrumentClass(StrEnum):
     """The three instrument classes the driver seam must absorb."""
 
     HETERODYNE = "heterodyne"  # ADC + dumb MCU, host-driven (e-Callisto)

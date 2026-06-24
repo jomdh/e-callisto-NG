@@ -1,0 +1,21 @@
+[Unit]
+Description=e-Callisto NG web service
+After=network-online.target chrony.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=callisto
+Group=callisto
+WorkingDirectory=/opt/ecallisto-ng
+EnvironmentFile=-/etc/callisto/ecallisto.env
+ExecStart=/opt/ecallisto-ng/.venv/bin/uvicorn \
+    ecallisto_ng.api.app:create_app --factory \
+    --host ${ECALLISTO_BIND} --port ${ECALLISTO_PORT}
+Restart=always
+RestartSec=3
+# Recording is independent of this unit; restarting the web app does not stop
+# acquisition (acquisition runs in its own threads/processes by design).
+
+[Install]
+WantedBy=multi-user.target

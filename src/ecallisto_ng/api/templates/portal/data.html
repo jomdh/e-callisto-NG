@@ -1,0 +1,32 @@
+{% extends "portal/base.html" %}
+{% block title %}Data -- e-Callisto NG{% endblock %}
+{% block body %}
+<div class="topbar">
+  <span class="brand">e-Callisto NG</span>
+  <span><a href="/portal">&larr; dashboard</a></span>
+</div>
+<div class="portal-main">
+  <h2>Recorded files</h2>
+  {% if files %}
+  <div class="grid">
+    {% for f in files %}
+    <div class="card">
+      <img src="/api/v1/files/{{ f.name }}/quicklook" alt="quicklook"
+           style="width:100%;border-radius:8px;background:#000">
+      <div style="margin-top:0.5rem;font-size:0.85rem">
+        <strong>{{ f.instrument }}</strong><br>
+        <span class="muted">{{ f.date_obs }}</span><br>
+        <span class="muted">{{ f.rows }}&times;{{ f.cols }} &middot;
+          {{ (f.size_bytes / 1024) | round(1) }} kB</span>
+      </div>
+      <div style="margin-top:0.5rem">
+        <a class="btn btn-ghost" href="/api/v1/files/{{ f.name }}/download">download</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No recordings yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

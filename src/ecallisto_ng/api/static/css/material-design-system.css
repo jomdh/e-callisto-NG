@@ -1,0 +1,116 @@
+/* ===========================================================================
+   e-Callisto NG -- M3 design system (compact, framework-agnostic)
+   Shared visual language with doncel.dev: Nebula (dark) / Supernova (light).
+   Customise tokens here; never hardcode colours in templates.
+   =========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap');
+
+:root {
+  --font-brand: 'DM Sans', system-ui, sans-serif;
+  --font-plain: 'Noto Sans', system-ui, sans-serif;
+  --radius: 12px;
+  --gap: 1rem;
+
+  /* Nebula -- dark cyberpunk */
+  --nebula-bg: #0d0e1a;
+  --nebula-surface: #151626;
+  --nebula-hover: #1e2038;
+  --nebula-fg: #e2e4f0;
+  --nebula-muted: #5a5e7a;
+  --nebula-accent: #00d4ff;
+  --nebula-danger: #ff4d6d;
+  --nebula-ok: #4ade80;
+  --nebula-border: #2a2d4a;
+
+  /* Supernova -- light */
+  --supernova-bg: #f5f5f7;
+  --supernova-surface: #ffffff;
+  --supernova-hover: #e8e8ed;
+  --supernova-fg: #1d1d1f;
+  --supernova-muted: #6e6e73;
+  --supernova-accent: #0071e3;
+  --supernova-danger: #d70015;
+  --supernova-ok: #1d8a4e;
+  --supernova-border: #d2d2d7;
+}
+
+:root,
+[data-theme='nebula'] {
+  --bg: var(--nebula-bg);
+  --surface: var(--nebula-surface);
+  --hover: var(--nebula-hover);
+  --fg: var(--nebula-fg);
+  --muted: var(--nebula-muted);
+  --accent: var(--nebula-accent);
+  --danger: var(--nebula-danger);
+  --ok: var(--nebula-ok);
+  --border: var(--nebula-border);
+}
+
+[data-theme='supernova'] {
+  --bg: var(--supernova-bg);
+  --surface: var(--supernova-surface);
+  --hover: var(--supernova-hover);
+  --fg: var(--supernova-fg);
+  --muted: var(--supernova-muted);
+  --accent: var(--supernova-accent);
+  --danger: var(--supernova-danger);
+  --ok: var(--supernova-ok);
+  --border: var(--supernova-border);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-plain);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+h1, h2, h3 { font-family: var(--font-brand); font-weight: 600; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.btn {
+  font-family: var(--font-brand);
+  font-size: 0.95rem;
+  padding: 0.6em 1.2em;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: var(--bg);
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn-ghost { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+
+label { display: block; font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+
+input, select {
+  width: 100%;
+  padding: 0.6em 0.8em;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.muted { color: var(--muted); }
+.error { color: var(--danger); }
+.ok { color: var(--ok); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; font-size: 0.85rem; }

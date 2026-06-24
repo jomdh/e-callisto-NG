@@ -14,3 +14,6 @@ out_dir
 # UploadTransport.put / verify parameters
 local
 remote
+# Connection.read parameter (kept for interface conformance; some backends,
+# like the simulator, do not need it)
+timeout

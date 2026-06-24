@@ -1,0 +1,44 @@
+{% extends "portal/base.html" %}
+{% block title %}Dashboard -- e-Callisto NG{% endblock %}
+{% block body %}
+<div class="topbar">
+  <span class="brand">e-Callisto NG</span>
+  <span>
+    <button class="theme-toggle" data-action="toggle-theme" type="button">theme</button>
+    <span class="muted">{{ user.username }} ({{ user.role }})</span>
+    <a href="/logout">sign out</a>
+  </span>
+</div>
+<div class="portal-main">
+  <h2>Station</h2>
+  <p class="muted">{{ station.name }} &mdash; {{ station.observatory or "no observatory set" }}</p>
+  <p>
+    <a href="/portal/data">browse recorded files &rarr;</a> &middot;
+    <a href="/portal/system">system health &rarr;</a>
+  </p>
+
+  <h2>Instruments</h2>
+  {% if instruments %}
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Class</th><th>Channels</th><th>Enabled</th></tr>
+      </thead>
+      <tbody>
+        {% for i in instruments %}
+        <tr>
+          <td>{{ i.name }}</td>
+          <td>{{ i.instrument_class }}</td>
+          <td>{{ i.channels }}</td>
+          <td>{{ "yes" if i.enabled else "no" }}</td>
+          <td><a href="/portal/live/{{ i.id }}">live</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">No instruments yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

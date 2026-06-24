@@ -6,35 +6,52 @@ this scans in under a minute. Milestones are seeded from
 
 ## In progress
 
-### M0 — Core contracts + record loop  (IN PROGRESS)
+## v0.1 released (all selected milestones M0-M5 complete)
 
-Define the seams first; the record loop proves them. Getting M0 right is what
-makes M1–M5 cheap.
+`main` is at **v0.1.5**. A station installs, runs the wizard, records real
+Callisto data to FITS, streams it live, schedules to the Sun, browses/uploads it,
+monitors health, optionally calibrates, and self-diagnoses. 17 sprints, 5 ADRs,
+69 tests, tags v0.1.0-v0.1.5.
 
-| Item | State |
-| -- | -- |
-| Repo scaffold + quality gate (black/ruff/flake8/mypy/pytest/vulture) | done |
-| `core` domain models (spectra, capabilities, units) | done |
-| Plugin contracts (`InstrumentDriver`, `OutputWriter`, `UploadTransport`) | done |
-| `FakeDriver` (hardware-free) + contract tests | done |
-| Callisto serial driver (class-1 heterodyne) against the contract | next |
-| FITS `OutputWriter` (standard mode) | next |
-| Acquisition service: drive → buffer → write loop | next |
-| CLI entry point to run a recording with the fake or Callisto driver | next |
+## Next (post-v0.1)
 
-Completion criteria: a recording runs end-to-end (fake driver → FITS on disk)
-via CLI, quality gate green, contracts documented as ADRs.
+- **M6+** — SDR classes (class-2 host-DSP, class-3 FPGA) on the M0 seams.
+- **Refinements** — credential encryption (B2), real NTP probe, auto-dispatch
+  (immediate/scheduled uploads), bench-tool UI (noise figure), full `.deb`/SD
+  image, the full multi-step wizard, CSP middleware.
 
-## Planned (post-M0)
+## Completed
 
-- **M1** — Backend + portal + auth + wizard (FastAPI, SQLite, Jinja portal on the
-  shared M3 design system, login/RBAC, install wizard, instrument setup).
-- **M2** — Live & data (WebSocket waterfall island, live viewer, data browser).
-- **M3** — Programs & scheduling (freq-program editor + overview generation,
-  sun-relative scheduler).
-- **M4** — Distribution & health (uploader, dispatch modes, health/alerts).
-- **M5** — Calibration & diagnostics; packaging (.deb + SD image).
-- **M6+** — SDR classes (class-2 host-DSP, class-3 FPGA drivers) on the M0 seams.
+### M0 — Core contracts + record loop  (v0.1.0, 2026-06-25)
+
+Seams first; the record loop proved them. S001-S004. End-to-end
+`ecallisto-ng record` → FITS; ADRs 0001-0004.
+
+### M1 — Backend + portal + auth + wizard  (v0.1.1, 2026-06-25)
+
+FastAPI + SQLite, argon2 auth + RBAC + sessions, instrument CRUD + record
+control, server-rendered portal on the M3 design system, first-run wizard.
+S005-S009.
+
+### M2 — Live & data  (v0.1.2, 2026-06-25)
+
+Live WebSocket waterfall island; data browser with quicklooks + download.
+S010-S011.
+
+### M3 — Programs & scheduling  (v0.1.3, 2026-06-25)
+
+Frequency programs (manual + overview-generated quiet-channel selection);
+sun-relative scheduler (astropy) with preview. S012-S013.
+
+### M4 — Distribution & health  (v0.1.4, 2026-06-25)
+
+Upload transports (local/FTP) + uploader (gzip, job tracking) + targets;
+system health page + alerts. S014-S015.
+
+### M5 — Calibration & diagnostics + packaging  (v0.1.5, 2026-06-25)
+
+Optional SFU/Kelvin calibration in the writer; device diagnostics endpoint;
+systemd + install-script packaging. S016-S017.
 
 ## Conventions
 

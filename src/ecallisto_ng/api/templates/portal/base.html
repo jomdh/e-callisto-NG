@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="nebula">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}e-Callisto NG{% endblock %}</title>
+  <meta name="theme-color" content="#0d0e1a">
+  <script>
+    (function () {
+      var allowed = ['nebula', 'supernova'];
+      var t = localStorage.getItem('ecallisto-theme');
+      if (!t || allowed.indexOf(t) === -1) { t = 'nebula'; }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/css/material-design-system.css">
+  <link rel="stylesheet" href="/static/css/portal.css">
+</head>
+<body>
+  {% block body %}{% endblock %}
+  <script src="/static/js/portal.js"></script>
+</body>
+</html>

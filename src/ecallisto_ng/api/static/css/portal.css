@@ -1,0 +1,30 @@
+/* Portal layout (structure only; colours come from the M3 design system). */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.topbar .brand { font-family: var(--font-brand); font-weight: 700; font-size: 1.1rem; }
+
+.portal-main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--gap);
+}
+
+.login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+.login-card { width: 100%; max-width: 360px; }
+
+.theme-toggle { background: none; border: 1px solid var(--border); color: var(--fg);
+  border-radius: 999px; padding: 0.3em 0.8em; cursor: pointer; font-size: 0.8rem; }
