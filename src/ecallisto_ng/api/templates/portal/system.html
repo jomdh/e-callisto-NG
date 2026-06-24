@@ -1,0 +1,35 @@
+{% extends "portal/base.html" %}
+{% block title %}System -- e-Callisto NG{% endblock %}
+{% block body %}
+<div class="topbar">
+  <span class="brand">e-Callisto NG</span>
+  <span><a href="/portal">&larr; dashboard</a></span>
+</div>
+<div class="portal-main">
+  <h2>System health</h2>
+  {% if h.alerts %}
+  <div class="card" style="border-color:var(--danger)">
+    <strong class="error">Alerts</strong>
+    <ul>{% for a in h.alerts %}<li>{{ a }}</li>{% endfor %}</ul>
+  </div>
+  {% else %}
+  <p class="ok">All clear.</p>
+  {% endif %}
+  <div class="grid" style="margin-top:1rem">
+    <div class="card">
+      <div class="muted">Disk free</div>
+      <h3>{{ h.disk_pct_free }}%</h3>
+      <div class="muted">{{ (h.disk_free_bytes / 1073741824) | round(1) }} GB</div>
+    </div>
+    <div class="card">
+      <div class="muted">Instruments</div><h3>{{ h.instruments }}</h3>
+    </div>
+    <div class="card">
+      <div class="muted">Recordings</div><h3>{{ h.recordings }}</h3>
+    </div>
+    <div class="card">
+      <div class="muted">Pending upload</div><h3>{{ h.upload_pending }}</h3>
+    </div>
+  </div>
+</div>
+{% endblock %}

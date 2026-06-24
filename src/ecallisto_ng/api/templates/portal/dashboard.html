@@ -12,7 +12,10 @@
 <div class="portal-main">
   <h2>Station</h2>
   <p class="muted">{{ station.name }} &mdash; {{ station.observatory or "no observatory set" }}</p>
-  <p><a href="/portal/data">browse recorded files &rarr;</a></p>
+  <p>
+    <a href="/portal/data">browse recorded files &rarr;</a> &middot;
+    <a href="/portal/system">system health &rarr;</a>
+  </p>
 
   <h2>Instruments</h2>
   {% if instruments %}

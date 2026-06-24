@@ -2,6 +2,21 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.1.4 -- 2026-06-25 (Milestone M4)
+
+Get your data off the station and keep an eye on it.
+
+- **Upload to a destination.** Configure where recorded files go (a local
+  mirror/mounted drive, or an FTP server), then send them -- gzipped, once each,
+  never re-sent. Failed files are recorded so you can see what didn't go.
+- **System health.** A health page (and API) shows disk space, instrument and
+  recording counts, and how many files are waiting to upload, with alerts when
+  something needs attention (disk low, no instruments, upload backlog).
+
+Internal: pluggable upload transports (local/FTP) behind the contract, uploader
+with gzip + tmp-then-rename + job tracking, health service with pure alert logic;
+64 tests; sprints S014-S015.
+
 ## v0.1.3 -- 2026-06-25 (Milestone M3)
 
 Plan what and when to observe.
