@@ -62,7 +62,7 @@ class CallistoDriver:
         self._clock = clock or (lambda: datetime.now(UTC))
         self._firmware = p.FIRMWARE_15
         self._nchannels = 0
-        self._sample_rate = 1
+        self._sweeps_per_second = 1.0
         self._running = False
         self._rx = bytearray()
 
@@ -102,10 +102,18 @@ class CallistoDriver:
     def configure(
         self, channels: Sequence[Channel], sample_rate_hz: float
     ) -> None:
+        """Program channels and rate. ``sample_rate_hz`` = sweeps per second.
+
+        The receiver's clock counts *pixels* (samples) per second, so the
+        divider is set from sweeps x channels (B1).
+        """
         if not channels:
             raise ValueError("at least one channel required")
         self._nchannels = len(channels)
-        self._sample_rate = max(int(round(sample_rate_hz)), 1)
+        self._sweeps_per_second = sample_rate_hz
+        pixels_per_second = max(
+            int(round(sample_rate_hz * self._nchannels)), 1
+        )
         for index, channel in enumerate(channels):
             self._conn.write(
                 p.channel_command(
@@ -119,7 +127,7 @@ class CallistoDriver:
             self._wait_for(p.EEPROM_READY)
         for cmd in p.init_commands(
             self._cfg.clocksource,
-            self._sample_rate,
+            pixels_per_second,
             self._cfg.agclevel,
             self._cfg.chargepump,
         ):

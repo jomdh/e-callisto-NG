@@ -6,28 +6,32 @@ this scans in under a minute. Milestones are seeded from
 
 ## In progress
 
-### M0 — Core contracts + record loop  (IN PROGRESS)
+### M1 — Backend + portal + auth + wizard  (IN PROGRESS)
 
-Define the seams first; the record loop proves them. Getting M0 right is what
-makes M1–M5 cheap.
+FastAPI app, SQLite persistence, the Jinja portal shell on the shared M3 design
+system, login/RBAC, the install wizard, instrument config, and start/stop.
 
 | Sprint | Item | State |
 | -- | -- | -- |
-| S001 | Scaffold + quality gate + core models + contracts + FakeDriver | done |
-| S002 | Callisto serial driver (class-1) + device simulator | done |
-| S003 | FITS `OutputWriter` (standard mode) | done |
-| S004 | Acquisition service (drive → buffer → write) + CLI + pyserial backend | next |
+| S005 | FastAPI app skeleton + SQLite (SQLModel) + settings + health | next |
 
-Completion criteria: a recording runs end-to-end (fake driver → FITS on disk)
-via CLI, quality gate green, contracts documented as ADRs. M0 closes at S004
-with a version bump to v0.1.0.
+Completion criteria: an operator can log in, complete the wizard, register an
+instrument, and start/stop a recording from the browser. Closes at a version
+bump (v0.1.1).
 
 Sprint plans: `sprints/SPRINT_PLAN_NNN.md`; logbooks: `logbook/SPRINT_LOG_NNN.md`.
 
-## Planned (post-M0)
+## Completed
 
-- **M1** — Backend + portal + auth + wizard (FastAPI, SQLite, Jinja portal on the
-  shared M3 design system, login/RBAC, install wizard, instrument setup).
+### M0 — Core contracts + record loop  (v0.1.0, 2026-06-25)
+
+Seams first; the record loop proved them. S001 scaffold+contracts+FakeDriver,
+S002 Callisto driver+simulator, S003 standard FITS writer, S004 record loop+CLI.
+End-to-end `ecallisto-ng record` → FITS; 30 tests; ADRs 0001-0004.
+
+## Planned
+
+- **M2** — Live & data (WebSocket waterfall island, live viewer, data browser).
 - **M2** — Live & data (WebSocket waterfall island, live viewer, data browser).
 - **M3** — Programs & scheduling (freq-program editor + overview generation,
   sun-relative scheduler).

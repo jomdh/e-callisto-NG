@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecallisto-ng"
-version = "0.0.1"
+version = "0.1.0"
 description = "Web-based solar radio spectrometer suite for a station (e-Callisto NG)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -16,7 +16,11 @@ license = { text = "TBD (GPLv3 vs AGPLv3 -- see ADR-0003)" }
 dependencies = [
     "astropy>=6",
     "numpy>=1.24",
+    "pyserial>=3.5",
 ]
+
+[project.scripts]
+ecallisto-ng = "ecallisto_ng.cli:main"
 
 [project.optional-dependencies]
 dev = [
