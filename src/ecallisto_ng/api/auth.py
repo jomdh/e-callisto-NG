@@ -92,6 +92,20 @@ def get_current_user(
     return user
 
 
+def optional_user(
+    request: Request, db: DbSession = Depends(get_session)
+) -> User | None:
+    """Return the logged-in user or ``None`` -- for server-rendered pages."""
+    token = request.cookies.get(SESSION_COOKIE)
+    if not token:
+        return None
+    session = db.get(Session, token)
+    if session is None or _expired(session.expires_at):
+        return None
+    user = db.get(User, session.user_id)
+    return user if user and user.active else None
+
+
 def require_role(minimum: Role) -> Callable[[User], User]:
     """Dependency factory: require at least ``minimum`` role."""
 
