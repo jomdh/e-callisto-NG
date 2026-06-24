@@ -50,3 +50,30 @@ class Session(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=_utcnow)
     expires_at: datetime
+
+
+class Station(SQLModel, table=True):
+    """This host's identity (single row), and its observatory + location."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = "station"
+    observatory: str = ""
+    latitude_deg: float = 0.0  # +N / -S
+    longitude_deg: float = 0.0  # +E / -W
+    altitude_m: float = 0.0
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
+class Instrument(SQLModel, table=True):
+    """A receiver controlled by this station."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    instrument_class: str = "heterodyne"  # heterodyne / sdr_soft / sdr_fpga
+    address: str = ""  # serial path / USB id / host:port; empty -> fake
+    focus_code: int = 1
+    gain: int = 120
+    channels: int = 200
+    sweep_rate_hz: float = 4.0
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=_utcnow)
