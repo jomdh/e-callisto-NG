@@ -11,19 +11,18 @@ this scans in under a minute. Milestones are seeded from
 Define the seams first; the record loop proves them. Getting M0 right is what
 makes M1–M5 cheap.
 
-| Item | State |
-| -- | -- |
-| Repo scaffold + quality gate (black/ruff/flake8/mypy/pytest/vulture) | done |
-| `core` domain models (spectra, capabilities, units) | done |
-| Plugin contracts (`InstrumentDriver`, `OutputWriter`, `UploadTransport`) | done |
-| `FakeDriver` (hardware-free) + contract tests | done |
-| Callisto serial driver (class-1 heterodyne) against the contract | next |
-| FITS `OutputWriter` (standard mode) | next |
-| Acquisition service: drive → buffer → write loop | next |
-| CLI entry point to run a recording with the fake or Callisto driver | next |
+| Sprint | Item | State |
+| -- | -- | -- |
+| S001 | Scaffold + quality gate + core models + contracts + FakeDriver | done |
+| S002 | Callisto serial driver (class-1) + device simulator | done |
+| S003 | FITS `OutputWriter` (standard mode) | done |
+| S004 | Acquisition service (drive → buffer → write) + CLI + pyserial backend | next |
 
 Completion criteria: a recording runs end-to-end (fake driver → FITS on disk)
-via CLI, quality gate green, contracts documented as ADRs.
+via CLI, quality gate green, contracts documented as ADRs. M0 closes at S004
+with a version bump to v0.1.0.
+
+Sprint plans: `sprints/SPRINT_PLAN_NNN.md`; logbooks: `logbook/SPRINT_LOG_NNN.md`.
 
 ## Planned (post-M0)
 

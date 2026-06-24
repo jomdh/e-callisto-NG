@@ -7,12 +7,16 @@ name = "ecallisto-ng"
 version = "0.0.1"
 description = "Web-based solar radio spectrometer suite for a station (e-Callisto NG)"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "TBD (GPLv3 vs AGPLv3 -- see ADR-0003)" }
 
-# M0 core + fake driver need no runtime deps (core is dependency-free by design).
-# Stack deps (fastapi, astropy, pyserial, ...) are added per milestone.
-dependencies = []
+# core + fake driver need no runtime deps (core is dependency-free by design).
+# Stack deps are added per milestone, scoped to the layer that needs them.
+# astropy/numpy: the FITS writers (writers/). Not imported by core.
+dependencies = [
+    "astropy>=6",
+    "numpy>=1.24",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -29,17 +33,19 @@ where = ["src"]
 
 [tool.black]
 line-length = 79
-target-version = ["py311"]
+target-version = ["py312"]
 
 [tool.ruff]
 line-length = 79
-target-version = "py311"
+target-version = "py312"
 src = ["src", "tests"]
-select = ["E", "F", "I", "UP", "B"]
 extend-exclude = ["vulture_whitelist.py", "legacy"]
 
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 ignore_missing_imports = true
 warn_unused_ignores = true
 warn_redundant_casts = true

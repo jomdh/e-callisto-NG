@@ -12,6 +12,7 @@ from ecallisto_ng.core.contracts import (
     OutputWriter,
     UploadTransport,
 )
+from ecallisto_ng.core.recording import Recording, RecordingMeta
 from ecallisto_ng.core.spectra import (
     Capabilities,
     Channel,
@@ -35,6 +36,8 @@ __all__ = [
     "Channel",
     "Housekeeping",
     "InstrumentInfo",
+    "Recording",
+    "RecordingMeta",
     "SpectrumFrame",
     "InstrumentClass",
     "LinkKind",

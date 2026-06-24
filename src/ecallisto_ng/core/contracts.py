@@ -20,15 +20,16 @@ from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from ecallisto_ng.core.recording import Recording
 from ecallisto_ng.core.spectra import (
     Capabilities,
     Channel,
     InstrumentInfo,
     SpectrumFrame,
 )
-from ecallisto_ng.core.units import UnitLevel
 
-CONTRACT_VERSION = "0.1.0"
+# 0.2.0: OutputWriter takes a Recording instead of (frames, unit) -- ADR-0004.
+CONTRACT_VERSION = "0.2.0"
 
 
 @runtime_checkable
@@ -74,19 +75,17 @@ class InstrumentDriver(Protocol):
 
 @runtime_checkable
 class OutputWriter(Protocol):
-    """Writes accumulated spectra to a science product (e.g. FITS).
+    """Writes a :class:`Recording` to a science product (e.g. FITS).
 
     The three output modes (legacy / standard / custom, DESIGN 6a) are three
-    writers. Writers must honor the frame ``unit`` and bit depth -- never
+    writers. Writers must honor the recording ``unit`` and bit depth -- never
     assume 8-bit, never silently rescale (DESIGN 6b).
     """
 
-    def filename(self, frames: Sequence[SpectrumFrame]) -> str:
-        """Compute the output filename for a block of frames."""
+    def filename(self, recording: Recording) -> str:
+        """Compute the output filename for a recording."""
 
-    def write(
-        self, frames: Sequence[SpectrumFrame], unit: UnitLevel, out_dir: Path
-    ) -> Path:
+    def write(self, recording: Recording, out_dir: Path) -> Path:
         """Write the product and return its path."""
 
 
