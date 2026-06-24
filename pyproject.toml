@@ -54,6 +54,8 @@ extend-exclude = ["vulture_whitelist.py", "legacy"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+# B008: FastAPI's Depends()/Query() in argument defaults is idiomatic.
+ignore = ["B008"]
 
 [tool.mypy]
 python_version = "3.12"

@@ -14,7 +14,9 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from ecallisto_ng import __version__
+from ecallisto_ng.api import models  # noqa: F401 -- register tables
 from ecallisto_ng.api.db import get_engine, init_db
+from ecallisto_ng.api.routes import auth as auth_routes
 
 
 @asynccontextmanager
@@ -27,6 +29,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="e-Callisto NG", version=__version__, lifespan=_lifespan
     )
+    app.include_router(auth_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:
