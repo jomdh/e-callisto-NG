@@ -2,6 +2,23 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.4.2 -- 2026-06-25 (Milestone M13)
+
+See your spectra and publish your light curves.
+
+- **Spectrum viewer.** Open any overview/spectrum file and explore it: LO
+  conversion, dB/log scaling, background subtraction, typed-range zoom, and PNG
+  export -- the legacy SXY/M9703A plotter, web-native.
+- **dB toggle.** Switch the live view and the viewer between raw and dB (never
+  automatic -- raw stays the default).
+- **Public light-curve images.** Render a day's light curve as a 24-hour UT PNG
+  with up to 10 coloured channels -- the website image the legacy wwwgeni made.
+- **Richer live view.** The live page now shows the waterfall plus a single
+  spectrum y(f) and a light curve y(t) of the peak channel.
+
+Internal: services/spectrum.py + viewer island, services/lightcurve_png.py
+(Pillow), spectra/lightcurve endpoints, live panels; 143 tests; sprints S034-S035.
+
 ## v0.4.1 -- 2026-06-25 (Milestone M12)
 
 The commissioning bench, web-native.
