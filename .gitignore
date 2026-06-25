@@ -30,3 +30,7 @@ legacy/
 # Planning, ADRs, sprint logs, milestone plans, changelog, parity audit.
 # Maintainer-local methodology -- kept on the computer, not pushed.
 docs/
+
+# stray SQLite DBs -- the station creates its own
+*.db
+*.db-journal
