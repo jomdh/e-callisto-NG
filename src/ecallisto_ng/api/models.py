@@ -114,6 +114,19 @@ class Schedule(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class CalibrationSet(SQLModel, table=True):
+    """Named per-channel calibration coefficients (a, b, cf, Tb).
+
+    ``coefficients_json`` is a JSON array of ``[a, b, cf, tb]`` rows. A single
+    row is broadcast to all channels; otherwise the count must match.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    coefficients_json: str = "[]"
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class FrequencyProgram(SQLModel, table=True):
     """A named frequency plan: a list of channel frequencies (MHz).
 
@@ -141,5 +154,9 @@ class Instrument(SQLModel, table=True):
     channels: int = 200
     sweep_rate_hz: float = 4.0
     file_seconds: int = 900  # length of one recording/FITS file
+    unit: str = "raw"  # raw / sfu / kelvin (calibrated output, DESIGN 6b)
+    calibration_set_id: int | None = Field(
+        default=None, foreign_key="calibrationset.id"
+    )
     enabled: bool = True
     created_at: datetime = Field(default_factory=_utcnow)

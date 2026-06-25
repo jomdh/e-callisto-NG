@@ -15,10 +15,18 @@ from datetime import UTC, datetime
 from sqlmodel import Session, select
 
 from ecallisto_ng.api.db import get_engine
-from ecallisto_ng.api.models import Instrument, Schedule, Station
+from ecallisto_ng.api.models import (
+    CalibrationSet,
+    Instrument,
+    Schedule,
+    Station,
+)
 from ecallisto_ng.api.settings import get_settings
+from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
+from ecallisto_ng.core.units import UnitLevel
+from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.recorder import (
     RecorderState,
     build_driver,
@@ -49,7 +57,7 @@ class SchedulerService:
             desired = is_recording_desired(window, now)
             state = recorder.status(inst.id).state
             if desired and state is not RecorderState.RECORDING:
-                self._start(inst, station)
+                self._start(db, inst, station)
             elif not desired and state is RecorderState.RECORDING:
                 recorder.stop(inst.id)
 
@@ -65,7 +73,7 @@ class SchedulerService:
             sched.margin_minutes,
         )
 
-    def _start(self, inst: Instrument, st: Station) -> None:
+    def _start(self, db: Session, inst: Instrument, st: Station) -> None:
         assert inst.id is not None
         driver = build_driver(
             inst.instrument_class, inst.address, inst.focus_code, inst.channels
@@ -85,6 +93,7 @@ class SchedulerService:
         frames = max(int(inst.file_seconds * inst.sweep_rate_hz), 1)
         data_dir = get_settings().data_dir
         data_dir.mkdir(parents=True, exist_ok=True)
+        unit, calibration = self._calibration(db, inst)
         get_recorder().start(
             inst.id,
             driver,
@@ -93,7 +102,19 @@ class SchedulerService:
             data_dir,
             sweep_rate_hz=inst.sweep_rate_hz,
             max_frames=frames,
+            unit=unit,
+            calibration=calibration,
         )
+
+    def _calibration(
+        self, db: Session, inst: Instrument
+    ) -> tuple[UnitLevel, Calibration | None]:
+        coeffs = None
+        if inst.calibration_set_id is not None:
+            cs = db.get(CalibrationSet, inst.calibration_set_id)
+            if cs is not None:
+                coeffs = cs.coefficients_json
+        return resolve(inst.unit, coeffs, inst.channels)
 
     # -- background loop ---------------------------------------------------
 

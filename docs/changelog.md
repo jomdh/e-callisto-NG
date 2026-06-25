@@ -2,6 +2,23 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.2.0 -- 2026-06-25 (Milestone M6)
+
+The station now runs itself.
+
+- **Records on schedule, unattended.** Once an instrument has a schedule, the
+  station starts and stops recording on the sun-relative (or fixed) window with
+  no operator action -- files roll over automatically.
+- **Uploads itself.** Targets set to "immediate" send each finished file as it's
+  written; "overnight"/scheduled targets send within their window. Old local
+  files are pruned once safely uploaded (un-uploaded data is never deleted).
+- **Calibrated output.** Assign a calibration set and unit to an instrument to
+  record SFU or Kelvin FITS; raw stays the default otherwise.
+- **Light curves.** Flagged channels are written as per-channel time-series CSVs.
+
+Internal: scheduler + uploader background loops, retention pruning, calibration
+wired through the recorder, light-curve writer; 76 tests; sprints S018-S020.
+
 ## v0.1.5 -- 2026-06-25 (Milestone M5, v0.1 release)
 
 Calibrate, diagnose, and install.

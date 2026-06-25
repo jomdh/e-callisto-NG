@@ -13,9 +13,11 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 
+from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.contracts import InstrumentDriver
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
+from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.drivers.callisto import CallistoConfig, CallistoDriver
 from ecallisto_ng.drivers.fake import FakeDriver
 from ecallisto_ng.services.acquisition import record
@@ -78,6 +80,8 @@ class RecorderService:
         *,
         sweep_rate_hz: float,
         max_frames: int,
+        unit: UnitLevel = UnitLevel.RAW,
+        calibration: Calibration | None = None,
     ) -> None:
         with self._lock:
             existing = self._jobs.get(instrument_id)
@@ -102,6 +106,8 @@ class RecorderService:
                     out_dir,
                     sweeps_per_second=sweep_rate_hz,
                     max_frames=max_frames,
+                    unit=unit,
+                    calibration=calibration,
                     on_frame=_publish,
                 )
                 self._finish(instrument_id, str(path), None)

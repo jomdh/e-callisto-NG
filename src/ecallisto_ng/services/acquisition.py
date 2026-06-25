@@ -14,9 +14,12 @@ import itertools
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.contracts import InstrumentDriver, OutputWriter
 from ecallisto_ng.core.recording import Recording, RecordingMeta
 from ecallisto_ng.core.spectra import Channel, SpectrumFrame
+from ecallisto_ng.core.units import UnitLevel
+from ecallisto_ng.services.lightcurve import write_light_curves
 
 
 def record(
@@ -28,6 +31,8 @@ def record(
     *,
     sweeps_per_second: float,
     max_frames: int,
+    unit: UnitLevel = UnitLevel.RAW,
+    calibration: Calibration | None = None,
     on_frame: Callable[[SpectrumFrame], None] | None = None,
 ) -> Path:
     """Record ``max_frames`` sweeps and write one product; return its path.
@@ -58,5 +63,9 @@ def record(
         channels=tuple(channels),
         frames=frames,
         sample_rate_hz=sweeps_per_second,
+        unit=unit,
+        calibration=calibration,
     )
-    return writer.write(recording, out_dir)
+    path = writer.write(recording, out_dir)
+    write_light_curves(recording, out_dir)
+    return path
