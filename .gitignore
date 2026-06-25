@@ -26,3 +26,7 @@ venv/
 # Legacy reverse-engineering reference (downloads, extracted source, analysis).
 # Local-only; not part of the NG repo.
 legacy/
+
+# Planning, ADRs, sprint logs, milestone plans, changelog, parity audit.
+# Maintainer-local methodology -- kept on the computer, not pushed.
+docs/
