@@ -52,6 +52,17 @@ class Session(SQLModel, table=True):
     expires_at: datetime
 
 
+class PeerStation(SQLModel, table=True):
+    """Another station this observatory oversees (fleet view, DESIGN 8)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    base_url: str  # e.g. https://stn2.obs.example
+    token: str = ""  # the peer's fleet token
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class AccessSettings(SQLModel, table=True):
     """How the station is reached remotely (single row). DESIGN 10."""
 

@@ -2,6 +2,23 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.3.1 -- 2026-06-25 (Milestone M10, v0.3 release)
+
+Oversee a whole observatory, not just one station.
+
+- **Fleet view.** Register your other stations and see them all in one place --
+  each station's disk, instruments, recordings, upload backlog, and alerts --
+  with unreachable stations clearly flagged.
+- Stations share health over a token-gated endpoint, so an observatory can poll
+  them without sharing logins.
+
+This is the **v0.3 release** -- SDR instruments (host-DSP and FPGA) join the
+classic receiver, and an observatory can watch its fleet of stations.
+
+Internal: shared station-health builder, PeerStation registry, token-gated
+fleet-health endpoint, pure injectable fleet aggregation; 109 tests; sprint S028.
+Merged 0.2-dev -> main.
+
 ## v0.3.0 -- 2026-06-25 (Milestone M9)
 
 Beyond the classic receiver: software-defined radios.
