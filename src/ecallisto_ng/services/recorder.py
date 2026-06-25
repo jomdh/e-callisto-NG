@@ -56,6 +56,10 @@ def build_driver(
         from ecallisto_ng.drivers.sdr.soft import SoftSdrDriver
 
         return SoftSdrDriver(channels=channels)
+    if instrument_class == "sdr_fpga":
+        from ecallisto_ng.drivers.sdr.fpga import build_fpga_driver
+
+        return build_fpga_driver(address, channels)
     if address and instrument_class == "heterodyne":
         from ecallisto_ng.connections.serial_link import SerialConnection
 
