@@ -54,6 +54,32 @@
     });
   }
 
+  // ---- audit log -------------------------------------------------------
+  const auditView = document.getElementById("audit-view");
+  if (auditView) {
+    api("GET", "/api/v1/audit").then((rows) => {
+      const table = document.createElement("table");
+      const head = document.createElement("tr");
+      ["when", "actor", "action", "target", "detail"].forEach((c) => {
+        const th = document.createElement("th");
+        th.textContent = c;
+        head.append(th);
+      });
+      table.append(head);
+      rows.forEach((r) => {
+        const tr = document.createElement("tr");
+        [r.created_at, r.actor, r.action, r.target, r.detail].forEach((v) => {
+          const td = document.createElement("td");
+          td.textContent = v == null ? "" : String(v);
+          tr.append(td);
+        });
+        table.append(tr);
+      });
+      auditView.replaceChildren(table);
+      if (!rows.length) auditView.textContent = "No events yet.";
+    }).catch((e) => { auditView.textContent = e.message; });
+  }
+
   // ---- fleet aggregate -------------------------------------------------
   const fleetView = document.getElementById("fleet-view");
   if (fleetView) {

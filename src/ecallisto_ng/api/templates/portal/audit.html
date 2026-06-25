@@ -1,0 +1,12 @@
+{% extends "portal/base.html" %}
+{% block title %}Audit log -- e-Callisto NG{% endblock %}
+{% block body %}
+{% include "portal/_nav.html" %}
+<div class="portal-main">
+  <h2>Audit log</h2>
+  <p class="muted">Security-sensitive actions (admin only).
+    <a href="/portal/manage/users">Manage users</a>.</p>
+  <div id="audit-view" class="card">Loading...</div>
+</div>
+<script src="/static/js/settings.js"></script>
+{% endblock %}

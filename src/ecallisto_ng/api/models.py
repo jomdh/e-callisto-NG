@@ -43,6 +43,17 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class AuditEvent(SQLModel, table=True):
+    """An append-only record of a security-sensitive action (ADR-0006)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=_utcnow, index=True)
+    actor: str = "system"  # username or "system"
+    action: str = Field(index=True)  # e.g. user.create, login.fail
+    target: str = ""
+    detail: str = ""
+
+
 class Session(SQLModel, table=True):
     """A server-side session; the token lives in an HttpOnly cookie."""
 

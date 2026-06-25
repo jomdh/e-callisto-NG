@@ -38,12 +38,16 @@ def create_user(
 def login(
     db: DbSession, response: Response, username: str, password: str
 ) -> User:
+    from ecallisto_ng.services import audit
+
     user = db.exec(select(User).where(User.username == username)).first()
     if user is None or not user.active:
+        audit.record(db, username, "login.fail", detail="unknown/inactive")
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, "invalid credentials"
         )
     if not verify_password(password, user.password_hash):
+        audit.record(db, username, "login.fail", detail="bad password")
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, "invalid credentials"
         )
@@ -60,6 +64,7 @@ def login(
         httponly=True,
         samesite="lax",
     )
+    audit.record(db, username, "login.ok")
     return user
 
 

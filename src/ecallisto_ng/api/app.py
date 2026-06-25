@@ -30,6 +30,7 @@ from ecallisto_ng.api.routes import programs as program_routes
 from ecallisto_ng.api.routes import schedules as schedule_routes
 from ecallisto_ng.api.routes import system as system_routes
 from ecallisto_ng.api.routes import upload as upload_routes
+from ecallisto_ng.api.routes import users as user_routes
 from ecallisto_ng.api.routes import wizard as wizard_routes
 from ecallisto_ng.api.templating import STATIC_DIR
 
@@ -91,6 +92,7 @@ def create_app() -> FastAPI:
     app.include_router(access_routes.router)
     app.include_router(migrate_routes.router)
     app.include_router(fleet_routes.router)
+    app.include_router(user_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:
