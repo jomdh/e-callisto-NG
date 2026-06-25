@@ -9,7 +9,7 @@ from sqlmodel import select
 
 from ecallisto_ng.api import auth
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Instrument, Station, User
+from ecallisto_ng.api.models import Station, User
 from ecallisto_ng.api.setup import is_configured
 from ecallisto_ng.api.templating import templates
 
@@ -71,11 +71,15 @@ def dashboard(
 ) -> object:
     if user is None:
         return RedirectResponse("/", status_code=303)
-    instruments = list(db.exec(select(Instrument)).all())
+    from datetime import UTC, datetime
+
+    from ecallisto_ng.services.operations import instrument_cockpit
+
+    cockpit = instrument_cockpit(db, datetime.now(UTC))
     return templates.TemplateResponse(
         request,
         "portal/dashboard.html",
-        {"user": user, "station": _station(db), "instruments": instruments},
+        {"user": user, "station": _station(db), "cockpit": cockpit},
     )
 
 

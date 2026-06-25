@@ -6,31 +6,39 @@
   <p class="muted">{{ station.name }} &mdash; {{ station.observatory or "no observatory set" }}</p>
 
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <h2>Instruments</h2>
+    <h2 style="border:none;margin:0">Instruments</h2>
     <a class="btn-filled" href="/portal/manage/instruments">Manage instruments</a>
   </div>
-  {% if instruments %}
-  <div class="card">
-    <table>
-      <thead>
-        <tr><th>Name</th><th>Class</th><th>Channels</th><th>Enabled</th><th></th></tr>
-      </thead>
-      <tbody>
-        {% for i in instruments %}
-        <tr>
-          <td>{{ i.name }}</td>
-          <td>{{ i.instrument_class }}</td>
-          <td>{{ i.channels }}</td>
-          <td>{{ "yes" if i.enabled else "no" }}</td>
-          <td><a href="/portal/live/{{ i.id }}">live</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+  {% if cockpit %}
+  <div class="cockpit-grid">
+    {% for i in cockpit %}
+    <div class="card cockpit-card" data-instrument="{{ i.id }}">
+      <div class="cockpit-head">
+        <span class="cockpit-name">{{ i.name }}</span>
+        <span class="chip cockpit-state" data-state="{{ i.state }}">{{ i.state }}</span>
+      </div>
+      <canvas class="cockpit-wf" width="320" height="64"
+              data-instrument="{{ i.id }}"></canvas>
+      <dl class="cockpit-meta">
+        <div><dt>class</dt><dd>{{ i.instrument_class }}</dd></div>
+        <div><dt>program</dt><dd>{{ i.program or "none" }}</dd></div>
+        <div><dt>next</dt><dd data-field="next_action">{{ i.next_action }}</dd></div>
+        <div><dt>last upload</dt><dd>{{ i.last_upload or "none" }}</dd></div>
+      </dl>
+      <div class="cockpit-actions">
+        <button class="btn-text" data-act="record" data-id="{{ i.id }}">record</button>
+        <button class="btn-text" data-act="stop" data-id="{{ i.id }}">stop</button>
+        <button class="btn-text" data-act="overview" data-id="{{ i.id }}">overview</button>
+        <a class="btn-text" href="/portal/live/{{ i.id }}">live</a>
+      </div>
+    </div>
+    {% endfor %}
   </div>
   {% else %}
   <p class="muted">No instruments yet &mdash;
     <a href="/portal/manage/instruments">add one</a>.</p>
   {% endif %}
 </div>
+<script src="/static/js/dashboard.js"></script>
 {% endblock %}

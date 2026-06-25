@@ -35,6 +35,21 @@ def health(db: DbSession = Depends(get_session)) -> HealthReport:
     return _report(db)
 
 
+@router.get("/api/v1/operations", dependencies=[Depends(_viewer)])
+def operations(db: DbSession = Depends(get_session)) -> dict[str, object]:
+    """Per-instrument cockpit + station vitals (DESIGN 8.1)."""
+    from datetime import UTC, datetime
+
+    from ecallisto_ng.services.operations import instrument_cockpit
+
+    report = build_station_health(db)
+    return {
+        "instruments": instrument_cockpit(db, datetime.now(UTC)),
+        "disk_pct_free": report.disk_pct_free,
+        "clock_synced": clock_synced(),
+    }
+
+
 @router.get("/api/v1/system/info", dependencies=[Depends(_viewer)])
 def system_info() -> dict[str, object]:
     """Version, storage, clock, and retention/archive policy."""
