@@ -99,6 +99,15 @@ vulture → black --line-length 79 → flake8 --extend-ignore E203,W503 → ruff
   isolation in CI. The **serial simulator** lets the whole stack run with no
   hardware.
 
+### On-unit acceptance (milestone close)
+
+The per-commit gate above runs hardware-free against fakes. Additionally, **a
+milestone is not closed until verified on a real station** (a reference unit
+with an actual Callisto), when one is available — not per sprint, once per
+milestone. The on-unit pass installs/updates the suite on the unit, exercises
+the milestone's behaviour against real hardware, and confirms the services
+recover (restart/reboot). Record the result in the milestone's close log.
+
 ## UI: coherence without identical setup
 
 - **Server-rendered Jinja portal + lightweight JS islands**, styled by the

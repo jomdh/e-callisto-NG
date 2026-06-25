@@ -5,11 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=callisto
-Group=callisto
-EnvironmentFile=/etc/callisto/ecallisto.env
-# Acquisition owns the loops; the web service runs with run_loops_in_web=false.
-ExecStart=/opt/ecallisto-ng/.venv/bin/ecallisto-ng acquire
+User=@USER@
+WorkingDirectory=@APP_DIR@
+EnvironmentFile=@ENV_FILE@
+# Acquisition owns the scheduler/uploader loops; the web service runs with
+# run_loops_in_web=false so they are not double-run.
+ExecStart=@VENV@/bin/ecallisto-ng acquire
 Restart=always
 RestartSec=3
 # Never lose un-uploaded science data on restart.
