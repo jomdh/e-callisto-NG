@@ -16,7 +16,7 @@
           {{ (f.size_bytes / 1024) | round(1) }} kB</span>
       </div>
       <div style="margin-top:0.5rem">
-        <a class="btn btn-ghost" href="/api/v1/files/{{ f.name }}/download">download</a>
+        <a class="btn-text" href="/api/v1/files/{{ f.name }}/download">download</a>
       </div>
     </div>
     {% endfor %}

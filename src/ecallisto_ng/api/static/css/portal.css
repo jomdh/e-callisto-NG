@@ -155,6 +155,24 @@ body {
   margin: 0 auto;
   padding: 1.6rem 2rem;
 }
+.portal-main h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+.portal-main h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+}
+.portal-main .card { margin-bottom: 1rem; }
+/* compact row-action buttons in console tables */
+.portal-main table .btn-text {
+  padding: 0.2em 0.6em;
+  font-size: 0.8rem;
+}
 
 /* ---- collapsed sidebar (icon-only) ---- */
 .sidebar.collapsed { width: 60px; }
