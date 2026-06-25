@@ -1,0 +1,74 @@
+{% set p = request.url.path %}
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-header" title="Toggle sidebar">
+    <span class="material-icons">graphic_eq</span>
+    <span class="brand">e-Callisto&nbsp;NG</span>
+  </div>
+
+  <ul class="sidebar-nav">
+    <span class="nav-section-label">Operations</span>
+    <li><a class="nav-link {{ 'active' if p == '/portal' }}" href="/portal">
+      <span class="material-icons">dashboard</span><span>Dashboard</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/instruments') }}"
+      href="/portal/manage/instruments">
+      <span class="material-icons">settings_input_antenna</span><span>Instruments</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/data') }}" href="/portal/data">
+      <span class="material-icons">folder</span><span>Data</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/system') }}" href="/portal/system">
+      <span class="material-icons">monitor_heart</span><span>System</span></a></li>
+
+    <div class="nav-divider"></div>
+    <span class="nav-section-label">Configure</span>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/schedules') }}"
+      href="/portal/manage/schedules">
+      <span class="material-icons">schedule</span><span>Schedules</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/programs') }}"
+      href="/portal/manage/programs">
+      <span class="material-icons">graphic_eq</span><span>Programs</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/calibration') }}"
+      href="/portal/manage/calibration">
+      <span class="material-icons">tune</span><span>Calibration</span></a></li>
+
+    <div class="nav-divider"></div>
+    <span class="nav-section-label">Tools</span>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/tools') }}" href="/portal/tools">
+      <span class="material-icons">build</span><span>Bench</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/viewer') }}" href="/portal/viewer">
+      <span class="material-icons">show_chart</span><span>Viewer</span></a></li>
+
+    <div class="nav-divider"></div>
+    <span class="nav-section-label">Distribution</span>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/uploads') }}"
+      href="/portal/manage/uploads">
+      <span class="material-icons">cloud_upload</span><span>Uploads</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/fleet') }}" href="/portal/fleet">
+      <span class="material-icons">public</span><span>Fleet</span></a></li>
+
+    <div class="nav-divider"></div>
+    <span class="nav-section-label">Administration</span>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/access') }}" href="/portal/access">
+      <span class="material-icons">vpn_key</span><span>Access</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/import') }}" href="/portal/import">
+      <span class="material-icons">move_to_inbox</span><span>Import</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/users') }}"
+      href="/portal/manage/users">
+      <span class="material-icons">group</span><span>Users</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/audit') }}" href="/portal/audit">
+      <span class="material-icons">receipt_long</span><span>Audit</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/settings') }}"
+      href="/portal/settings">
+      <span class="material-icons">settings</span><span>Settings</span></a></li>
+  </ul>
+
+  <div class="theme-toggle" id="theme-toggle">
+    <button id="btn-nebula" type="button" aria-label="Dark theme">
+      <span class="material-icons icon-18">dark_mode</span></button>
+    <button id="btn-supernova" type="button" aria-label="Light theme">
+      <span class="material-icons icon-18">light_mode</span></button>
+  </div>
+
+  <div class="sidebar-footer">
+    <span>{% if user %}{{ user.username }} ({{ user.role }}){% endif %}</span>
+    <a href="/logout" title="Sign out"><span class="material-icons icon-18">logout</span></a>
+  </div>
+</nav>

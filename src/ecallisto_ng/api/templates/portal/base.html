@@ -13,11 +13,28 @@
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Round">
   <link rel="stylesheet" href="/static/css/material-design-system.css">
   <link rel="stylesheet" href="/static/css/portal.css">
 </head>
 <body>
-  {% block body %}{% endblock %}
+  {% if user %}
+  <div class="mobile-fab" id="mobile-fab" role="button" tabindex="0"
+       aria-label="Open navigation">
+    <span class="material-icons">menu</span>
+  </div>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  {% include "portal/_sidebar.html" %}
+  {% endif %}
+
+  <div class="app-main">
+    {% block body %}{% endblock %}
+  </div>
+
   <script src="/static/js/portal.js"></script>
+  {% if user %}<script src="/static/js/sidebar.js"></script>{% endif %}
 </body>
 </html>
