@@ -64,18 +64,110 @@ def record(
             if on_frame is not None:
                 on_frame(frame)
             collected.append(frame)
-        frames = tuple(collected)
     finally:
         driver.stop()
         driver.close()
 
-    if not frames:
+    if not collected:
         raise DataLossError("no valid sweeps recorded")
+    return _write_product(
+        writer,
+        channels,
+        meta,
+        out_dir,
+        collected,
+        sweeps_per_second,
+        unit,
+        calibration,
+    )
 
+
+def record_continuous(
+    driver: InstrumentDriver,
+    writer: OutputWriter,
+    channels: Sequence[Channel],
+    meta: RecordingMeta,
+    out_dir: Path,
+    *,
+    sweeps_per_second: float,
+    frames_per_file: int,
+    unit: UnitLevel = UnitLevel.RAW,
+    calibration: Calibration | None = None,
+    on_frame: Callable[[SpectrumFrame], None] | None = None,
+    watchdog: Watchdog | None = None,
+    on_data_loss: Callable[[list[str]], None] | None = None,
+    on_file: Callable[[Path], None] | None = None,
+) -> list[Path]:
+    """Record continuously, rolling a file every ``frames_per_file`` sweeps.
+
+    Streams from a single ``start()`` and slices the stream into files (legacy
+    15-min FITS rollover). Runs until ``driver.stop()`` ends the stream (an
+    operator Stop or the scheduler closing the window), then flushes the
+    partial final file (degrade, don't die -- DESIGN 14a). Returns the paths.
+
+    NOTE (M34): a stalled-but-enumerated device makes ``stream()`` block here;
+    the no-data-timeout + self-heal that bounds this lives behind the
+    InstrumentDriver stability contract (ADR-0010), not yet implemented.
+    """
+    if frames_per_file < 1:
+        raise ValueError("frames_per_file must be >= 1")
+
+    driver.connect()
+    driver.identify()
+    driver.configure(channels, sweeps_per_second)
+    driver.start()
+    paths: list[Path] = []
+    try:
+        stream = driver.stream()
+        while True:
+            collected: list[SpectrumFrame] = []
+            stopped = False
+            for frame in itertools.islice(stream, frames_per_file):
+                if watchdog is not None and watchdog.check(frame.values):
+                    if on_data_loss is not None:
+                        on_data_loss(watchdog.alert_sequence())
+                    stopped = True
+                    break
+                if on_frame is not None:
+                    on_frame(frame)
+                collected.append(frame)
+            if collected:
+                path = _write_product(
+                    writer,
+                    channels,
+                    meta,
+                    out_dir,
+                    collected,
+                    sweeps_per_second,
+                    unit,
+                    calibration,
+                )
+                paths.append(path)
+                if on_file is not None:
+                    on_file(path)
+            # A short or empty batch means the stream ended (Stop / data loss).
+            if stopped or len(collected) < frames_per_file:
+                break
+    finally:
+        driver.stop()
+        driver.close()
+    return paths
+
+
+def _write_product(
+    writer: OutputWriter,
+    channels: Sequence[Channel],
+    meta: RecordingMeta,
+    out_dir: Path,
+    frames: Sequence[SpectrumFrame],
+    sweeps_per_second: float,
+    unit: UnitLevel,
+    calibration: Calibration | None,
+) -> Path:
     recording = Recording(
         meta=meta,
         channels=tuple(channels),
-        frames=frames,
+        frames=tuple(frames),
         sample_rate_hz=sweeps_per_second,
         unit=unit,
         calibration=calibration,

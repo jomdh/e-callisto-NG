@@ -61,7 +61,7 @@
   }
 
   const ACTIONS = {
-    record: ["POST", `/api/v1/instruments/${id}/record?frames=200`],
+    record: ["POST", `/api/v1/instruments/${id}/record`],
     stop: ["POST", `/api/v1/instruments/${id}/stop`],
     overview: ["POST", `/api/v1/instruments/${id}/overview`],
     diagnose: ["GET", `/api/v1/instruments/${id}/diagnose`],

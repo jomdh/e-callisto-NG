@@ -141,9 +141,12 @@ def delete_instrument(
 @router.post("/{instrument_id}/record", dependencies=[Depends(_operator)])
 def record_instrument(
     instrument_id: int,
-    frames: int = 100,
+    frames: int = 0,
     db: DbSession = Depends(get_session),
 ) -> dict[str, str]:
+    """Start recording. ``frames=0`` (default) records **continuously** until
+    Stop, rolling a file every ``file_seconds``; ``frames>0`` is a bounded
+    test capture of that many sweeps."""
     inst = _get(db, instrument_id)
     if port_lock.is_busy(instrument_id):
         raise HTTPException(
@@ -164,6 +167,9 @@ def record_instrument(
     out_dir = get_settings().data_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     unit, calibration = _instrument_calibration(db, inst)
+    continuous = frames <= 0
+    # In continuous mode max_frames is the per-file rollover size.
+    per_file = max(int(inst.file_seconds * inst.sweep_rate_hz), 1)
     try:
         get_recorder().start(
             instrument_id,
@@ -172,10 +178,11 @@ def record_instrument(
             meta,
             out_dir,
             sweep_rate_hz=inst.sweep_rate_hz,
-            max_frames=frames,
+            max_frames=per_file if continuous else frames,
             unit=unit,
             calibration=calibration,
             writer=get_writer(inst.output_mode),
+            continuous=continuous,
             on_state=lambda st, lf: recorder_state.write(
                 instrument_id, st, lf
             ),
