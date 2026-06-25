@@ -167,3 +167,10 @@ def settings_page(
     request: Request, user: User | None = Depends(auth.optional_user)
 ) -> object:
     return _page(request, "settings", user)
+
+
+@router.get("/portal/time", response_class=HTMLResponse)
+def time_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "time", user)

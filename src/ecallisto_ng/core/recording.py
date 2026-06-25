@@ -27,6 +27,9 @@ class RecordingMeta:
     frqfile: str = ""
     pwm: int = 0  # tuner gain (PWM) value
     focus_code: int = 0
+    # Timing provenance (DESIGN 12a / ADR-0009).
+    time_source: str = "system"
+    clock_offset_ms: float | None = None
 
 
 @dataclass(frozen=True)

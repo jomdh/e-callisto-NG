@@ -2,6 +2,22 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.7.2 -- 2026-06-25 (Milestone M22)
+
+Know your time.
+
+- **Time sources.** The station runs on the system clock (disciplined by chrony)
+  or a GPS/PPS reference; the Time page shows the active source, its lock, and
+  offset.
+- **Timing provenance.** Every recording records which time source produced it
+  and the clock offset at the time -- so the timing quality of each product is
+  known downstream.
+- **Per-class correction.** Timestamps are corrected for each instrument class's
+  acquisition latency (heterodyne / host-DSP SDR / FPGA).
+
+Internal: ADR-0009 TimeSource contract (CONTRACT 0.4.0), services/timing,
+RecordingMeta provenance, /api/v1/system/time + Time page; 205 tests; sprint S050.
+
 ## v0.7.1 -- 2026-06-25 (Milestone M21)
 
 Manage the host from the portal -- safely.

@@ -74,6 +74,20 @@ def update_status() -> dict[str, str]:
     return updates.update_info(get_settings().update_channel)
 
 
+@router.get("/api/v1/system/time", dependencies=[Depends(_viewer)])
+def system_time() -> dict[str, object]:
+    """Active time source: name, lock, offset (DESIGN 12a / ADR-0009)."""
+    from ecallisto_ng.services.timing import get_time_source
+
+    src = get_time_source(get_settings().time_source)
+    return {
+        "source": src.name,
+        "locked": src.locked(),
+        "offset_ms": src.offset_ms(),
+        "now": src.now().isoformat(),
+    }
+
+
 @router.get("/api/v1/system/log", dependencies=[Depends(_admin)])
 def system_log(lines: int = 200) -> dict[str, list[str]]:
     """Tail the configured log file (read-only, ADR-0008)."""

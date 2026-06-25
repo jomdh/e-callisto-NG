@@ -28,6 +28,7 @@ from ecallisto_ng.services.recorder import (
     build_driver,
     get_recorder,
 )
+from ecallisto_ng.services.timing import get_time_source
 from ecallisto_ng.writers.fits import get_writer
 
 router = APIRouter(prefix="/api/v1/instruments", tags=["instruments"])
@@ -128,7 +129,13 @@ def record_instrument(
         inst.instrument_class, inst.address, inst.focus_code, inst.channels
     )
     channels = [Channel(frequency_mhz=45.0 + i) for i in range(inst.channels)]
-    meta = RecordingMeta(instrument=inst.name, focus_code=inst.focus_code)
+    tsrc = get_time_source(get_settings().time_source)
+    meta = RecordingMeta(
+        instrument=inst.name,
+        focus_code=inst.focus_code,
+        time_source=tsrc.name,
+        clock_offset_ms=tsrc.offset_ms(),
+    )
     out_dir = get_settings().data_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     unit, calibration = _instrument_calibration(db, inst)

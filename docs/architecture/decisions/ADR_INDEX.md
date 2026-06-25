@@ -13,3 +13,4 @@ index in the same commit.** Status: Proposed | Accepted | Superseded | Open.
 | [ADR-0006](ADR-0006-audit-log.md) | Append-only audit log for security-sensitive actions | Accepted |
 | [ADR-0007](ADR-0007-acquisition-process-isolation.md) | Acquisition as an isolated, supervised process | Accepted |
 | [ADR-0008](ADR-0008-host-hook.md) | Least-privilege host-action hook | Accepted |
+| [ADR-0009](ADR-0009-time-source-contract.md) | TimeSource contract (system clock vs GPS/PPS) | Accepted |

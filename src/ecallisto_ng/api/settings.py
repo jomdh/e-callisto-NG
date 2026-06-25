@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     smtp_from: str = "ecallisto@localhost"
     # Update channel the station tracks (DESIGN 15).
     update_channel: str = "stable"
+    # Active time source: "system" (OS clock + chrony) or "gps" (ADR-0009).
+    time_source: str = "system"
     # Least-privilege host-action hook command (ADR-0008); empty = disabled.
     host_hook: str = ""
     # Log file the System log viewer tails (read-only).

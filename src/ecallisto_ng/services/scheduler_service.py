@@ -41,6 +41,7 @@ from ecallisto_ng.services.scheduler import (
     is_recording_desired,
     sun_window,
 )
+from ecallisto_ng.services.timing import get_time_source
 from ecallisto_ng.writers.fits import get_writer
 
 
@@ -102,6 +103,7 @@ class SchedulerService:
             inst.instrument_class, inst.address, inst.focus_code, inst.channels
         )
         channels = self._channels(db, inst, sched)
+        tsrc = get_time_source(get_settings().time_source)
         meta = RecordingMeta(
             instrument=inst.name,
             origin=st.observatory or "e-CALLISTO NG",
@@ -110,6 +112,8 @@ class SchedulerService:
             altitude_m=st.altitude_m,
             pwm=inst.gain,
             focus_code=inst.focus_code,
+            time_source=tsrc.name,
+            clock_offset_ms=tsrc.offset_ms(),
         )
         frames = max(int(inst.file_seconds * inst.sweep_rate_hz), 1)
         data_dir = get_settings().data_dir
