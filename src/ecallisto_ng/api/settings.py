@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     smtp_host: str = ""
     smtp_port: int = 25
     smtp_from: str = "ecallisto@localhost"
+    # Update channel the station tracks (DESIGN 15).
+    update_channel: str = "stable"
 
 
 @lru_cache

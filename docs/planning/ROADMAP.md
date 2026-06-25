@@ -76,7 +76,7 @@ dropped per the F6 decision. Branch `0.5-dev` from `main` after the v0.4 close.
 | -- | -- | -- | -- |
 | **M15 — Station Settings** (§8.4) ✓ done (S038-S039) | M12 | v0.5.0 | users + audit log + config backup/restore + system info (host reboot/log-viewer + data-browser depth -> F12/F13) |
 | **M16 — Resilience & supervision** (§14a/§12a) ✓ done (S040-S041) | M14 | v0.5.1 | failure-mode matrix + alert channels + acquisition daemon + drift-gating (cross-process status -> F14) |
-| **M17 — Updates & deployment** (§15) | M15 | v0.5.2 | update **channels + rollback**, config **backup/restore**, **SD image**, **support-bundle** export (F5, F11) |
+| **M17 — Updates & deployment** (§15) ✓ done (S042) | M15 | v0.5.2 | support bundle + update reporting + SD image + config backup/restore (apply/rollback runner -> F15) |
 | **M18 — Wizard completeness** (§9) | M16 | v0.5.3 / version close | full multi-step **resumable** wizard, map picker, clone/import branch (F9) |
 
 Folded in: a richer **data browser** (§8.1: calendar/heatmap, in-browser FITS

@@ -5,7 +5,7 @@ from __future__ import annotations
 import shutil
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from sqlmodel import Session as DbSession
 
 from ecallisto_ng import __version__
@@ -15,7 +15,7 @@ from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import Role, User
 from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.api.templating import templates
-from ecallisto_ng.services import config_backup
+from ecallisto_ng.services import config_backup, support_bundle, updates
 from ecallisto_ng.services.clock import clock_synced
 from ecallisto_ng.services.health import HealthReport
 from ecallisto_ng.services.health_report import build_station_health
@@ -51,6 +51,31 @@ def system_info() -> dict[str, object]:
         "archive_dir": settings.archive_dir,
         "data_dir": str(settings.data_dir),
     }
+
+
+@router.get("/api/v1/system/update", dependencies=[Depends(_viewer)])
+def update_status() -> dict[str, str]:
+    """Current version + the channel this station tracks (DESIGN 15)."""
+    return updates.update_info(get_settings().update_channel)
+
+
+@router.get("/api/v1/system/support-bundle", dependencies=[Depends(_admin)])
+def support_bundle_download(
+    db: DbSession = Depends(get_session),
+) -> FileResponse:
+    """Download a redacted support bundle (no secrets)."""
+    settings = get_settings()
+    out_dir = settings.data_dir / "support"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = support_bundle.build_support_bundle(
+        db,
+        out_dir / "support-bundle.zip",
+        __version__,
+        system_info(),
+    )
+    return FileResponse(
+        path, media_type="application/zip", filename="support-bundle.zip"
+    )
 
 
 @router.get("/api/v1/config/export", dependencies=[Depends(_admin)])

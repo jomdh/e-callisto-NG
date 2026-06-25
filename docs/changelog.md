@@ -2,6 +2,20 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.5.2 -- 2026-06-25 (Milestone M17)
+
+Ship it, keep it current, get help fast.
+
+- **Support bundle.** One click downloads a bundle of versions, system info,
+  configuration, and audit log -- with all secrets redacted -- to send for
+  support (replaces the old remote-desktop step).
+- **Update status.** See the running version and the channel the station tracks.
+- **SD-card image.** A build recipe produces a flashable Raspberry Pi OS image
+  with the suite preinstalled and both services enabled.
+
+Internal: support_bundle (redacted zip), updates version reporting,
+build-sd-image.sh (pi-gen); 174 tests; sprint S042. (Config backup/restore: M15.)
+
 ## v0.5.1 -- 2026-06-25 (Milestone M16)
 
 Hard to knock over.

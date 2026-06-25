@@ -12,6 +12,7 @@ origin, and motivation.
 | F12 | Host ops: reboot/shutdown + journald log viewer | DESIGN 8.4 | needs a least-privilege host hook; deferred from M15 |
 | F13 | Data-browser depth: calendar/heatmap, in-browser FITS viewer, bulk ops | DESIGN 8.1 | richer browsing; deferred from M15 |
 | F14 | DB-backed recorder run-state (cross-process status) | ADR-0007 | so the web app sees acquisition state when the daemon owns the loops |
+| F15 | Update apply/rollback runner (host hook) | DESIGN 15 | reporting + SD image done in M17; the apt/rollback runner needs a real repo + least-priv hook |
 
 ## Promoted to v0.5 milestones
 
