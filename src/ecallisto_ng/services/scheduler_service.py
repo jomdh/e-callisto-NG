@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Background scheduler: start/stop recordings on each instrument's window.
 
 Ticks periodically; each tick computes today's recording window per enabled
@@ -28,6 +29,7 @@ from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
+from ecallisto_ng.services import recorder_state
 from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
@@ -40,6 +42,7 @@ from ecallisto_ng.services.scheduler import (
     is_recording_desired,
     sun_window,
 )
+from ecallisto_ng.services.timing import get_time_source
 from ecallisto_ng.writers.fits import get_writer
 
 
@@ -96,10 +99,12 @@ class SchedulerService:
         self, db: Session, inst: Instrument, st: Station, sched: Schedule
     ) -> None:
         assert inst.id is not None
+        iid = inst.id
         driver = build_driver(
             inst.instrument_class, inst.address, inst.focus_code, inst.channels
         )
         channels = self._channels(db, inst, sched)
+        tsrc = get_time_source(get_settings().time_source)
         meta = RecordingMeta(
             instrument=inst.name,
             origin=st.observatory or "e-CALLISTO NG",
@@ -108,6 +113,8 @@ class SchedulerService:
             altitude_m=st.altitude_m,
             pwm=inst.gain,
             focus_code=inst.focus_code,
+            time_source=tsrc.name,
+            clock_offset_ms=tsrc.offset_ms(),
         )
         frames = max(int(inst.file_seconds * inst.sweep_rate_hz), 1)
         data_dir = get_settings().data_dir
@@ -124,6 +131,7 @@ class SchedulerService:
             unit=unit,
             calibration=calibration,
             writer=get_writer(inst.output_mode),
+            on_state=lambda st, lf: recorder_state.write(iid, st, lf),
         )
 
     def _channels(

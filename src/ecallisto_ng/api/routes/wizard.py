@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """First-run install wizard: multi-step, resumable (DESIGN 9).
 
 Steps (admin -> station -> coordinates -> instrument -> review) accumulate into

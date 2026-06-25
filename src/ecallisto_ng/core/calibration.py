@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Optional calibration: raw ADC -> SFU or antenna temperature (Kelvin).
 
 Per-channel coefficients (a, b, cf, Tb) and the log-compression formulas ported

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Upload transports -- ship finished files to a destination.
 
 Each implements :class:`ecallisto_ng.core.UploadTransport`. ``local`` (copy to

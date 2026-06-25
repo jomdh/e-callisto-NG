@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """SFTP transport (paramiko).
 
 Mirrors the FTP transport: upload to a ``.tmp`` name then rename, so the

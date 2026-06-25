@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Core domain models and plugin contracts.
 
 ``core`` is the inward-most package: it depends on nothing concrete, and
@@ -12,6 +13,7 @@ from ecallisto_ng.core.contracts import (
     BenchCapable,
     InstrumentDriver,
     OutputWriter,
+    TimeSource,
     UploadTransport,
 )
 from ecallisto_ng.core.recording import Recording, RecordingMeta
@@ -32,6 +34,7 @@ from ecallisto_ng.core.units import (
 __all__ = [
     "CONTRACT_VERSION",
     "BenchCapable",
+    "TimeSource",
     "InstrumentDriver",
     "OutputWriter",
     "UploadTransport",

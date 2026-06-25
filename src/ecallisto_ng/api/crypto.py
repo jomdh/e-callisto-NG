@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Symmetric encryption for secrets at rest (B2).
 
 Fernet key derived from the station's ``secret_key`` (set per install), so

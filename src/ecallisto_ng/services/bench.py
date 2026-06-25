@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Bench/commissioning operations over a BenchCapable driver (M12).
 
 Thin orchestration of the ``BenchCapable`` primitives (ADR-0005) -- the legacy

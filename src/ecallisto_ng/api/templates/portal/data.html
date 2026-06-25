@@ -3,12 +3,30 @@
 {% block body %}
 <div class="portal-main">
   <h2>Recorded files</h2>
+
+  <div class="card">
+    <h3 style="margin-top:0">Activity (last 8 weeks)</h3>
+    <div id="cal-heatmap" class="cal-heatmap muted">loading...</div>
+  </div>
+
+  <div class="data-toolbar">
+    <label><input type="checkbox" id="sel-all"> select all</label>
+    <span id="sel-count" class="muted">0 selected</span>
+    <button class="btn-text" id="bulk-requeue">re-queue uploads</button>
+    <button class="btn-text" id="bulk-delete">delete</button>
+    <span id="bulk-msg" class="muted"></span>
+  </div>
+
   {% if files %}
-  <div class="grid">
+  <div class="grid" id="file-grid">
     {% for f in files %}
-    <div class="card">
+    <div class="card" data-name="{{ f.name }}">
+      <label class="file-sel">
+        <input type="checkbox" class="file-check" value="{{ f.name }}">
+      </label>
       <img src="/api/v1/files/{{ f.name }}/quicklook" alt="quicklook"
-           style="width:100%;border-radius:8px;background:#000">
+           class="file-thumb" data-name="{{ f.name }}"
+           style="width:100%;border-radius:8px;background:#000;cursor:pointer">
       <div style="margin-top:0.5rem;font-size:0.85rem">
         <strong>{{ f.instrument }}</strong><br>
         <span class="muted">{{ f.date_obs }}</span><br>
@@ -17,6 +35,7 @@
       </div>
       <div style="margin-top:0.5rem">
         <a class="btn-text" href="/api/v1/files/{{ f.name }}/download">download</a>
+        <button class="btn-text file-view" data-name="{{ f.name }}">view</button>
       </div>
     </div>
     {% endfor %}
@@ -24,5 +43,16 @@
   {% else %}
   <p class="muted">No recordings yet.</p>
   {% endif %}
+
+  <dialog id="fits-viewer" class="fits-viewer">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong id="fv-name"></strong>
+      <button class="btn-text" id="fv-close">close</button>
+    </div>
+    <img id="fv-img" alt="spectrogram"
+         style="width:100%;border-radius:8px;background:#000;margin:0.5rem 0">
+    <table id="fv-header"></table>
+  </dialog>
 </div>
+<script src="/static/js/data.js"></script>
 {% endblock %}

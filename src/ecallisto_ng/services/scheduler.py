@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Sun-relative scheduling.
 
 Computes sunrise / transit / sunset for the station's coordinates with astropy

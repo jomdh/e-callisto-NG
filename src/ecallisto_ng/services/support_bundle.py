@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Support-bundle export (DESIGN 15 / F5 -- replaces TeamViewer support).
 
 Gathers version, system info, the station config, and recent audit into one zip

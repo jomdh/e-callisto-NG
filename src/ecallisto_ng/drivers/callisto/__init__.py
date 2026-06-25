@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Callisto serial driver -- class-1 heterodyne (ADC + dumb MCU).
 
 The first instrument driver. It ports the legacy e-Callisto serial protocol

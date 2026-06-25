@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Best-effort NTP clock-sync probe (DESIGN 12a).
 
 Queries ``timedatectl`` for the real sync state. Returns a tri-state:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """The record loop: drive an instrument and write a science product.
 
 A thin synchronous orchestration that joins an

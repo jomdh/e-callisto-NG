@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Degrade-don't-die failure-mode policy matrix (DESIGN 14a).
 
 A pure mapping from a fault condition to the station's response: keep running

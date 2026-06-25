@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Frequency-program generation from a spectral overview.
 
 Ports the GenFrqPrg idea (DESIGN 8.2 / legacy analysis): split the band into N

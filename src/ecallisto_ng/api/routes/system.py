@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """System health endpoint + page."""
 
 from __future__ import annotations
@@ -35,6 +36,21 @@ def health(db: DbSession = Depends(get_session)) -> HealthReport:
     return _report(db)
 
 
+@router.get("/api/v1/operations", dependencies=[Depends(_viewer)])
+def operations(db: DbSession = Depends(get_session)) -> dict[str, object]:
+    """Per-instrument cockpit + station vitals (DESIGN 8.1)."""
+    from datetime import UTC, datetime
+
+    from ecallisto_ng.services.operations import instrument_cockpit
+
+    report = build_station_health(db)
+    return {
+        "instruments": instrument_cockpit(db, datetime.now(UTC)),
+        "disk_pct_free": report.disk_pct_free,
+        "clock_synced": clock_synced(),
+    }
+
+
 @router.get("/api/v1/system/info", dependencies=[Depends(_viewer)])
 def system_info() -> dict[str, object]:
     """Version, storage, clock, and retention/archive policy."""
@@ -57,6 +73,68 @@ def system_info() -> dict[str, object]:
 def update_status() -> dict[str, str]:
     """Current version + the channel this station tracks (DESIGN 15)."""
     return updates.update_info(get_settings().update_channel)
+
+
+@router.get("/api/v1/system/time", dependencies=[Depends(_viewer)])
+def system_time() -> dict[str, object]:
+    """Active time source: name, lock, offset (DESIGN 12a / ADR-0009)."""
+    from ecallisto_ng.services.timing import get_time_source
+
+    src = get_time_source(get_settings().time_source)
+    return {
+        "source": src.name,
+        "locked": src.locked(),
+        "offset_ms": src.offset_ms(),
+        "now": src.now().isoformat(),
+    }
+
+
+@router.get("/api/v1/system/log", dependencies=[Depends(_admin)])
+def system_log(lines: int = 200) -> dict[str, list[str]]:
+    """Tail the configured log file (read-only, ADR-0008)."""
+    from ecallisto_ng.services import host
+
+    return {"lines": host.tail_log(lines)}
+
+
+def _host_action(
+    db: DbSession, actor: User, verb: str, *args: str
+) -> dict[str, object]:
+    from ecallisto_ng.services import audit, host
+
+    ok, message = host.run_hook(verb, *args)
+    audit.record(
+        db, actor.username, f"host.{verb}", detail="ok" if ok else message
+    )
+    return {"ok": ok, "message": message}
+
+
+@router.post("/api/v1/system/reboot")
+def host_reboot(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "reboot")
+
+
+@router.post("/api/v1/system/shutdown")
+def host_shutdown(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "shutdown")
+
+
+@router.post("/api/v1/system/update/apply")
+def host_update_apply(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "update", get_settings().update_channel)
+
+
+@router.post("/api/v1/system/update/rollback")
+def host_update_rollback(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "rollback")
 
 
 @router.get("/api/v1/system/support-bundle", dependencies=[Depends(_admin)])

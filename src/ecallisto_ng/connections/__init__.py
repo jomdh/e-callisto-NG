@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Device-connection backends implementing ``core.connection.Connection``.
 
 The medium varies by instrument class (DESIGN 5a): serial-over-USB (class 1),

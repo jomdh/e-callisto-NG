@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Legacy-mode FITS writer.
 
 Subclasses the standard writer and adds the legacy archive's warning COMMENT

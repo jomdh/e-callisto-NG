@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Alert channels (DESIGN 5a extension point / 14a "always alert").
 
 An ``AlertChannel`` delivers a short alert. Two real channels -- webhook (HTTP

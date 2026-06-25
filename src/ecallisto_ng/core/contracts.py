@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Plugin contracts -- the versioned seams the suite is built on.
 
 Everything variable in the system is a plugin behind one of these
@@ -17,6 +18,7 @@ keeps plugins independently developed and independently licensed.
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
+from datetime import datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -28,8 +30,31 @@ from ecallisto_ng.core.spectra import (
     SpectrumFrame,
 )
 
-# 0.3.0: add the optional BenchCapable protocol -- ADR-0005 (additive).
-CONTRACT_VERSION = "0.3.0"
+# 0.4.0: add the optional TimeSource protocol -- ADR-0009 (additive).
+CONTRACT_VERSION = "0.4.0"
+
+
+@runtime_checkable
+class TimeSource(Protocol):
+    """A clock to timestamp + gate recordings against (DESIGN 12a).
+
+    ``system`` reads the OS clock + chrony; a ``gps`` source reads GPS/PPS.
+    ``offset_ms`` is the known offset from true time (None if unknown);
+    ``locked`` is whether the source is disciplined/locked (ADR-0009).
+    """
+
+    @property
+    def name(self) -> str:
+        """Short identifier, e.g. ``system`` or ``gps``."""
+
+    def now(self) -> datetime:
+        """Current UTC time from this source."""
+
+    def offset_ms(self) -> float | None:
+        """Offset from true time in ms, or None if unknown."""
+
+    def locked(self) -> bool:
+        """True when the source is synchronized/locked."""
 
 
 @runtime_checkable

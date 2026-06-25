@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Noise-figure / detector-slope / bandpass math (legacy NF.cpp parity, M12).
 
 Pure functions over aligned cold/warm/hot detector sweeps (millivolts per

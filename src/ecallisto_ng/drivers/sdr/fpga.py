@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Class-3 SDR driver: the FPGA does the DSP.
 
 The device streams ready power spectra; the host just ingests, frames, and

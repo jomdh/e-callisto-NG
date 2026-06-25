@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Local-directory transport (copy/mirror to a folder or mounted drive).
 
 Useful on its own (mirror to a USB/NAS path) and as the testable reference

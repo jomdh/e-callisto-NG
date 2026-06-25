@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Serial-over-USB connection backend (class-1 e-Callisto).
 
 Implements :class:`ecallisto_ng.core.connection.Connection` over ``pyserial``.

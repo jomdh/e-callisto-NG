@@ -7,25 +7,26 @@ origin, and motivation.
 
 | ID | Feature | Origin | Motivation |
 | -- | -- | -- | -- |
-| F3 | GPS/PPS high-accuracy timing add-on | DESIGN 12a | sub-ms absolute timing |
-| F8 | `astro` planning aid (source az/el vs horizon) | WINDOWS_FUNCTIONALITY §2 | observation planning; legacy parity (low priority) |
-| F12 | Host ops: reboot/shutdown + journald log viewer | DESIGN 8.4 | needs a least-privilege host hook; deferred from M15 |
-| F13 | Data-browser depth: calendar/heatmap, in-browser FITS viewer, bulk ops | DESIGN 8.1 | richer browsing; deferred from M15 |
-| F14 | DB-backed recorder run-state (cross-process status) | ADR-0007 | so the web app sees acquisition state when the daemon owns the loops |
-| F15 | Update apply/rollback runner (host hook) | DESIGN 15 | reporting + SD image done in M17; the apt/rollback runner needs a real repo + least-priv hook |
-| F16 | Interactive offline map picker for coordinates | DESIGN 9 | wizard uses labelled numeric lat/lon/alt; a draggable offline map is a refinement (CSP-safe, no CDN) |
+| F17 | doncel.dev integration (data + API) | DESIGN §1 | NG and doncel share domain/tech/design system but stay **disconnected for now** (owner, 2026-06-25); integration intended later but **not** via the push/pull API sketched in v0.7 -- approach TBD |
 
-## Promoted to v0.5 milestones
+## Promoted to milestones
 
-These were open F-items; the milestone-gathering review promoted them to planned
-milestones (see ROADMAP v0.5).
+These were open F-items; milestone-gathering reviews promoted them to planned
+milestones (see ROADMAP).
 
 | ID | Feature | Milestone |
 | -- | -- | -- |
-| F5 | In-app help + support-bundle export | M17 |
-| F9 | Full multi-step resumable install wizard | M18 |
-| F10 | Acquisition as an isolated supervised process + failure matrix | M16 |
-| F11 | Updates (channels/rollback) + config backup/restore + SD image | M17 |
+| F5 | In-app help + support-bundle export | M17 (v0.5) |
+| F9 | Full multi-step resumable install wizard | M18 (v0.5) |
+| F10 | Acquisition as an isolated supervised process + failure matrix | M16 (v0.5) |
+| F11 | Updates (channels/rollback) + config backup/restore + SD image | M17 (v0.5) |
+| F13 | Data-browser depth + operations cockpit | M20 (v0.7) |
+| F12 | Host ops: reboot/shutdown + journald log viewer | M21 (v0.7) |
+| F14 | DB-backed recorder run-state (cross-process status) | M21 (v0.7) |
+| F15 | Update apply/rollback runner (host hook) | M21 (v0.7) |
+| F3 | GPS/PPS high-accuracy timing add-on | M23 (v0.7) |
+| F8 | `astro` planning aid (source az/el vs horizon) | M24 (v0.7) |
+| F16 | Interactive offline map picker for coordinates | M24 (v0.7) |
 
 ## Closed by owner decision
 

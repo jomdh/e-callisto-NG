@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """TCP/Ethernet connection backend (class-3 FPGA appliances, DESIGN 5a).
 
 Implements :class:`ecallisto_ng.core.connection.Connection` over a TCP socket.

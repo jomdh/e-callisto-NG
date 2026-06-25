@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """SDR instrument drivers (classes 2 and 3, DESIGN 5a).
 
 - ``soft`` (class 2): host does the DSP -- raw IQ in, FFT to spectra here.

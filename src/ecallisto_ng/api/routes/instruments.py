@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Instrument CRUD + record control."""
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import CalibrationSet, Instrument, Role
+from ecallisto_ng.api.models import CalibrationSet, Instrument, Role, User
 from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.contracts import BenchCapable
@@ -20,6 +21,7 @@ from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services import bench as bench_svc
 from ecallisto_ng.services import noise_figure as nf_svc
+from ecallisto_ng.services import recorder_state
 from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
@@ -27,6 +29,7 @@ from ecallisto_ng.services.recorder import (
     build_driver,
     get_recorder,
 )
+from ecallisto_ng.services.timing import get_time_source
 from ecallisto_ng.writers.fits import get_writer
 
 router = APIRouter(prefix="/api/v1/instruments", tags=["instruments"])
@@ -127,7 +130,13 @@ def record_instrument(
         inst.instrument_class, inst.address, inst.focus_code, inst.channels
     )
     channels = [Channel(frequency_mhz=45.0 + i) for i in range(inst.channels)]
-    meta = RecordingMeta(instrument=inst.name, focus_code=inst.focus_code)
+    tsrc = get_time_source(get_settings().time_source)
+    meta = RecordingMeta(
+        instrument=inst.name,
+        focus_code=inst.focus_code,
+        time_source=tsrc.name,
+        clock_offset_ms=tsrc.offset_ms(),
+    )
     out_dir = get_settings().data_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     unit, calibration = _instrument_calibration(db, inst)
@@ -143,6 +152,9 @@ def record_instrument(
             unit=unit,
             calibration=calibration,
             writer=get_writer(inst.output_mode),
+            on_state=lambda st, lf: recorder_state.write(
+                instrument_id, st, lf
+            ),
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
@@ -153,6 +165,27 @@ def record_instrument(
 def stop_instrument(instrument_id: int) -> dict[str, bool]:
     get_recorder().stop(instrument_id)
     return {"ok": True}
+
+
+@router.post("/{instrument_id}/reconnect")
+def reconnect_instrument(
+    instrument_id: int,
+    db: DbSession = Depends(get_session),
+    actor: User = Depends(_operator),
+) -> dict[str, object]:
+    """Reconnect the receiver via the host hook (ADR-0008)."""
+    from ecallisto_ng.services import audit, host
+
+    _get(db, instrument_id)
+    ok, message = host.run_hook("reconnect", str(instrument_id))
+    audit.record(
+        db,
+        actor.username,
+        "host.reconnect",
+        target=str(instrument_id),
+        detail="ok" if ok else message,
+    )
+    return {"ok": ok, "message": message}
 
 
 @router.post("/{instrument_id}/overview", dependencies=[Depends(_operator)])

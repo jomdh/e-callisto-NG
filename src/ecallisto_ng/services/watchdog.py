@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Data-loss watchdog (legacy callisto.exe parity, DESIGN 14a).
 
 The Windows recorder auto-stops, warns, and auto-restarts when the serial

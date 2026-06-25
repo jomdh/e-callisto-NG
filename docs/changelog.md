@@ -2,6 +2,81 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.7.4 -- 2026-06-25 (Milestone M24, v0.7 release / v1.0 candidate)
+
+Ready to share.
+
+- **AGPL-3.0-or-later.** The suite is now licensed (AGPLv3), with the full text,
+  per-file SPDX headers, and a plugin-governance policy: drivers/transports and
+  other plugins talk to the core over versioned contracts + a process boundary
+  and may be independently licensed, even closed-source.
+- **Contributor + security docs.** GOVERNANCE, CONTRIBUTING (DCO sign-off), and
+  SECURITY policies are in place.
+
+This is the **v0.7 release** and a **v1.0 candidate** -- the design is fully
+built (M0-M18), reskinned (M19), and the deferred backlog is closed (M20-M24).
+
+Internal: vendored AGPLv3 LICENSE + fetch script, SPDX on all source, pyproject
+license metadata, GOVERNANCE/CONTRIBUTING/SECURITY, release-hygiene test; 216
+tests; sprint S053. Merged 0.7-dev -> main.
+
+## v0.7.3 -- 2026-06-25 (Milestone M23)
+
+Plan your observations.
+
+- **Planning panel.** Plot a source -- the Sun, a planet, the Moon, or a strong
+  radio source (Cas A, Cyg A, Tau A, Vir A, Sgr A, Orion) -- as its elevation
+  across the day for your station, against the horizon.
+- **Map coordinate picker.** Set the station's latitude/longitude by clicking or
+  dragging on a map in the setup wizard (fully offline -- no internet needed).
+
+Internal: services/astro_track (astropy) + planning endpoint/page, Station
+horizon_deg, offline mappicker.js; 211 tests; sprints S051-S052.
+
+## v0.7.2 -- 2026-06-25 (Milestone M22)
+
+Know your time.
+
+- **Time sources.** The station runs on the system clock (disciplined by chrony)
+  or a GPS/PPS reference; the Time page shows the active source, its lock, and
+  offset.
+- **Timing provenance.** Every recording records which time source produced it
+  and the clock offset at the time -- so the timing quality of each product is
+  known downstream.
+- **Per-class correction.** Timestamps are corrected for each instrument class's
+  acquisition latency (heterodyne / host-DSP SDR / FPGA).
+
+Internal: ADR-0009 TimeSource contract (CONTRACT 0.4.0), services/timing,
+RecordingMeta provenance, /api/v1/system/time + Time page; 205 tests; sprint S050.
+
+## v0.7.1 -- 2026-06-25 (Milestone M21)
+
+Manage the host from the portal -- safely.
+
+- **Cross-process status.** The dashboard shows recording state even when the
+  separate acquisition service owns the loops.
+- **Host control.** View the log, reconnect a receiver, reboot/shutdown the
+  station, and apply/rollback an update -- all from the System page, through a
+  least-privilege hook (disabled until configured) and recorded in the audit log.
+
+Internal: RecorderRuntime + recorder_state (F14); ADR-0008 host hook,
+services/host, host endpoints + System UI; 200 tests; sprints S048-S049.
+
+## v0.7.0 -- 2026-06-25 (Milestone M20)
+
+A live operations cockpit and a richer data browser.
+
+- **Dashboard cockpit.** Each instrument is a card with its recording state, a
+  live mini-waterfall, current program, next scheduled action, last upload, and
+  one-click record / stop / overview / live.
+- **Data activity heatmap.** See recordings-per-day across the last eight weeks.
+- **In-browser FITS viewer.** Click a file to see its spectrogram and header
+  without downloading it.
+- **Bulk actions.** Select many files and delete or re-queue their uploads.
+
+Internal: services/operations cockpit + /api/v1/operations, dashboard.js;
+catalog calendar + header, bulk endpoints, data.js; 189 tests; sprints S046-S047.
+
 ## v0.6.0 -- 2026-06-25 (Milestone M19)
 
 A new look: the doncel visual language.

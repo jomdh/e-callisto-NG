@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Uploader: ship recorded files to a transport, tracking what's done.
 
 gzip (optional) -> transport.put (tmp-then-rename inside the transport) ->

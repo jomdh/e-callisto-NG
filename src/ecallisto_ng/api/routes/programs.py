@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Frequency-program CRUD + overview-based generation."""
 
 from __future__ import annotations

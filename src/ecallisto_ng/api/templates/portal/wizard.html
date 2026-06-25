@@ -33,6 +33,9 @@
 
     {% elif step_name == "coordinates" %}
     <h3>Coordinates</h3>
+    <p class="muted">Click or drag on the map, or type below.</p>
+    <canvas id="map-canvas" width="460" height="230"
+            style="width:100%;border-radius:6px;cursor:crosshair"></canvas>
     <label for="latitude_deg">Latitude (deg, +N / -S)</label>
     <input id="latitude_deg" name="latitude_deg" type="number" step="any"
            value="{{ data.get('latitude_deg', 0) }}">
@@ -75,4 +78,5 @@ instrument: {{ data.get('instrument_name', '(none)') }}</pre>
     </div>
   </form>
 </div>
+<script src="/static/js/mappicker.js"></script>
 {% endblock %}

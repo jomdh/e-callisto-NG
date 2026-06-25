@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """FITS output writers."""
 
 from __future__ import annotations

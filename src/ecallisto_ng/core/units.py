@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Unit, processing-location, link and instrument-class enumerations.
 
 These are the small, stable vocabularies the whole suite agrees on. They

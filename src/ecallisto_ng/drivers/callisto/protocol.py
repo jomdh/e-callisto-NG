@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Pure Callisto serial-protocol logic -- no I/O.
 
 Every value here is reverse-engineered from the legacy host software (the

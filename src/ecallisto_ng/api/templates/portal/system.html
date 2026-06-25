@@ -27,5 +27,25 @@
       <div class="muted">Pending upload</div><h3>{{ h.upload_pending }}</h3>
     </div>
   </div>
+
+  <h2 style="margin-top:1.5rem">Host control</h2>
+  <p class="muted">Host actions run through a least-privilege hook; disabled
+    until configured.</p>
+  <div class="card">
+    <div class="data-toolbar">
+      <button class="btn-text" id="host-update">apply update</button>
+      <button class="btn-text" id="host-rollback">rollback</button>
+      <button class="btn-text" id="host-reboot">reboot</button>
+      <button class="btn-text" id="host-shutdown">shutdown</button>
+      <span id="host-msg" class="muted"></span>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem">Log</h3>
+  <div class="card">
+    <pre id="host-log" class="muted"
+         style="max-height:18em;overflow:auto;white-space:pre-wrap">loading...</pre>
+  </div>
 </div>
+<script src="/static/js/system.js"></script>
 {% endblock %}

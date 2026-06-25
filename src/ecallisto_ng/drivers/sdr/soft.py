@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Class-2 SDR driver: the host does the DSP.
 
 Synthesizes IQ samples (a drifting tone + noise) and turns them into power

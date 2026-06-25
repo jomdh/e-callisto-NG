@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Instrument drivers -- one concrete implementation per instrument type.
 
 Each driver implements the :class:`ecallisto_ng.core.InstrumentDriver`

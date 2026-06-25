@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Parse 2-column ASCII spectra (legacy M9703APlotter parity, M13).
 
 The legacy viewer opens ``.prn``/``.csv``/``.txt`` files of ``frequency,

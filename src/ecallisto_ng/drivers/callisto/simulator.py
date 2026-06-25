@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """In-memory Callisto device -- a serial-level simulator.
 
 ``SimulatedCallisto`` implements the ``Connection`` interface and speaks

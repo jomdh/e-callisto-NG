@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Export NG schedules to the legacy ``scheduler.cfg`` format (DESIGN 6a).
 
 Lets an NG station keep feeding tools (or a legacy host) that expect the old

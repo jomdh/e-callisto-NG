@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Generate a Caddyfile for the chosen remote-access mode (DESIGN 10).
 
 Pure string generation -- the operator/installer writes the result and runs

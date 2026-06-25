@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Persistent models (SQLModel tables).
 
 Importing this module registers the tables on ``SQLModel.metadata`` so
@@ -41,6 +42,20 @@ class User(SQLModel, table=True):
     role: Role = Role.VIEWER
     active: bool = True
     created_at: datetime = Field(default_factory=_utcnow)
+
+
+class RecorderRuntime(SQLModel, table=True):
+    """Persisted recorder run-state per instrument (ADR-0007 / F14).
+
+    Written by whichever process owns the recording (web or the `acquire`
+    daemon), read by the web app -- so the dashboard reflects acquisition state
+    across the process boundary.
+    """
+
+    instrument_id: int = Field(primary_key=True)
+    state: str = "idle"
+    last_file: str | None = None
+    updated_at: datetime = Field(default_factory=_utcnow)
 
 
 class WizardState(SQLModel, table=True):
@@ -115,6 +130,7 @@ class Station(SQLModel, table=True):
     latitude_deg: float = 0.0  # +N / -S
     longitude_deg: float = 0.0  # +E / -W
     altitude_m: float = 0.0
+    horizon_deg: float = 0.0  # local horizon elevation (planning overlay)
     created_at: datetime = Field(default_factory=_utcnow)
 
 

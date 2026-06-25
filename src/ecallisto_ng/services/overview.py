@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Spectral overview / "radio monitoring" output (legacy parity, DESIGN 6).
 
 The legacy recorder's "Save spectral overview" runs a wide 45-870 MHz sweep and

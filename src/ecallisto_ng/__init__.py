@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """e-Callisto NG -- web-based solar radio spectrometer suite for a station.
 
 Package layout (imports flow inward toward ``core``):
@@ -15,4 +16,4 @@ working agreement.
 
 from __future__ import annotations
 
-__version__ = "0.6.0"
+__version__ = "0.7.4"

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Device-connection seam.
 
 A driver reaches its instrument through a ``Connection`` -- the device-side
