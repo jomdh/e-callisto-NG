@@ -60,8 +60,31 @@ version close merges `0.4-dev` → `main`.
 
 Owner decisions (from the milestone-gathering review): burst detection/flagging
 (F6) stays **out** -- acquisition-only, analysis lives in doncel. Core license
-(ADR-0003) **deferred** until the first public release. GPS/PPS timing (F3),
-the `astro` planning aid, and the full multi-step wizard remain backlog.
+(ADR-0003) **deferred** until the first public release. GPS/PPS timing (F3) and
+the `astro` planning aid remain backlog.
+
+## v0.5 -- "Station completeness" (SELECTED, after v0.4)
+
+Theme: the **design's pillars beyond legacy parity** -- the §8.4 settings depth,
+the §14a resilience model, the §15 deployment lifecycle, and the §9 full wizard.
+These are the proposed design-gap milestones, **renumbered M15+** and
+**de-duplicated against v0.4**: the earlier "Tools & Bench" and "Viewer & data
+depth" proposals are already delivered by parity **M12/M13**, and "Analysis" is
+dropped per the F6 decision. Branch `0.5-dev` from `main` after the v0.4 close.
+
+| Milestone | Was (design proposal) | Closes | Scope |
+| -- | -- | -- | -- |
+| **M15 — Station Settings** (§8.4) | M12 | v0.5.0 | users + audit log, Time/drift page, Storage/retention, Software (config backup/restore), System (journald log viewer, receiver reconnect, reboot/shutdown) |
+| **M16 — Resilience & supervision** (§14a/§12a) | M14 | v0.5.1 | acquisition as an **isolated supervised process**, degrade-don't-die **failure-mode matrix**, **alert channels** (email/webhook) -- the deep model beyond the M11 watchdog (F10) |
+| **M17 — Updates & deployment** (§15) | M15 | v0.5.2 | update **channels + rollback**, config **backup/restore**, **SD image**, **support-bundle** export (F5, F11) |
+| **M18 — Wizard completeness** (§9) | M16 | v0.5.3 / version close | full multi-step **resumable** wizard, map picker, clone/import branch (F9) |
+
+Folded in: a richer **data browser** (§8.1: calendar/heatmap, in-browser FITS
+viewer, bulk download/delete/re-queue) -- the part of the old "Viewer & data
+depth" not covered by parity M13 -- rides along in **M15**.
+
+Mapping note: old M11 (Tools & Bench) -> v0.4 **M12**; old M13 (Viewer & dB) ->
+v0.4 **M13**; old M17 (Analysis) -> **dropped** (F6 out). The rest shift to M15-M18.
 
 ## Completed
 

@@ -8,11 +8,19 @@ origin, and motivation.
 | ID | Feature | Origin | Motivation |
 | -- | -- | -- | -- |
 | F3 | GPS/PPS high-accuracy timing add-on | DESIGN 12a | sub-ms absolute timing |
-| F5 | In-app help + support-bundle export | gap review | replace legacy TeamViewer step |
 | F8 | `astro` planning aid (source az/el vs horizon) | WINDOWS_FUNCTIONALITY §2 | observation planning; legacy parity (low priority) |
-| F9 | Full multi-step resumable install wizard (map picker, clone/import branch) | DESIGN 9 | smoother first-run; current wizard is minimal |
-| F10 | Acquisition as an isolated supervised process + failure-mode matrix | DESIGN 14a | never-lose-data robustness beyond the M11 watchdog |
-| F11 | Updates (channels/rollback) + config backup/restore + SD image | DESIGN 15 | field deployment lifecycle |
+
+## Promoted to v0.5 milestones
+
+These were open F-items; the milestone-gathering review promoted them to planned
+milestones (see ROADMAP v0.5).
+
+| ID | Feature | Milestone |
+| -- | -- | -- |
+| F5 | In-app help + support-bundle export | M17 |
+| F9 | Full multi-step resumable install wizard | M18 |
+| F10 | Acquisition as an isolated supervised process + failure matrix | M16 |
+| F11 | Updates (channels/rollback) + config backup/restore + SD image | M17 |
 
 ## Closed by owner decision
 
