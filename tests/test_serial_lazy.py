@@ -23,3 +23,33 @@ def test_build_heterodyne_driver_no_hardware() -> None:
     from ecallisto_ng.core.contracts import BenchCapable
 
     assert isinstance(driver, BenchCapable)  # the page's gate, hardware-free
+
+
+def _login_op(client) -> None:
+    from sqlmodel import Session
+
+    from ecallisto_ng.api import auth, db
+    from ecallisto_ng.api.models import Role
+
+    with Session(db.get_engine()) as s:
+        auth.create_user(s, "op", "lazy-pass-123", Role.OPERATOR)
+    client.post(
+        "/api/v1/auth/login",
+        json={"username": "op", "password": "lazy-pass-123"},
+    )
+
+
+def test_overview_serial_failure_is_clean_503(client) -> None:
+    # a heterodyne instrument on a non-existent port -> clean 503, not a 500
+    _login_op(client)
+    iid = client.post(
+        "/api/v1/instruments",
+        json={
+            "name": "BADPORT",
+            "instrument_class": "heterodyne",
+            "address": "/dev/does-not-exist-xyz",
+        },
+    ).json()["id"]
+    r = client.post(f"/api/v1/instruments/{iid}/overview")
+    assert r.status_code == 503
+    assert "hardware error" in r.json()["detail"]
