@@ -26,6 +26,7 @@ from ecallisto_ng.api.routes import fleet as fleet_routes
 from ecallisto_ng.api.routes import instruments as instrument_routes
 from ecallisto_ng.api.routes import live as live_routes
 from ecallisto_ng.api.routes import migrate as migrate_routes
+from ecallisto_ng.api.routes import planning as planning_routes
 from ecallisto_ng.api.routes import portal as portal_routes
 from ecallisto_ng.api.routes import programs as program_routes
 from ecallisto_ng.api.routes import schedules as schedule_routes
@@ -97,6 +98,7 @@ def create_app() -> FastAPI:
     app.include_router(fleet_routes.router)
     app.include_router(user_routes.router)
     app.include_router(alert_routes.router)
+    app.include_router(planning_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:

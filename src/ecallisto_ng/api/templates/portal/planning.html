@@ -1,0 +1,21 @@
+{% extends "portal/base.html" %}
+{% block title %}Planning -- e-Callisto NG{% endblock %}
+{% block body %}
+<div class="portal-main">
+  <h2>Observation planning</h2>
+  <p class="muted">Azimuth/elevation of a source over the day for this station's
+    coordinates, against the local horizon.</p>
+  <div class="card">
+    <div class="data-toolbar">
+      <label for="pl-source">Source</label>
+      <select id="pl-source"></select>
+      <label for="pl-date">Date</label>
+      <input id="pl-date" type="date">
+      <span id="pl-msg" class="muted"></span>
+    </div>
+    <canvas id="pl-canvas" width="900" height="360"
+            style="width:100%;border-radius:6px"></canvas>
+  </div>
+</div>
+<script src="/static/js/planning.js"></script>
+{% endblock %}

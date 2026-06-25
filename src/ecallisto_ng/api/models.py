@@ -129,6 +129,7 @@ class Station(SQLModel, table=True):
     latitude_deg: float = 0.0  # +N / -S
     longitude_deg: float = 0.0  # +E / -W
     altitude_m: float = 0.0
+    horizon_deg: float = 0.0  # local horizon elevation (planning overlay)
     created_at: datetime = Field(default_factory=_utcnow)
 
 
