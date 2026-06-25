@@ -2,6 +2,21 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.7.0 -- 2026-06-25 (Milestone M20)
+
+A live operations cockpit and a richer data browser.
+
+- **Dashboard cockpit.** Each instrument is a card with its recording state, a
+  live mini-waterfall, current program, next scheduled action, last upload, and
+  one-click record / stop / overview / live.
+- **Data activity heatmap.** See recordings-per-day across the last eight weeks.
+- **In-browser FITS viewer.** Click a file to see its spectrogram and header
+  without downloading it.
+- **Bulk actions.** Select many files and delete or re-queue their uploads.
+
+Internal: services/operations cockpit + /api/v1/operations, dashboard.js;
+catalog calendar + header, bulk endpoints, data.js; 189 tests; sprints S046-S047.
+
 ## v0.6.0 -- 2026-06-25 (Milestone M19)
 
 A new look: the doncel visual language.

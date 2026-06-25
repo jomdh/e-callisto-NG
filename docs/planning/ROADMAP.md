@@ -100,7 +100,7 @@ deferred backlog and makes the suite **publicly releasable** (AGPLv3). Branch
 
 | Milestone | Closes | Plan |
 | -- | -- | -- |
-| **M20 — Operations cockpit & data depth** (F13) | v0.7.0 | `milestones/V0.7_M20_operations_data_depth.md` |
+| **M20 — Operations cockpit & data depth** (F13) ✓ done (S046-S047) | v0.7.0 | done |
 | **M21 — Host control & lifecycle** (F12+F15+F14) | v0.7.1 | `milestones/V0.7_M21_host_control_lifecycle.md` |
 | **M22 — Timing precision (GPS/PPS)** (F3) | v0.7.2 | `milestones/V0.7_M22_timing_precision.md` |
 | **M23 — Planning aids** (F8+F16) | v0.7.3 | `milestones/V0.7_M23_planning_aids.md` |
