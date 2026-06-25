@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from fastapi.testclient import TestClient
+
 from ecallisto_ng.connections.serial_link import SerialConnection
 from ecallisto_ng.core.units import InstrumentClass
 from ecallisto_ng.services.recorder import build_driver
@@ -25,7 +27,7 @@ def test_build_heterodyne_driver_no_hardware() -> None:
     assert isinstance(driver, BenchCapable)  # the page's gate, hardware-free
 
 
-def _login_op(client) -> None:
+def _login_op(client: TestClient) -> None:
     from sqlmodel import Session
 
     from ecallisto_ng.api import auth, db
@@ -39,7 +41,7 @@ def _login_op(client) -> None:
     )
 
 
-def test_overview_serial_failure_is_clean_503(client) -> None:
+def test_overview_serial_failure_is_clean_503(client: TestClient) -> None:
     # a heterodyne instrument on a non-existent port -> clean 503, not a 500
     _login_op(client)
     iid = client.post(
