@@ -1,0 +1,50 @@
+{% extends "portal/base.html" %}
+{% block title %}Spectrum viewer -- e-Callisto NG{% endblock %}
+{% block body %}
+{% include "portal/_nav.html" %}
+<div class="portal-main">
+  <h2>Spectrum viewer</h2>
+  <p class="muted">View overview/spectrum files (.prn/.csv/.txt): LO conversion,
+    dB/log, background subtraction, typed-range zoom, PNG export.</p>
+  <div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end">
+      <span>
+        <label for="v-file">File</label>
+        <select id="v-file"></select>
+      </span>
+      <span>
+        <label for="v-lo-mode">LO mode</label>
+        <select id="v-lo-mode">
+          <option value="none">RF = IF</option>
+          <option value="add">RF = LO + IF</option>
+          <option value="sub">RF = LO - IF</option>
+          <option value="rev">RF = IF - LO</option>
+        </select>
+      </span>
+      <span>
+        <label for="v-lo">LO [MHz]</label>
+        <input id="v-lo" type="number" value="0" style="width:6em">
+      </span>
+      <span>
+        <label><input type="checkbox" id="v-db"> dB / log</label>
+      </span>
+      <span>
+        <label><input type="checkbox" id="v-bg"> subtract min</label>
+      </span>
+      <span>
+        <label for="v-xmin">X min</label>
+        <input id="v-xmin" type="number" style="width:6em">
+      </span>
+      <span>
+        <label for="v-xmax">X max</label>
+        <input id="v-xmax" type="number" style="width:6em">
+      </span>
+      <button class="btn" id="v-png" type="button">Save PNG</button>
+    </div>
+    <canvas id="v-canvas" width="900" height="380"
+      style="width:100%;margin-top:1rem;border-radius:6px"></canvas>
+    <p id="v-msg" class="muted"></p>
+  </div>
+</div>
+<script src="/static/js/viewer.js"></script>
+{% endblock %}
