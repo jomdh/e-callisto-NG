@@ -1,0 +1,26 @@
+"""Export NG schedules to the legacy ``scheduler.cfg`` format (DESIGN 6a).
+
+Lets an NG station keep feeding tools (or a legacy host) that expect the old
+schedule file. Pure formatter.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class ExportEntry:
+    time_utc: str  # HH:MM[:SS]
+    focus_code: int
+    mode: int  # 3 = start, 0 = stop, 8 = overview
+
+
+def build_scheduler_cfg(entries: Iterable[ExportEntry]) -> str:
+    """Render ``hh:mm:ss,fc,mode`` lines with the legacy header comment."""
+    lines = ["// scheduler.cfg exported by e-Callisto NG"]
+    for e in sorted(entries, key=lambda x: x.time_utc):
+        hhmmss = e.time_utc if len(e.time_utc) == 8 else f"{e.time_utc}:00"
+        lines.append(f"{hhmmss},{e.focus_code:02d},{e.mode}")
+    return "\r\n".join(lines) + "\r\n"

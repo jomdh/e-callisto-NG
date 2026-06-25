@@ -167,6 +167,7 @@ class Instrument(SQLModel, table=True):
     sweep_rate_hz: float = 4.0
     file_seconds: int = 900  # length of one recording/FITS file
     unit: str = "raw"  # raw / sfu / kelvin (calibrated output, DESIGN 6b)
+    output_mode: str = "standard"  # legacy / standard / custom (DESIGN 6a)
     calibration_set_id: int | None = Field(
         default=None, foreign_key="calibrationset.id"
     )

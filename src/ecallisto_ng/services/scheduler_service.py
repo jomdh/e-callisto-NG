@@ -37,6 +37,7 @@ from ecallisto_ng.services.scheduler import (
     is_recording_desired,
     sun_window,
 )
+from ecallisto_ng.writers.fits import get_writer
 
 
 class SchedulerService:
@@ -109,6 +110,7 @@ class SchedulerService:
             max_frames=frames,
             unit=unit,
             calibration=calibration,
+            writer=get_writer(inst.output_mode),
         )
 
     def _calibration(

@@ -14,7 +14,7 @@ from enum import StrEnum
 from pathlib import Path
 
 from ecallisto_ng.core.calibration import Calibration
-from ecallisto_ng.core.contracts import InstrumentDriver
+from ecallisto_ng.core.contracts import InstrumentDriver, OutputWriter
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
@@ -82,6 +82,7 @@ class RecorderService:
         max_frames: int,
         unit: UnitLevel = UnitLevel.RAW,
         calibration: Calibration | None = None,
+        writer: OutputWriter | None = None,
     ) -> None:
         with self._lock:
             existing = self._jobs.get(instrument_id)
@@ -92,6 +93,7 @@ class RecorderService:
         from ecallisto_ng.services.hub import get_hub
 
         hub = get_hub()
+        out_writer = writer or StandardFitsWriter()
 
         def _publish(frame: SpectrumFrame) -> None:
             hub.publish(instrument_id, frame)
@@ -100,7 +102,7 @@ class RecorderService:
             try:
                 path = record(
                     driver,
-                    StandardFitsWriter(),
+                    out_writer,
                     channels,
                     meta,
                     out_dir,

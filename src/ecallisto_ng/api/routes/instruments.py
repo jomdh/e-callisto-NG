@@ -21,6 +21,7 @@ from ecallisto_ng.services.recorder import (
     build_driver,
     get_recorder,
 )
+from ecallisto_ng.writers.fits import get_writer
 
 router = APIRouter(prefix="/api/v1/instruments", tags=["instruments"])
 
@@ -38,6 +39,7 @@ class InstrumentIn(BaseModel):
     sweep_rate_hz: float = 4.0
     file_seconds: int = 900
     unit: str = "raw"
+    output_mode: str = "standard"
     calibration_set_id: int | None = None
     enabled: bool = True
 
@@ -134,6 +136,7 @@ def record_instrument(
             max_frames=frames,
             unit=unit,
             calibration=calibration,
+            writer=get_writer(inst.output_mode),
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc

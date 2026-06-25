@@ -2,6 +2,23 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.2.2 -- 2026-06-25 (Milestone M8, v0.2 release)
+
+A drop-in upgrade for existing stations.
+
+- **Import a legacy station.** Paste an existing station's `callisto.cfg`,
+  frequency, scheduler, and calibration files and the suite recreates the
+  instrument, coordinates, program, schedule, and calibration -- no re-setup.
+- **Archive-compatible output.** Pick "legacy" output mode per instrument to write
+  FITS the existing e-Callisto archive expects, and export a `scheduler.cfg`.
+
+This is the **v0.2 release** -- the station now runs unattended (M6), is safe to
+expose and simple to ship (M7), and is a drop-in for existing stations (M8).
+
+Internal: legacy config parsers + import endpoint, LegacyFitsWriter + writer
+registry + per-instrument output mode, scheduler.cfg export; 97 tests; sprints
+S024-S025. Merged 0.2-dev -> main.
+
 ## v0.2.1 -- 2026-06-25 (Milestone M7)
 
 Safe to expose and simple to ship.

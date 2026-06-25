@@ -24,7 +24,7 @@ CSP are blocking -- v0.2 does not ship until both hold.**
 | -- | -- | -- |
 | **M6 — Autonomous operation** | v0.2.0 ✓ done | S018-S020 |
 | **M7 — Security & deploy hardening** *(release gate)* | v0.2.1 ✓ done | S021-S023 |
-| **M8 — Legacy migration & interop** | v0.2.2 / version close | `milestones/V0.2_M8_migration.md` (S024-S025) |
+| **M8 — Legacy migration & interop** | v0.2.2 ✓ done | S024-S025 |
 
 Order: M6 (autonomy) → M7 (the blocking gate) → M8 (adoption); version close
 merges `0.2-dev` → `main`.

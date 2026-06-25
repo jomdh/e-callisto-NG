@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecallisto-ng"
-version = "0.2.1"
+version = "0.2.2"
 description = "Web-based solar radio spectrometer suite for a station (e-Callisto NG)"
 readme = "README.md"
 requires-python = ">=3.12"
