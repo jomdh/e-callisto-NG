@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session as DbSession
@@ -16,6 +18,7 @@ from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services.calibration_build import resolve
+from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
     RecorderState,
     build_driver,
@@ -147,6 +150,25 @@ def record_instrument(
 def stop_instrument(instrument_id: int) -> dict[str, bool]:
     get_recorder().stop(instrument_id)
     return {"ok": True}
+
+
+@router.post("/{instrument_id}/overview", dependencies=[Depends(_operator)])
+def overview_instrument(
+    instrument_id: int, db: DbSession = Depends(get_session)
+) -> dict[str, str]:
+    """Run a 45-870 MHz spectral overview now; write the OVS .prn/.csv pair."""
+    inst = _get(db, instrument_id)
+    if get_recorder().status(instrument_id).state is RecorderState.RECORDING:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "instrument is recording"
+        )
+    driver = build_driver(
+        inst.instrument_class, inst.address, inst.focus_code, inst.channels
+    )
+    out_dir = get_settings().data_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    prn, csv = run_overview(driver, out_dir, inst.name, datetime.now(UTC))
+    return {"prn": prn.name, "csv": csv.name}
 
 
 @router.get("/{instrument_id}/status", dependencies=[Depends(_viewer)])

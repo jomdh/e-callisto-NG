@@ -32,6 +32,7 @@ class ProgramOut(BaseModel):
 class ProgramIn(BaseModel):
     name: str
     frequencies: list[float] = []
+    light_curve_indices: list[int] = []
     start_mhz: float = 45.0
     stop_mhz: float = 870.0
 
@@ -68,6 +69,7 @@ def create_program(
     prog = FrequencyProgram(
         name=body.name,
         frequencies_json=json.dumps(body.frequencies),
+        light_curve_indices_json=json.dumps(body.light_curve_indices),
         start_mhz=body.start_mhz,
         stop_mhz=body.stop_mhz,
         source="manual",

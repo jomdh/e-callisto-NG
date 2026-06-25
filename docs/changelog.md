@@ -2,6 +2,25 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.4.0 -- 2026-06-25 (Milestone M11)
+
+Legacy recorder parity, part 1 -- what fielded heterodyne stations rely on daily.
+
+- **Data-loss watchdog.** A garbled receiver stream auto-stops with the familiar
+  "Check RS232-connection!" warning, the good data so far is kept, and recording
+  auto-restarts -- no lost science, no stuck recorder.
+- **Scheduled overviews.** A schedule can trigger a 45-870 MHz spectral overview
+  at a set time (and you can run one on demand), written as the legacy
+  OVS .prn/.csv pair.
+- **Program-driven schedules.** A schedule records with a chosen frequency
+  program, including its light-curve channel flags.
+- **Legacy light-curve files.** Flagged channels are written as the legacy daily
+  `LC<date>_<ADU|SFU>_<instrument>.txt` (up to 10 channels).
+
+Internal: services/watchdog.py + acquisition wiring; services/overview.py;
+Schedule.program_id/overview_at, FrequencyProgram light-curve indices; console UI
+fields/actions; 123 tests; sprints S030-S031.
+
 ## v0.3.2 -- 2026-06-25 (Usability)
 
 Everything is now clickable.

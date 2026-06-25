@@ -35,6 +35,7 @@
       actions: [
         { label: "record", run: (r) => api("POST", `/api/v1/instruments/${r.id}/record?frames=200`) },
         { label: "stop", run: (r) => api("POST", `/api/v1/instruments/${r.id}/stop`) },
+        { label: "overview", run: (r) => api("POST", `/api/v1/instruments/${r.id}/overview`), show: true },
         { label: "diagnose", run: (r) => api("GET", `/api/v1/instruments/${r.id}/diagnose`), show: true },
         { label: "live", href: (r) => `/portal/live/${r.id}` },
       ],
@@ -44,13 +45,15 @@
       list: "/api/v1/schedules",
       create: "/api/v1/schedules",
       del: (r) => `/api/v1/schedules/${r.id}`,
-      columns: ["id", "instrument_id", "kind", "margin_minutes", "start_utc", "stop_utc", "enabled"],
+      columns: ["id", "instrument_id", "kind", "margin_minutes", "start_utc", "stop_utc", "program_id", "overview_at", "enabled"],
       fields: [
         { name: "instrument_id", type: "number", required: true },
         { name: "kind", select: "kind" },
         { name: "margin_minutes", type: "number", value: 0 },
         { name: "start_utc", value: "00:00" },
         { name: "stop_utc", value: "23:59" },
+        { name: "program_id", type: "number", placeholder: "program to record (blank=ramp)" },
+        { name: "overview_at", placeholder: "HH:MM scheduled overview (blank=none)" },
       ],
       actions: [
         { label: "preview", run: (r) => api("GET", `/api/v1/schedules/${r.id}/preview`), show: true },
@@ -65,6 +68,7 @@
       fields: [
         { name: "name", required: true },
         { name: "frequencies", json: true, placeholder: "[45.0, 55.0, 65.0]" },
+        { name: "light_curve_indices", json: true, placeholder: "[0, 2] (channel indices, max 10)" },
         { name: "start_mhz", type: "number", value: 45 },
         { name: "stop_mhz", type: "number", value: 870 },
       ],
@@ -215,8 +219,9 @@
     cfg.fields.forEach((f) => {
       const v = form.elements[f.name].value;
       if (f.json) payload[f.name] = v ? JSON.parse(v) : [];
-      else if (f.type === "number") payload[f.name] = Number(v);
-      else payload[f.name] = v;
+      else if (f.type === "number") {
+        if (v !== "") payload[f.name] = Number(v); // blank -> server default
+      } else payload[f.name] = v;
     });
     try { await api("POST", cfg.create, payload); form.reset(); note("created", "ok"); refresh(); }
     catch (e) { note(e.message, "error"); }

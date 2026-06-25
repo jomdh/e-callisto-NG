@@ -133,6 +133,15 @@ class Schedule(SQLModel, table=True):
     margin_minutes: int = 0
     start_utc: str = "00:00"  # fixed mode
     stop_utc: str = "23:59"  # fixed mode
+    # Program-switch parity: the frequency program to record with (None = a
+    # plain ramp from the instrument's channel count).
+    program_id: int | None = Field(
+        default=None, foreign_key="frequencyprogram.id"
+    )
+    # Scheduled-overview parity (legacy scheduler.cfg mode 8): trigger an
+    # overview sweep at this HH:MM (empty = none); guarded once per day.
+    overview_at: str = ""
+    last_overview_date: str = ""
     enabled: bool = True
     created_at: datetime = Field(default_factory=_utcnow)
 
@@ -159,6 +168,8 @@ class FrequencyProgram(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
     frequencies_json: str = "[]"
+    # Channel indices flagged as light curves (legacy frq-file ``,>0`` flag).
+    light_curve_indices_json: str = "[]"
     start_mhz: float = 45.0
     stop_mhz: float = 870.0
     source: str = "manual"  # manual / generated

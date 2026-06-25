@@ -9,6 +9,7 @@ pure-ish and testable; the loop just calls it.
 
 from __future__ import annotations
 
+import json
 import threading
 from datetime import UTC, datetime
 
@@ -17,6 +18,7 @@ from sqlmodel import Session, select
 from ecallisto_ng.api.db import get_engine
 from ecallisto_ng.api.models import (
     CalibrationSet,
+    FrequencyProgram,
     Instrument,
     Schedule,
     Station,
@@ -27,6 +29,7 @@ from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services.calibration_build import resolve
+from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
     RecorderState,
     build_driver,
@@ -61,11 +64,13 @@ class SchedulerService:
             desired = is_recording_desired(window, now)
             state = recorder.status(inst.id).state
             if desired and gate_ok and state is not RecorderState.RECORDING:
-                self._start(db, inst, station)
+                self._start(db, inst, station, sched)
             elif (
                 not desired or not gate_ok
             ) and state is RecorderState.RECORDING:
                 recorder.stop(inst.id)
+            else:
+                self._maybe_overview(db, inst, sched, now)
 
     def _window(
         self, sched: Schedule, station: Station, now: datetime
@@ -79,14 +84,14 @@ class SchedulerService:
             sched.margin_minutes,
         )
 
-    def _start(self, db: Session, inst: Instrument, st: Station) -> None:
+    def _start(
+        self, db: Session, inst: Instrument, st: Station, sched: Schedule
+    ) -> None:
         assert inst.id is not None
         driver = build_driver(
             inst.instrument_class, inst.address, inst.focus_code, inst.channels
         )
-        channels = [
-            Channel(frequency_mhz=45.0 + i) for i in range(inst.channels)
-        ]
+        channels = self._channels(db, inst, sched)
         meta = RecordingMeta(
             instrument=inst.name,
             origin=st.observatory or "e-CALLISTO NG",
@@ -112,6 +117,46 @@ class SchedulerService:
             calibration=calibration,
             writer=get_writer(inst.output_mode),
         )
+
+    def _channels(
+        self, db: Session, inst: Instrument, sched: Schedule
+    ) -> list[Channel]:
+        """Channels from the schedule's program (with light-curve flags), or a
+        plain ramp from the instrument's channel count."""
+        if sched.program_id is not None:
+            prog = db.get(FrequencyProgram, sched.program_id)
+            if prog is not None:
+                freqs = json.loads(prog.frequencies_json)
+                lc = set(json.loads(prog.light_curve_indices_json))
+                if freqs:
+                    return [
+                        Channel(frequency_mhz=float(f), light_curve=(i in lc))
+                        for i, f in enumerate(freqs)
+                    ]
+        return [Channel(frequency_mhz=45.0 + i) for i in range(inst.channels)]
+
+    def _maybe_overview(
+        self, db: Session, inst: Instrument, sched: Schedule, now: datetime
+    ) -> None:
+        """Trigger a scheduled overview at ``overview_at``, once per day."""
+        if not sched.overview_at or inst.id is None:
+            return
+        today = now.strftime("%Y-%m-%d")
+        if sched.last_overview_date == today:
+            return
+        if now.strftime("%H:%M") < sched.overview_at:
+            return
+        if get_recorder().status(inst.id).state is RecorderState.RECORDING:
+            return
+        driver = build_driver(
+            inst.instrument_class, inst.address, inst.focus_code, inst.channels
+        )
+        data_dir = get_settings().data_dir
+        data_dir.mkdir(parents=True, exist_ok=True)
+        run_overview(driver, data_dir, inst.name, now)
+        sched.last_overview_date = today
+        db.add(sched)
+        db.commit()
 
     def _calibration(
         self, db: Session, inst: Instrument

@@ -34,6 +34,8 @@ class ScheduleIn(BaseModel):
     margin_minutes: int = 0
     start_utc: str = "00:00"
     stop_utc: str = "23:59"
+    program_id: int | None = None
+    overview_at: str = ""
     enabled: bool = True
 
 
