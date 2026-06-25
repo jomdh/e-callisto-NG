@@ -29,19 +29,39 @@ CSP are blocking -- v0.2 does not ship until both hold.**
 Order: M6 (autonomy) → M7 (the blocking gate) → M8 (adoption); version close
 merges `0.2-dev` → `main`.
 
-## v0.3 released (M9 SDR + M10 fleet)
+## v0.3 released (M9 SDR + M10 fleet + UI)
 
-`main` is at **v0.3.1**. Both SDR classes (host-DSP + FPGA) record through the
-same pipeline as the heterodyne receiver, and an observatory can aggregate the
-health of multiple stations. Tags v0.3.0-v0.3.1.
+`main` is at **v0.3.2**. Both SDR classes (host-DSP + FPGA) record through the
+same pipeline as the heterodyne receiver, an observatory aggregates many
+stations' health, and the portal surfaces every feature. Tags v0.3.0-v0.3.2.
 
-## Deferred (v0.4+)
+## v0.4 -- "No orphan users" (SELECTED, not started)
 
-- **M9** — SDR classes: class-2 host-DSP driver + USB backend (F1), then class-3
-  FPGA + network backend (F2) -- the headline extensibility, on the M0 seams.
-- **M10** — Observatory/fleet view across multiple stations (F4).
-- Bench-tool UI (noise figure), burst detection/flagging (F6), GPS/PPS timing
-  (F3), in-app help + support bundle (F5), full multi-step wizard, SD image.
+Theme: **feature parity with the legacy Windows (Borland) suite** so the
+heterodyne stations already in the field migrate without losing functionality.
+Driven by `legacy/sources/WINDOWS_FUNCTIONALITY.md`, not abstract design gaps.
+Branch `0.4-dev` from `main`.
+
+The recorder *protocol* is already faithful (tuner step, band-select, PLL
+dividers, firmware 1.5/1.7/1.8, EEPROM upload, overview command -- all from M0).
+The gaps are the *operational behaviors, bench tools, and publication outputs*
+around it.
+
+| Milestone | Closes | Plan |
+| -- | -- | -- |
+| **M11 — Recorder operational parity** | v0.4.0 | `milestones/V0.4_M11_recorder_parity.md` |
+| **M12 — Bench & diagnostic tools** | v0.4.1 | `milestones/V0.4_M12_bench_tools.md` |
+| **M13 — Spectrum viewer & publication** | v0.4.2 | `milestones/V0.4_M13_viewer_publication.md` |
+| **M14 — Distribution & generator parity** | v0.4.3 / version close | `milestones/V0.4_M14_distribution_parity.md` |
+
+Order: M11 (what deployed stations rely on daily) → M12 (commissioning/bench) →
+M13 (visualization + public light curves) → M14 (distribution + generator);
+version close merges `0.4-dev` → `main`.
+
+Owner decisions (from the milestone-gathering review): burst detection/flagging
+(F6) stays **out** -- acquisition-only, analysis lives in doncel. Core license
+(ADR-0003) **deferred** until the first public release. GPS/PPS timing (F3),
+the `astro` planning aid, and the full multi-step wizard remain backlog.
 
 ## Completed
 
