@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     port: int = 8000
     # Server-side session signing; overridden in production via env.
     secret_key: str = "dev-insecure-change-me"
+    # Background loop tick intervals (seconds); 0 disables (used in tests).
+    scheduler_tick_seconds: int = 30
+    uploader_tick_seconds: int = 60
+    # Days to keep uploaded local files; <0 disables pruning.
+    retention_days: int = -1
+    # Block recording when the clock is known-unsynced (DESIGN 12a).
+    require_clock_sync: bool = False
 
 
 @lru_cache

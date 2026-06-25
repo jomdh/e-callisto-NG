@@ -13,12 +13,29 @@ Callisto data to FITS, streams it live, schedules to the Sun, browses/uploads it
 monitors health, optionally calibrates, and self-diagnoses. 17 sprints, 5 ADRs,
 69 tests, tags v0.1.0-v0.1.5.
 
-## Next (post-v0.1)
+## v0.2 -- "Real, safe, drop-in" (SELECTED, not started)
 
-- **M6+** — SDR classes (class-2 host-DSP, class-3 FPGA) on the M0 seams.
-- **Refinements** — credential encryption (B2), real NTP probe, auto-dispatch
-  (immediate/scheduled uploads), bench-tool UI (noise figure), full `.deb`/SD
-  image, the full multi-step wizard, CSP middleware.
+Theme: v0.1 built every piece but isn't yet *unattended*, *field-safe*, or a
+*drop-in* for existing stations. v0.2 closes those three gaps. Branch `0.2-dev`
+from `main`. **Release gate (operator directive): B2 credential encryption and
+CSP are blocking -- v0.2 does not ship until both hold.**
+
+| Milestone | Closes | Plan |
+| -- | -- | -- |
+| **M6 — Autonomous operation** | v0.2.0 ✓ done | S018-S020 |
+| **M7 — Security & deploy hardening** *(release gate)* | v0.2.1 ✓ done | S021-S023 |
+| **M8 — Legacy migration & interop** | v0.2.2 ✓ done | S024-S025 |
+
+Order: M6 (autonomy) → M7 (the blocking gate) → M8 (adoption); version close
+merges `0.2-dev` → `main`.
+
+## Deferred to v0.3+
+
+- **M9** — SDR classes: class-2 host-DSP driver + USB backend (F1), then class-3
+  FPGA + network backend (F2) -- the headline extensibility, on the M0 seams.
+- **M10** — Observatory/fleet view across multiple stations (F4).
+- Bench-tool UI (noise figure), burst detection/flagging (F6), GPS/PPS timing
+  (F3), in-app help + support bundle (F5), full multi-step wizard, SD image.
 
 ## Completed
 

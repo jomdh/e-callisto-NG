@@ -5,13 +5,18 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Role, Schedule, Station
+from ecallisto_ng.api.models import Instrument, Role, Schedule, Station
+from ecallisto_ng.services.legacy_export import (
+    ExportEntry,
+    build_scheduler_cfg,
+)
 from ecallisto_ng.services.scheduler import (
     is_recording_desired,
     sun_window,
@@ -63,6 +68,23 @@ def delete_schedule(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no such schedule")
     db.delete(obj)
     db.commit()
+
+
+@router.get(
+    "/export/scheduler.cfg",
+    dependencies=[Depends(_viewer)],
+    response_class=PlainTextResponse,
+)
+def export_scheduler_cfg(db: DbSession = Depends(get_session)) -> str:
+    """Export enabled fixed-mode schedules in the legacy format."""
+    entries: list[ExportEntry] = []
+    for sched in db.exec(select(Schedule).where(Schedule.enabled)).all():
+        inst = db.get(Instrument, sched.instrument_id)
+        fc = inst.focus_code if inst else 1
+        if sched.kind == "fixed":
+            entries.append(ExportEntry(sched.start_utc, fc, 3))
+            entries.append(ExportEntry(sched.stop_utc, fc, 0))
+    return build_scheduler_cfg(entries)
 
 
 @router.get("/{schedule_id}/preview", dependencies=[Depends(_viewer)])

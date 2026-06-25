@@ -1,0 +1,110 @@
+"""Auto-dispatch uploads + retention, on a background loop.
+
+Each tick: for every enabled target, upload pending files if its dispatch mode
+says so now -- ``immediate`` always, ``scheduled`` only inside the target's
+window, ``manual`` never. Then prune local files that have been uploaded to all
+enabled targets and are older than the retention age (un-uploaded files are
+never pruned). ``tick`` is the testable unit; the loop just calls it.
+"""
+
+from __future__ import annotations
+
+import threading
+import time
+from datetime import UTC, datetime
+from pathlib import Path
+
+from sqlmodel import Session, select
+
+from ecallisto_ng.api.db import get_engine
+from ecallisto_ng.api.models import UploadJob, UploadTarget
+from ecallisto_ng.api.settings import get_settings
+from ecallisto_ng.services import catalog, uploader
+from ecallisto_ng.services.scheduler import fixed_window, is_recording_desired
+
+
+def _due(target: UploadTarget, now: datetime) -> bool:
+    if not target.enabled or target.dispatch == "manual":
+        return False
+    if target.dispatch == "immediate":
+        return True
+    window = fixed_window(now.date(), target.window_start, target.window_stop)
+    return is_recording_desired(window, now)
+
+
+def prune(db: Session, data_dir: Path, retention_days: int) -> int:
+    """Delete files uploaded to all enabled targets and older than retention.
+
+    ``retention_days < 0`` disables pruning. Un-uploaded files are kept.
+    """
+    if retention_days < 0:
+        return 0
+    data = Path(data_dir)
+    targets = db.exec(select(UploadTarget).where(UploadTarget.enabled)).all()
+    if not targets:
+        return 0
+    target_ids = {t.id for t in targets}
+    now = time.time()
+    min_age = retention_days * 86400
+    deleted = 0
+    for info in catalog.list_recordings(data):
+        done = {
+            j.target_id
+            for j in db.exec(
+                select(UploadJob).where(
+                    UploadJob.filename == info.name,
+                    UploadJob.state == "done",
+                )
+            ).all()
+        }
+        if not target_ids.issubset(done):
+            continue  # not yet uploaded everywhere
+        path = data / info.name
+        if now - path.stat().st_mtime < min_age:
+            continue
+        path.unlink(missing_ok=True)
+        deleted += 1
+    return deleted
+
+
+class UploaderService:
+    """Auto-dispatch + retention loop. One per process."""
+
+    def __init__(self) -> None:
+        self._thread: threading.Thread | None = None
+        self._stop = threading.Event()
+
+    def tick(self, db: Session, now: datetime) -> None:
+        settings = get_settings()
+        for target in db.exec(select(UploadTarget)).all():
+            if _due(target, now):
+                uploader.upload_pending(db, target, settings.data_dir)
+        prune(db, settings.data_dir, settings.retention_days)
+
+    def start_loop(self) -> None:
+        interval = get_settings().uploader_tick_seconds
+        if interval <= 0 or self._thread is not None:
+            return
+
+        def _run() -> None:
+            while not self._stop.wait(interval):
+                try:
+                    with Session(get_engine()) as db:
+                        self.tick(db, datetime.now(UTC))
+                except Exception:  # noqa: BLE001 - keep the loop alive
+                    pass
+
+        self._stop.clear()
+        self._thread = threading.Thread(target=_run, daemon=True)
+        self._thread.start()
+
+    def stop_loop(self) -> None:
+        self._stop.set()
+        self._thread = None
+
+
+_service = UploaderService()
+
+
+def get_uploader() -> UploaderService:
+    return _service

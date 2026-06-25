@@ -9,15 +9,19 @@ from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Instrument, Role
+from ecallisto_ng.api.models import CalibrationSet, Instrument, Role
 from ecallisto_ng.api.settings import get_settings
+from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
+from ecallisto_ng.core.units import UnitLevel
+from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.recorder import (
     RecorderState,
     build_driver,
     get_recorder,
 )
+from ecallisto_ng.writers.fits import get_writer
 
 router = APIRouter(prefix="/api/v1/instruments", tags=["instruments"])
 
@@ -33,7 +37,22 @@ class InstrumentIn(BaseModel):
     gain: int = 120
     channels: int = 200
     sweep_rate_hz: float = 4.0
+    file_seconds: int = 900
+    unit: str = "raw"
+    output_mode: str = "standard"
+    calibration_set_id: int | None = None
     enabled: bool = True
+
+
+def _instrument_calibration(
+    db: DbSession, inst: Instrument
+) -> tuple[UnitLevel, Calibration | None]:
+    coeffs: str | None = None
+    if inst.calibration_set_id is not None:
+        cs = db.get(CalibrationSet, inst.calibration_set_id)
+        if cs is not None:
+            coeffs = cs.coefficients_json
+    return resolve(inst.unit, coeffs, inst.channels)
 
 
 def _get(db: DbSession, instrument_id: int) -> Instrument:
@@ -105,6 +124,7 @@ def record_instrument(
     meta = RecordingMeta(instrument=inst.name, focus_code=inst.focus_code)
     out_dir = get_settings().data_dir
     out_dir.mkdir(parents=True, exist_ok=True)
+    unit, calibration = _instrument_calibration(db, inst)
     try:
         get_recorder().start(
             instrument_id,
@@ -114,6 +134,9 @@ def record_instrument(
             out_dir,
             sweep_rate_hz=inst.sweep_rate_hz,
             max_frames=frames,
+            unit=unit,
+            calibration=calibration,
+            writer=get_writer(inst.output_mode),
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc

@@ -74,6 +74,22 @@ def sun_window(
     return start, stop
 
 
+def fixed_window(
+    day: date_type, start_hhmm: str, stop_hhmm: str
+) -> tuple[datetime, datetime] | None:
+    """Fixed-time window for ``day`` from ``HH:MM`` strings (UTC)."""
+    try:
+        sh, sm = (int(x) for x in start_hhmm.split(":"))
+        eh, em = (int(x) for x in stop_hhmm.split(":"))
+    except (ValueError, AttributeError):
+        return None
+    start = datetime(day.year, day.month, day.day, sh, sm, tzinfo=UTC)
+    stop = datetime(day.year, day.month, day.day, eh, em, tzinfo=UTC)
+    if stop <= start:
+        return None
+    return start, stop
+
+
 def is_recording_desired(
     window: tuple[datetime, datetime] | None, now: datetime
 ) -> bool:

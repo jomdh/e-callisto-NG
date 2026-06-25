@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}e-Callisto NG{% endblock %}</title>
   <meta name="theme-color" content="#0d0e1a">
-  <script>
+  <script nonce="{{ request.state.csp_nonce }}">
     (function () {
       var allowed = ['nebula', 'supernova'];
       var t = localStorage.getItem('ecallisto-theme');

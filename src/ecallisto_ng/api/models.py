@@ -52,6 +52,18 @@ class Session(SQLModel, table=True):
     expires_at: datetime
 
 
+class AccessSettings(SQLModel, table=True):
+    """How the station is reached remotely (single row). DESIGN 10."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    mode: str = "lan"  # lan / public / tunnel
+    hostname: str = ""  # public-HTTPS / DDNS hostname
+    tls_email: str = ""  # Let's Encrypt account email (public mode)
+    ddns_update_url: str = ""  # template; {ip} is substituted
+    tunnel_relay: str = ""  # outbound relay target (tunnel mode)
+    updated_at: datetime = Field(default_factory=_utcnow)
+
+
 class Station(SQLModel, table=True):
     """This host's identity (single row), and its observatory + location."""
 
@@ -79,6 +91,8 @@ class UploadTarget(SQLModel, table=True):
     username: str = ""
     password: str = ""
     dispatch: str = "manual"  # immediate / scheduled / manual
+    window_start: str = "00:00"  # scheduled-dispatch window (UTC HH:MM)
+    window_stop: str = "23:59"
     gzip: bool = True
     enabled: bool = True
     created_at: datetime = Field(default_factory=_utcnow)
@@ -112,6 +126,19 @@ class Schedule(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class CalibrationSet(SQLModel, table=True):
+    """Named per-channel calibration coefficients (a, b, cf, Tb).
+
+    ``coefficients_json`` is a JSON array of ``[a, b, cf, tb]`` rows. A single
+    row is broadcast to all channels; otherwise the count must match.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    coefficients_json: str = "[]"
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class FrequencyProgram(SQLModel, table=True):
     """A named frequency plan: a list of channel frequencies (MHz).
 
@@ -138,5 +165,11 @@ class Instrument(SQLModel, table=True):
     gain: int = 120
     channels: int = 200
     sweep_rate_hz: float = 4.0
+    file_seconds: int = 900  # length of one recording/FITS file
+    unit: str = "raw"  # raw / sfu / kelvin (calibrated output, DESIGN 6b)
+    output_mode: str = "standard"  # legacy / standard / custom (DESIGN 6a)
+    calibration_set_id: int | None = Field(
+        default=None, foreign_key="calibrationset.id"
+    )
     enabled: bool = True
     created_at: datetime = Field(default_factory=_utcnow)

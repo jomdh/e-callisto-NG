@@ -17,6 +17,8 @@ from ecallisto_ng.api.settings import get_settings
 def client(tmp_path: Path) -> Iterator[TestClient]:
     os.environ["ECALLISTO_DB_URL"] = f"sqlite:///{tmp_path / 'test.db'}"
     os.environ["ECALLISTO_DATA_DIR"] = str(tmp_path / "data")
+    os.environ["ECALLISTO_SCHEDULER_TICK_SECONDS"] = "0"  # loops off in tests
+    os.environ["ECALLISTO_UPLOADER_TICK_SECONDS"] = "0"
     get_settings.cache_clear()
     db.reset_engine_for_tests()
 
