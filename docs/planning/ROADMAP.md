@@ -128,7 +128,7 @@ device functions **inside each instrument's own entry**, class-gated. Branch
 | Milestone | Closes | Plan |
 | -- | -- | -- |
 | **M25 — Per-instrument device console** ✓ done (S054) | v0.8.0 | done |
-| **M26 — Recorder/output accuracy** (audit A) | v0.8.1 | `milestones/V0.8_M26_recorder_accuracy.md` |
+| **M26 — Recorder/output accuracy** (audit A) ✓ done (S055-S056) | v0.8.1 | done |
 | **M27 — Scheduler & file-format fidelity** (B) | v0.8.2 | `milestones/V0.8_M27_scheduler_files.md` |
 | **M28 — Generator & frq-file** (D1-D5) | v0.8.3 | `milestones/V0.8_M28_generator_frqfile.md` |
 | **M29 — Bench completeness** (C) | v0.8.4 | `milestones/V0.8_M29_bench_completeness.md` |

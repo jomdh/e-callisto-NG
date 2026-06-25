@@ -2,6 +2,21 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.8.1 -- 2026-06-25 (Milestone M26)
+
+Byte-faithful to the e-Callisto device + archive.
+
+- **Tuner commands** now match the Borland firmware exactly: inclusive band
+  boundaries (171/450 MHz), `F0045.000` tune format (3 decimals, no aliasing),
+  10-bit tuners force the correct control byte, and an unrecognized receiver
+  falls back to the legacy default profile instead of being rejected.
+- **Legacy FITS output** carries the exact `BUNIT` strings the archive/JavaViewer
+  read (`45*log(sfu+10)`, `40*log(Tant)`), the binary-table scale/display cards,
+  and DATAMIN/DATAMAX over the written image.
+
+Internal: PARITY_AUDIT A1-A7; protocol band/F0/control/firmware + FITS
+BUNIT/table/DATAMIN; 228 tests; sprints S055-S056.
+
 ## v0.8.0 -- 2026-06-25 (Milestone M25)
 
 Every instrument has its own console.
