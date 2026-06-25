@@ -1,0 +1,12 @@
+{% extends "portal/base.html" %}
+{% block title %}Fleet -- e-Callisto NG{% endblock %}
+{% block body %}
+{% include "portal/_nav.html" %}
+<div class="portal-main">
+  <h2>Observatory fleet</h2>
+  <p class="muted">This station plus every registered peer.
+    <a href="/portal/manage/peers">Manage peers</a>.</p>
+  <div id="fleet-view" class="card">Loading...</div>
+</div>
+<script src="/static/js/settings.js"></script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "portal/base.html" %}
+{% block title %}Access -- e-Callisto NG{% endblock %}
+{% block body %}
+{% include "portal/_nav.html" %}
+<div class="portal-main">
+  <h2>Remote access</h2>
+  <form id="access-form" class="card" style="max-width:520px">
+    <label for="mode">Mode</label>
+    <select id="mode" name="mode">
+      <option value="lan">LAN / VPN (self-signed)</option>
+      <option value="public">Public HTTPS + dynamic DNS</option>
+      <option value="tunnel">Outbound relay tunnel</option>
+    </select>
+    <label for="hostname">Hostname</label>
+    <input id="hostname" name="hostname">
+    <label for="tls_email">TLS email (Let's Encrypt)</label>
+    <input id="tls_email" name="tls_email">
+    <label for="ddns_update_url">DDNS update URL ({ip} placeholder)</label>
+    <input id="ddns_update_url" name="ddns_update_url">
+    <label for="tunnel_relay">Tunnel relay</label>
+    <input id="tunnel_relay" name="tunnel_relay">
+    <div style="margin-top:1rem">
+      <button class="btn" type="submit">Save</button>
+      <a class="btn btn-ghost" href="/api/v1/access/caddyfile" target="_blank">view Caddyfile</a>
+    </div>
+    <pre id="access-msg" class="muted" style="white-space:pre-wrap"></pre>
+  </form>
+</div>
+<script src="/static/js/settings.js"></script>
+{% endblock %}

@@ -1,0 +1,21 @@
+<nav class="topbar">
+  <span class="brand">e-Callisto NG</span>
+  <span class="navlinks">
+    <a href="/portal">Dashboard</a>
+    <a href="/portal/manage/instruments">Instruments</a>
+    <a href="/portal/manage/schedules">Schedules</a>
+    <a href="/portal/manage/programs">Programs</a>
+    <a href="/portal/manage/calibration">Calibration</a>
+    <a href="/portal/manage/uploads">Uploads</a>
+    <a href="/portal/data">Data</a>
+    <a href="/portal/fleet">Fleet</a>
+    <a href="/portal/access">Access</a>
+    <a href="/portal/import">Import</a>
+    <a href="/portal/system">System</a>
+  </span>
+  <span class="navright">
+    <button class="theme-toggle" data-action="toggle-theme" type="button">theme</button>
+    {% if user %}<span class="muted">{{ user.username }} ({{ user.role }})</span>{% endif %}
+    <a href="/logout">sign out</a>
+  </span>
+</nav>

@@ -77,3 +77,60 @@ def dashboard(
         "portal/dashboard.html",
         {"user": user, "station": _station(db), "instruments": instruments},
     )
+
+
+# Resources surfaced by the generic management console (must match console.js).
+_MANAGE = {
+    "instruments": "Instruments",
+    "schedules": "Schedules",
+    "programs": "Frequency programs",
+    "calibration": "Calibration sets",
+    "uploads": "Upload targets",
+    "peers": "Fleet peers",
+}
+
+
+@router.get("/portal/manage/{resource}", response_class=HTMLResponse)
+def manage(
+    request: Request,
+    resource: str,
+    user: User | None = Depends(auth.optional_user),
+) -> object:
+    if user is None:
+        return RedirectResponse("/", status_code=303)
+    if resource not in _MANAGE:
+        raise HTTPException(404, "no such section")
+    return templates.TemplateResponse(
+        request,
+        "portal/manage.html",
+        {"user": user, "resource": resource, "title": _MANAGE[resource]},
+    )
+
+
+def _page(request: Request, name: str, user: User | None) -> object:
+    if user is None:
+        return RedirectResponse("/", status_code=303)
+    return templates.TemplateResponse(
+        request, f"portal/{name}.html", {"user": user}
+    )
+
+
+@router.get("/portal/access", response_class=HTMLResponse)
+def access_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "access", user)
+
+
+@router.get("/portal/import", response_class=HTMLResponse)
+def import_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "import", user)
+
+
+@router.get("/portal/fleet", response_class=HTMLResponse)
+def fleet_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "fleet", user)

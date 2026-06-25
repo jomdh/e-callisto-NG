@@ -1,0 +1,26 @@
+{% extends "portal/base.html" %}
+{% block title %}Import -- e-Callisto NG{% endblock %}
+{% block body %}
+{% include "portal/_nav.html" %}
+<div class="portal-main">
+  <h2>Import a legacy station</h2>
+  <p class="muted">Paste the legacy config files. Use dry-run to preview without
+    creating records.</p>
+  <form id="import-form" class="card">
+    <label for="callisto_cfg">callisto.cfg</label>
+    <textarea id="callisto_cfg" name="callisto_cfg" rows="6"></textarea>
+    <label for="frq_cfg">frequency program (frqXXXXX.cfg)</label>
+    <textarea id="frq_cfg" name="frq_cfg" rows="4"></textarea>
+    <label for="scheduler_cfg">scheduler.cfg</label>
+    <textarea id="scheduler_cfg" name="scheduler_cfg" rows="3"></textarea>
+    <label for="cal_prn">calibration (CALxxxxx.prn)</label>
+    <textarea id="cal_prn" name="cal_prn" rows="3"></textarea>
+    <label style="margin-top:.6rem">
+      <input type="checkbox" id="dry_run" name="dry_run" checked> dry-run (preview only)
+    </label>
+    <div style="margin-top:1rem"><button class="btn" type="submit">Import</button></div>
+    <pre id="import-msg" class="muted" style="white-space:pre-wrap"></pre>
+  </form>
+</div>
+<script src="/static/js/settings.js"></script>
+{% endblock %}
