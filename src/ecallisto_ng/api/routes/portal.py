@@ -213,3 +213,10 @@ def planning_page(
     request: Request, user: User | None = Depends(auth.optional_user)
 ) -> object:
     return _page(request, "planning", user)
+
+
+@router.get("/portal/hardware", response_class=HTMLResponse)
+def hardware_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "hardware", user)
