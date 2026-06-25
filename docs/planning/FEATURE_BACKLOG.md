@@ -13,6 +13,7 @@ origin, and motivation.
 | F13 | Data-browser depth: calendar/heatmap, in-browser FITS viewer, bulk ops | DESIGN 8.1 | richer browsing; deferred from M15 |
 | F14 | DB-backed recorder run-state (cross-process status) | ADR-0007 | so the web app sees acquisition state when the daemon owns the loops |
 | F15 | Update apply/rollback runner (host hook) | DESIGN 15 | reporting + SD image done in M17; the apt/rollback runner needs a real repo + least-priv hook |
+| F16 | Interactive offline map picker for coordinates | DESIGN 9 | wizard uses labelled numeric lat/lon/alt; a draggable offline map is a refinement (CSP-safe, no CDN) |
 
 ## Promoted to v0.5 milestones
 

@@ -2,36 +2,76 @@
 {% block title %}Set up -- e-Callisto NG{% endblock %}
 {% block body %}
 <div class="login-wrap">
-  <form class="card" style="max-width:480px;width:100%" method="post" action="/wizard">
-    <h1>Welcome to e-Callisto NG</h1>
-    <p class="muted">First-run setup for this station.</p>
+  <form class="card" style="max-width:520px;width:100%" method="post" action="/wizard">
+    <h1>Set up e-Callisto NG</h1>
+    <p class="muted">Step {{ step + 1 }} of {{ total }} &mdash; {{ step_name }}</p>
 
+    {% if step_name == "admin" %}
     <h3>Administrator</h3>
+    <p class="muted">No default account exists; create the admin now.</p>
     <label for="admin_username">Username</label>
-    <input id="admin_username" name="admin_username" required>
+    <input id="admin_username" name="admin_username" required
+           value="{{ data.get('admin_username', '') }}">
     <label for="admin_password">Password</label>
     <input id="admin_password" name="admin_password" type="password" required>
 
+    {% elif step_name == "station" %}
     <h3>Station</h3>
     <label for="station_name">Station name</label>
-    <input id="station_name" name="station_name" value="station" required>
+    <input id="station_name" name="station_name" required
+           value="{{ data.get('station_name', 'station') }}">
     <label for="observatory">Observatory</label>
-    <input id="observatory" name="observatory">
-    <label for="latitude_deg">Latitude (deg, +N / -S)</label>
-    <input id="latitude_deg" name="latitude_deg" type="number" step="any" value="0">
-    <label for="longitude_deg">Longitude (deg, +E / -W)</label>
-    <input id="longitude_deg" name="longitude_deg" type="number" step="any" value="0">
-    <label for="altitude_m">Altitude (m)</label>
-    <input id="altitude_m" name="altitude_m" type="number" step="any" value="0">
+    <input id="observatory" name="observatory"
+           value="{{ data.get('observatory', '') }}">
+    <details style="margin-top:1rem">
+      <summary class="muted">Migrating? Paste a legacy callisto.cfg</summary>
+      <label for="callisto_cfg">callisto.cfg</label>
+      <textarea id="callisto_cfg" name="callisto_cfg" rows="5"
+        placeholder="[instrument]=...&#10;[latitude]=N,..."></textarea>
+      <p class="muted">This pre-fills the rest and jumps to review.</p>
+    </details>
 
+    {% elif step_name == "coordinates" %}
+    <h3>Coordinates</h3>
+    <label for="latitude_deg">Latitude (deg, +N / -S)</label>
+    <input id="latitude_deg" name="latitude_deg" type="number" step="any"
+           value="{{ data.get('latitude_deg', 0) }}">
+    <label for="longitude_deg">Longitude (deg, +E / -W)</label>
+    <input id="longitude_deg" name="longitude_deg" type="number" step="any"
+           value="{{ data.get('longitude_deg', 0) }}">
+    <label for="altitude_m">Altitude (m above sea level)</label>
+    <input id="altitude_m" name="altitude_m" type="number" step="any"
+           value="{{ data.get('altitude_m', 0) }}">
+
+    {% elif step_name == "instrument" %}
     <h3>First instrument (optional)</h3>
     <label for="instrument_name">Instrument name</label>
-    <input id="instrument_name" name="instrument_name" placeholder="e.g. CALLISTO-01">
+    <input id="instrument_name" name="instrument_name"
+           placeholder="e.g. CALLISTO-01"
+           value="{{ data.get('instrument_name', '') }}">
+    <label for="instrument_class">Class</label>
+    <select id="instrument_class" name="instrument_class">
+      <option value="heterodyne">heterodyne</option>
+      <option value="sdr_soft">sdr_soft</option>
+      <option value="sdr_fpga">sdr_fpga</option>
+    </select>
     <label for="channels">Channels</label>
-    <input id="channels" name="channels" type="number" value="200">
+    <input id="channels" name="channels" type="number"
+           value="{{ data.get('channels', 200) }}">
+
+    {% elif step_name == "review" %}
+    <h3>Review</h3>
+    <pre class="muted" style="white-space:pre-wrap">admin:      {{ data.get('admin_username', '') }}
+station:    {{ data.get('station_name', '') }}
+observatory:{{ data.get('observatory', '') }}
+lat/lon/alt:{{ data.get('latitude_deg', 0) }}, {{ data.get('longitude_deg', 0) }}, {{ data.get('altitude_m', 0) }}
+instrument: {{ data.get('instrument_name', '(none)') }}</pre>
+    {% endif %}
 
     <div style="margin-top:1.25rem">
-      <button class="btn" type="submit">Finish setup</button>
+      <button class="btn" type="submit">
+        {{ "Finish setup" if step_name == "review" else "Next" }}
+      </button>
     </div>
   </form>
 </div>

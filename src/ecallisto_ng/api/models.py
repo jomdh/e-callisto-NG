@@ -43,6 +43,14 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class WizardState(SQLModel, table=True):
+    """Resumable first-run wizard state (single row, DESIGN 9)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    step: int = 0
+    data_json: str = "{}"  # accumulated answers across steps
+
+
 class AuditEvent(SQLModel, table=True):
     """An append-only record of a security-sensitive action (ADR-0006)."""
 

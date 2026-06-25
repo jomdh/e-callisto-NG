@@ -2,6 +2,23 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.5.3 -- 2026-06-25 (Milestone M18, v0.5 release)
+
+A guided first run that you can't lose your place in.
+
+- **Multi-step setup wizard.** Set up a fresh station step by step -- admin,
+  station, coordinates, first instrument, review -- and a refresh or reboot
+  resumes exactly where you left off.
+- **Migrate in the wizard.** Paste a legacy `callisto.cfg` and the wizard
+  pre-fills the station and instrument for you.
+
+This is the **v0.5 release** -- station completeness: user management + audit
+(M15), degrade-don't-die resilience + alerts + independent acquisition (M16),
+support bundle + updates + SD image (M17), and the full setup wizard (M18).
+
+Internal: WizardState + multi-step resumable wizard, legacy-import branch; 176
+tests; sprint S043. Merged 0.5-dev -> main.
+
 ## v0.5.2 -- 2026-06-25 (Milestone M17)
 
 Ship it, keep it current, get help fast.
