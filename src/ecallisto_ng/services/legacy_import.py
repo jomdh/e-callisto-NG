@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Parse legacy e-Callisto config files for migration (DESIGN 9a).
 
 Pure parsers for the legacy text formats (``callisto.cfg``, ``frqXXXXX.cfg``,

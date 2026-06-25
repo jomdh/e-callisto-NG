@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Persist + read recorder run-state across processes (ADR-0007 / F14).
 
 The recorder calls ``write`` on each state change (via a callback wired by the

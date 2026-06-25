@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Operations cockpit: per-instrument live state for the dashboard (DESIGN 8).
 
 Aggregates, per instrument: recording state + last file (from the recorder),

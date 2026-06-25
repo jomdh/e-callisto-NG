@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Standard-mode FITS writer.
 
 Writes a recording as a conventional 8-bit time x frequency FITS image with a

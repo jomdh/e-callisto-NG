@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Build this station's health report (shared by system + fleet)."""
 
 from __future__ import annotations

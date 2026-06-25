@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Auto-dispatch uploads + retention, on a background loop.
 
 Each tick: for every enabled target, upload pending files if its dispatch mode

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Source azimuth/elevation track for observation planning (legacy `astro`).
 
 Computes a source's az/el over a UTC day for the station's coordinates, via

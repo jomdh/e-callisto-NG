@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecallisto-ng"
-version = "0.7.3"
+version = "0.7.4"
 description = "Web-based solar radio spectrometer suite for a station (e-Callisto NG)"
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "TBD (GPLv3 vs AGPLv3 -- see ADR-0003)" }
+license = "AGPL-3.0-or-later"
 
 # core + fake driver need no runtime deps (core is dependency-free by design).
 # Stack deps are added per milestone, scoped to the layer that needs them.

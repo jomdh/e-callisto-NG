@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """FastAPI application factory.
 
 ``create_app()`` builds the app so tests and the server share one construction

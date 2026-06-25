@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Plugin contracts -- the versioned seams the suite is built on.
 
 Everything variable in the system is a plugin behind one of these

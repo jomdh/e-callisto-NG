@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """CallistoDriver -- the class-1 heterodyne instrument driver.
 
 Implements :class:`ecallisto_ng.core.InstrumentDriver` over a

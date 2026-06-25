@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Normalized spectra and capability value types.
 
 The **driver boundary sits at "normalized spectra"** (DESIGN 5a): every

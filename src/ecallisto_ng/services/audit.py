@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Append-only audit log (ADR-0006).
 
 One entry point: ``record``. Best-effort -- an audit-write failure is logged

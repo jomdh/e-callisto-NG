@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Background scheduler: start/stop recordings on each instrument's window.
 
 Ticks periodically; each tick computes today's recording window per enabled

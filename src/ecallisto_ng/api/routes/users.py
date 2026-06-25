@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """User management + audit log (admin only, DESIGN 8.4 / ADR-0006)."""
 
 from __future__ import annotations

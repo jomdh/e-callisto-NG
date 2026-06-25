@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Observation planning: source az/el track vs horizon (DESIGN 8 / F8)."""
 
 from __future__ import annotations

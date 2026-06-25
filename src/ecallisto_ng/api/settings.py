@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Typed application settings, loaded from the environment.
 
 Read via ``pydantic-settings`` (never hardcode paths/secrets; CLAUDE rule).

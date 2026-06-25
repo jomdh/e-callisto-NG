@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Light-curve product (legacy callisto.exe parity, DESIGN 6).
 
 Channels flagged ``light_curve=True`` are written as the legacy daily file

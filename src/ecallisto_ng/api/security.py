@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Password hashing and session-token minting.
 
 Argon2id for passwords (memory-hard); URL-safe random tokens for sessions.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Background recorder: start/stop a recording per instrument.
 
 A thin controller that runs the synchronous ``record()`` loop on a worker

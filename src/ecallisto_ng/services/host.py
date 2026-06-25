@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Host operations behind a least-privilege hook (ADR-0008, DESIGN 8.4/15).
 
 The web process is unprivileged. Host actions shell out to the single

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Incremental decoder for the Callisto byte stream.
 
 Separates the two interleaved framings on the wire: text messages

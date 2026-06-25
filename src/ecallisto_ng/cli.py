@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Command-line entry point.
 
 ``ecallisto-ng record`` runs one recording end-to-end -- from a driver (the

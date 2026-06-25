@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Station config backup / restore (DESIGN 8.4 Software).
 
 Exports the DB-backed *configuration* (not science data, not user accounts) as

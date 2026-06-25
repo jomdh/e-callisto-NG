@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Live streaming: WebSocket frame feed + the live-viewer page."""
 
 from __future__ import annotations

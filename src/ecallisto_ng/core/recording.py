@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """A finished block of spectra plus the metadata needed to persist it.
 
 An :class:`ecallisto_ng.core.OutputWriter` turns a ``Recording`` into a science

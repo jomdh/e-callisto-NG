@@ -39,3 +39,11 @@ pytest
 
 No hardware is needed: the `fake` driver emits synthetic spectra so the whole
 stack runs in development and CI.
+
+## License
+
+e-Callisto NG is licensed **AGPL-3.0-or-later** — see [`LICENSE`](LICENSE) and
+[`GOVERNANCE.md`](GOVERNANCE.md). Plugins (drivers/transports/writers) interact
+across versioned contracts + a process boundary and may be independently
+licensed, including closed-source. Contributions require a DCO sign-off
+([`CONTRIBUTING.md`](CONTRIBUTING.md)).

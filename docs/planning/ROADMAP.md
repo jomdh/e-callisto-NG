@@ -104,7 +104,7 @@ deferred backlog and makes the suite **publicly releasable** (AGPLv3). Branch
 | **M21 — Host control & lifecycle** (F12+F15+F14) ✓ done (S048-S049) | v0.7.1 | done |
 | **M22 — Timing precision (GPS/PPS)** (F3) ✓ done (S050) | v0.7.2 | done |
 | **M23 — Planning aids** (F8+F16) ✓ done (S051-S052) | v0.7.3 | done |
-| **M24 — Release readiness (AGPLv3)** *(release gate)* | v0.7.4 / v1.0 candidate | `milestones/V0.7_M24_release_readiness.md` |
+| **M24 — Release readiness (AGPLv3)** *(release gate)* ✓ done (S053) | v0.7.4 / v1.0 candidate | done |
 
 Order: M20 (operator value) → M21 (host completeness) → M22 (timing) → M23
 (polish) → M24 (license + release hygiene); version close merges `0.7-dev` →

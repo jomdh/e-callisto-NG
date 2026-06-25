@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """SQLite persistence via SQLModel.
 
 One file-backed database per station (WAL mode for concurrent reads while the

@@ -2,6 +2,24 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.7.4 -- 2026-06-25 (Milestone M24, v0.7 release / v1.0 candidate)
+
+Ready to share.
+
+- **AGPL-3.0-or-later.** The suite is now licensed (AGPLv3), with the full text,
+  per-file SPDX headers, and a plugin-governance policy: drivers/transports and
+  other plugins talk to the core over versioned contracts + a process boundary
+  and may be independently licensed, even closed-source.
+- **Contributor + security docs.** GOVERNANCE, CONTRIBUTING (DCO sign-off), and
+  SECURITY policies are in place.
+
+This is the **v0.7 release** and a **v1.0 candidate** -- the design is fully
+built (M0-M18), reskinned (M19), and the deferred backlog is closed (M20-M24).
+
+Internal: vendored AGPLv3 LICENSE + fetch script, SPDX on all source, pyproject
+license metadata, GOVERNANCE/CONTRIBUTING/SECURITY, release-hygiene test; 216
+tests; sprint S053. Merged 0.7-dev -> main.
+
 ## v0.7.3 -- 2026-06-25 (Milestone M23)
 
 Plan your observations.

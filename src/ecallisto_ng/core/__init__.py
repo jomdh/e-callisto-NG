@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Core domain models and plugin contracts.
 
 ``core`` is the inward-most package: it depends on nothing concrete, and

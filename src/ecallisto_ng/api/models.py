@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Persistent models (SQLModel tables).
 
 Importing this module registers the tables on ``SQLModel.metadata`` so

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Schedule CRUD + today's-window preview."""
 
 from __future__ import annotations

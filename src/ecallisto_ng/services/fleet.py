@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Observatory fleet aggregation: poll peer stations' health (DESIGN 8).
 
 The aggregation is pure and takes an injected ``fetch`` so it is testable

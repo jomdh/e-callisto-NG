@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Recorded-file catalog: scan the data dir, read headers, make quicklooks.
 
 Scan-based on purpose -- the FITS files on disk are the source of truth, so

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Instrument CRUD + record control."""
 
 from __future__ import annotations

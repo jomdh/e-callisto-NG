@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Dynamic-DNS update helper (DESIGN 10).
 
 Most stations are on a dynamic IP behind NAT. The operator gives an update

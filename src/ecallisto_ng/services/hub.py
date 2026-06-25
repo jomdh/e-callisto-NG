@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """In-memory live-frame pub/sub bridging the recorder thread to WS clients.
 
 The recorder (a worker thread) publishes spectra; WebSocket clients subscribe

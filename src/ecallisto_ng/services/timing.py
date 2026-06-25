@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Time sources + per-class timestamping correction (DESIGN 12a / ADR-0009).
 
 `SystemTimeSource` reads the OS clock + chrony offset/lock; `GpsTimeSource`

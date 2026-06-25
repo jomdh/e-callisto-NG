@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Data browsing: list / download / quicklook recorded FITS files."""
 
 from __future__ import annotations

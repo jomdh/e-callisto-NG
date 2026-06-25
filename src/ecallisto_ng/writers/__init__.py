@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Output writers -- one per output mode (legacy / standard / custom).
 
 Each implements :class:`ecallisto_ng.core.OutputWriter`. Standard mode lands

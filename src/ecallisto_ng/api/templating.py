@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Jinja templates and static-file locations for the portal."""
 
 from __future__ import annotations

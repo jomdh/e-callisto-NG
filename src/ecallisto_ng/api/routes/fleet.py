@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Fleet: token-gated health + peer registry + aggregate (DESIGN 8)."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """FTP transport (stdlib ftplib).
 
 Uploads to a ``.tmp`` name then renames, matching the legacy upload scripts so

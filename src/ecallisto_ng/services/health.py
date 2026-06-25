@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Station health: disk, instruments, recordings, upload backlog, alerts.
 
 Distinguishes system health from data quality (DESIGN 14); this is the system
