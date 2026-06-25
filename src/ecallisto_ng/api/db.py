@@ -8,13 +8,16 @@ register against ``SQLModel.metadata`` and are created by ``init_db``.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 
-from sqlalchemy import event
+from sqlalchemy import event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
 from ecallisto_ng.api.settings import get_settings
+
+logger = logging.getLogger(__name__)
 
 _engine: Engine | None = None
 
@@ -42,9 +45,41 @@ def get_engine() -> Engine:
     return _engine
 
 
+def _add_missing_columns(engine: Engine) -> None:
+    """Add columns the models gained to existing tables (SQLite migration).
+
+    ``create_all`` only creates *missing tables*, never new columns -- so a
+    station upgraded over an existing DB would hit "no such column". For each
+    registered table that already exists, add any column the model has but the
+    table lacks, with the model's default. New (nullable / defaulted) columns
+    only -- this never drops or retypes anything.
+    """
+    insp = inspect(engine)
+    for name, table in SQLModel.metadata.tables.items():
+        if not insp.has_table(name):
+            continue
+        present = {c["name"] for c in insp.get_columns(name)}
+        for col in table.columns:
+            if col.name in present:
+                continue
+            coltype = col.type.compile(engine.dialect)
+            ddl = f'ALTER TABLE "{name}" ADD COLUMN "{col.name}" {coltype}'
+            default = getattr(col.default, "arg", None)
+            if not col.nullable:
+                if default is None or callable(default):
+                    default = "" if "CHAR" in coltype.upper() else 0
+                value = repr(default) if isinstance(default, str) else default
+                ddl += f" DEFAULT {value}"
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
+            logger.info("migrated: added %s.%s", name, col.name)
+
+
 def init_db() -> None:
-    """Create all registered tables."""
-    SQLModel.metadata.create_all(get_engine())
+    """Create all registered tables, then add any new columns."""
+    engine = get_engine()
+    SQLModel.metadata.create_all(engine)
+    _add_missing_columns(engine)
 
 
 def get_session() -> Iterator[Session]:

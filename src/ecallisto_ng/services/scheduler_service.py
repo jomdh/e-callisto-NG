@@ -10,7 +10,6 @@ pure-ish and testable; the loop just calls it.
 
 from __future__ import annotations
 
-import json
 import threading
 from datetime import UTC, datetime
 
@@ -19,7 +18,6 @@ from sqlmodel import Session, select
 from ecallisto_ng.api.db import get_engine
 from ecallisto_ng.api.models import (
     CalibrationSet,
-    FrequencyProgram,
     Instrument,
     Schedule,
     Station,
@@ -31,6 +29,7 @@ from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services import recorder_state
 from ecallisto_ng.services.calibration_build import resolve
+from ecallisto_ng.services.channels import resolve_channels
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
     RecorderState,
@@ -138,19 +137,9 @@ class SchedulerService:
     def _channels(
         self, db: Session, inst: Instrument, sched: Schedule
     ) -> list[Channel]:
-        """Channels from the schedule's program (with light-curve flags), or a
-        plain ramp from the instrument's channel count."""
-        if sched.program_id is not None:
-            prog = db.get(FrequencyProgram, sched.program_id)
-            if prog is not None:
-                freqs = json.loads(prog.frequencies_json)
-                lc = set(json.loads(prog.light_curve_indices_json))
-                if freqs:
-                    return [
-                        Channel(frequency_mhz=float(f), light_curve=(i in lc))
-                        for i, f in enumerate(freqs)
-                    ]
-        return [Channel(frequency_mhz=45.0 + i) for i in range(inst.channels)]
+        """Channels for the run: the schedule's program overrides the
+        instrument's own program, else a ramp (M32)."""
+        return resolve_channels(db, inst, sched.program_id)
 
     def _maybe_overview(
         self, db: Session, inst: Instrument, sched: Schedule, now: datetime

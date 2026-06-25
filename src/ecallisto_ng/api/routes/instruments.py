@@ -17,12 +17,12 @@ from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.contracts import BenchCapable
 from ecallisto_ng.core.recording import RecordingMeta
-from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services import bench as bench_svc
 from ecallisto_ng.services import noise_figure as nf_svc
 from ecallisto_ng.services import recorder_state
 from ecallisto_ng.services.calibration_build import resolve
+from ecallisto_ng.services.channels import resolve_channels
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
     RecorderState,
@@ -49,6 +49,7 @@ class InstrumentIn(BaseModel):
     file_seconds: int = 900
     unit: str = "raw"
     output_mode: str = "standard"
+    program_id: int | None = None  # frequency plan (range/channels), M32
     calibration_set_id: int | None = None
     enabled: bool = True
 
@@ -145,7 +146,7 @@ def record_instrument(
     driver = build_driver(
         inst.instrument_class, inst.address, inst.focus_code, inst.channels
     )
-    channels = [Channel(frequency_mhz=45.0 + i) for i in range(inst.channels)]
+    channels = resolve_channels(db, inst)
     tsrc = get_time_source(get_settings().time_source)
     meta = RecordingMeta(
         instrument=inst.name,
