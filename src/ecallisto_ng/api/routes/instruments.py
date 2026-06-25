@@ -11,7 +11,7 @@ from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import CalibrationSet, Instrument, Role
+from ecallisto_ng.api.models import CalibrationSet, Instrument, Role, User
 from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.contracts import BenchCapable
@@ -157,6 +157,27 @@ def record_instrument(
 def stop_instrument(instrument_id: int) -> dict[str, bool]:
     get_recorder().stop(instrument_id)
     return {"ok": True}
+
+
+@router.post("/{instrument_id}/reconnect")
+def reconnect_instrument(
+    instrument_id: int,
+    db: DbSession = Depends(get_session),
+    actor: User = Depends(_operator),
+) -> dict[str, object]:
+    """Reconnect the receiver via the host hook (ADR-0008)."""
+    from ecallisto_ng.services import audit, host
+
+    _get(db, instrument_id)
+    ok, message = host.run_hook("reconnect", str(instrument_id))
+    audit.record(
+        db,
+        actor.username,
+        "host.reconnect",
+        target=str(instrument_id),
+        detail="ok" if ok else message,
+    )
+    return {"ok": ok, "message": message}
 
 
 @router.post("/{instrument_id}/overview", dependencies=[Depends(_operator)])

@@ -2,6 +2,19 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.7.1 -- 2026-06-25 (Milestone M21)
+
+Manage the host from the portal -- safely.
+
+- **Cross-process status.** The dashboard shows recording state even when the
+  separate acquisition service owns the loops.
+- **Host control.** View the log, reconnect a receiver, reboot/shutdown the
+  station, and apply/rollback an update -- all from the System page, through a
+  least-privilege hook (disabled until configured) and recorded in the audit log.
+
+Internal: RecorderRuntime + recorder_state (F14); ADR-0008 host hook,
+services/host, host endpoints + System UI; 200 tests; sprints S048-S049.
+
 ## v0.7.0 -- 2026-06-25 (Milestone M20)
 
 A live operations cockpit and a richer data browser.

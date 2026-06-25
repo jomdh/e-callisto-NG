@@ -74,6 +74,54 @@ def update_status() -> dict[str, str]:
     return updates.update_info(get_settings().update_channel)
 
 
+@router.get("/api/v1/system/log", dependencies=[Depends(_admin)])
+def system_log(lines: int = 200) -> dict[str, list[str]]:
+    """Tail the configured log file (read-only, ADR-0008)."""
+    from ecallisto_ng.services import host
+
+    return {"lines": host.tail_log(lines)}
+
+
+def _host_action(
+    db: DbSession, actor: User, verb: str, *args: str
+) -> dict[str, object]:
+    from ecallisto_ng.services import audit, host
+
+    ok, message = host.run_hook(verb, *args)
+    audit.record(
+        db, actor.username, f"host.{verb}", detail="ok" if ok else message
+    )
+    return {"ok": ok, "message": message}
+
+
+@router.post("/api/v1/system/reboot")
+def host_reboot(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "reboot")
+
+
+@router.post("/api/v1/system/shutdown")
+def host_shutdown(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "shutdown")
+
+
+@router.post("/api/v1/system/update/apply")
+def host_update_apply(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "update", get_settings().update_channel)
+
+
+@router.post("/api/v1/system/update/rollback")
+def host_update_rollback(
+    db: DbSession = Depends(get_session), actor: User = Depends(_admin)
+) -> dict[str, object]:
+    return _host_action(db, actor, "rollback")
+
+
 @router.get("/api/v1/system/support-bundle", dependencies=[Depends(_admin)])
 def support_bundle_download(
     db: DbSession = Depends(get_session),

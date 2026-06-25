@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     smtp_from: str = "ecallisto@localhost"
     # Update channel the station tracks (DESIGN 15).
     update_channel: str = "stable"
+    # Least-privilege host-action hook command (ADR-0008); empty = disabled.
+    host_hook: str = ""
+    # Log file the System log viewer tails (read-only).
+    log_file: str = ""
 
 
 @lru_cache
