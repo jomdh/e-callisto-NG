@@ -63,6 +63,12 @@ def test_scan_endpoint(client: TestClient) -> None:
     assert "count" in body
 
 
+def test_scan_open_during_wizard(client: TestClient) -> None:
+    # first-run (no users yet) -> the wizard can scan without a login
+    body = client.get("/api/v1/discovery/scan").json()
+    assert "devices" in body and "count" in body
+
+
 def test_scan_requires_operator(client: TestClient) -> None:
     # viewer cannot scan (it touches hardware)
     with Session(db.get_engine()) as s:
