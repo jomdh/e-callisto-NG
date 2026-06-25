@@ -72,6 +72,16 @@ def build_transport(target: UploadTarget) -> UploadTransport:
             decrypt(target.password),  # B2: decrypt at point of use
             target.base_path,
         )
+    if target.protocol == "sftp":
+        from ecallisto_ng.api.crypto import decrypt
+        from ecallisto_ng.transports.sftp import SftpTransport
+
+        return SftpTransport(
+            target.host,
+            target.username,
+            decrypt(target.password),
+            target.base_path,
+        )
     raise ValueError(f"unknown protocol: {target.protocol}")
 
 

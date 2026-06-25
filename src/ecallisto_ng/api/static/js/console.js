@@ -11,7 +11,7 @@
     unit: ["raw", "sfu", "kelvin"],
     output_mode: ["standard", "legacy"],
     kind: ["sun", "fixed"],
-    protocol: ["local", "ftp"],
+    protocol: ["local", "ftp", "sftp"],
     dispatch: ["manual", "immediate", "scheduled"],
   };
 

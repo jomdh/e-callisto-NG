@@ -67,8 +67,43 @@ def prune(db: Session, data_dir: Path, retention_days: int) -> int:
     return deleted
 
 
+def archive_file(src: Path, archive_root: Path, when: datetime) -> Path:
+    """Move ``src`` into a dated ``YYYY/MM/DD`` tree (legacy FITbackup)."""
+    dest_dir = archive_root / f"{when:%Y}" / f"{when:%m}" / f"{when:%d}"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / src.name
+    src.replace(dest)
+    return dest
+
+
+def archive_done(db: Session, data_dir: Path, archive_root: Path) -> int:
+    """Move files uploaded to all enabled targets into the dated archive."""
+    data = Path(data_dir)
+    targets = db.exec(select(UploadTarget).where(UploadTarget.enabled)).all()
+    if not targets:
+        return 0
+    target_ids = {t.id for t in targets}
+    moved = 0
+    for path in data.glob("*.fit"):
+        done = {
+            j.target_id
+            for j in db.exec(
+                select(UploadJob).where(
+                    UploadJob.filename == path.name,
+                    UploadJob.state == "done",
+                )
+            ).all()
+        }
+        if not target_ids.issubset(done):
+            continue
+        when = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+        archive_file(path, archive_root, when)
+        moved += 1
+    return moved
+
+
 class UploaderService:
-    """Auto-dispatch + retention loop. One per process."""
+    """Auto-dispatch + retention/archive loop. One per process."""
 
     def __init__(self) -> None:
         self._thread: threading.Thread | None = None
@@ -79,7 +114,10 @@ class UploaderService:
         for target in db.exec(select(UploadTarget)).all():
             if _due(target, now):
                 uploader.upload_pending(db, target, settings.data_dir)
-        prune(db, settings.data_dir, settings.retention_days)
+        if settings.archive_dir:
+            archive_done(db, settings.data_dir, Path(settings.archive_dir))
+        else:
+            prune(db, settings.data_dir, settings.retention_days)
 
     def start_loop(self) -> None:
         interval = get_settings().uploader_tick_seconds

@@ -26,6 +26,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "pillow>=10",
     "cryptography>=42",
+    "paramiko>=3",
 ]
 
 [project.scripts]
