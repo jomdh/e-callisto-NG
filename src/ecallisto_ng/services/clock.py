@@ -38,3 +38,33 @@ def may_record(require_sync: bool, synced: bool | None) -> bool:
     if require_sync and synced is False:
         return False
     return True
+
+
+def within_drift(offset_ms: float | None, max_ms: float) -> bool:
+    """Drift gate: ok unless a known offset exceeds ``max_ms`` (0 = off)."""
+    if max_ms <= 0 or offset_ms is None:
+        return True
+    return abs(offset_ms) <= max_ms
+
+
+def clock_offset_ms() -> float | None:  # pragma: no cover - needs chrony
+    """Current clock offset in ms from ``chronyc tracking`` (or None)."""
+    import shutil
+    import subprocess
+
+    if shutil.which("chronyc") is None:
+        return None
+    try:
+        out = subprocess.run(
+            ["chronyc", "-c", "tracking"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except Exception:  # noqa: BLE001 - any failure -> unknown
+        return None
+    fields = out.stdout.strip().split(",")
+    try:  # field index 4 is the last offset in seconds
+        return float(fields[4]) * 1000.0
+    except (IndexError, ValueError):
+        return None

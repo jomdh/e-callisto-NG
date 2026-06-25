@@ -8,6 +8,7 @@ prints the path. This is the M0 deliverable; the web app (M1+) is separate.
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 from ecallisto_ng.core.contracts import InstrumentDriver
@@ -69,7 +70,35 @@ def build_parser() -> argparse.ArgumentParser:
     rec.add_argument("--focus", type=int, default=1)
     rec.add_argument("--out", default=".")
     rec.set_defaults(func=_cmd_record)
+
+    acq = sub.add_parser(
+        "acquire", help="run the acquisition daemon (scheduler + uploader)"
+    )
+    acq.set_defaults(func=_cmd_acquire)
     return parser
+
+
+def _cmd_acquire(_args: argparse.Namespace) -> int:
+    """Run scheduler + uploader loops as a standalone daemon (ADR-0007)."""
+    import time
+
+    from ecallisto_ng.api.db import init_db
+    from ecallisto_ng.services.scheduler_service import get_scheduler
+    from ecallisto_ng.services.uploader_service import get_uploader
+
+    init_db()
+    get_scheduler().start_loop()
+    get_uploader().start_loop()
+    logging.getLogger(__name__).info("acquisition daemon running")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:  # pragma: no cover - signal-driven
+        pass
+    finally:
+        get_scheduler().stop_loop()
+        get_uploader().stop_loop()
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

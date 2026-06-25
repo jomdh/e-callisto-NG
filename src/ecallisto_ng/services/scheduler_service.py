@@ -51,11 +51,19 @@ class SchedulerService:
         self._stop = threading.Event()
 
     def tick(self, db: Session, now: datetime) -> None:
-        from ecallisto_ng.services.clock import clock_synced, may_record
+        from ecallisto_ng.services.clock import (
+            clock_offset_ms,
+            clock_synced,
+            may_record,
+            within_drift,
+        )
 
         station = db.exec(select(Station)).first() or Station()
         recorder = get_recorder()
-        gate_ok = may_record(get_settings().require_clock_sync, clock_synced())
+        settings = get_settings()
+        gate_ok = may_record(
+            settings.require_clock_sync, clock_synced()
+        ) and within_drift(clock_offset_ms(), settings.max_clock_offset_ms)
         for sched in db.exec(select(Schedule).where(Schedule.enabled)).all():
             inst = db.get(Instrument, sched.instrument_id)
             if inst is None or not inst.enabled or inst.id is None:

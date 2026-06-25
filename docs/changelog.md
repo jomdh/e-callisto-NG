@@ -2,6 +2,25 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.5.1 -- 2026-06-25 (Milestone M16)
+
+Hard to knock over.
+
+- **Degrade, don't die.** A clear policy decides what happens on each fault: disk
+  full pauses recording, a vanished receiver auto-reconnects, an upload backlog
+  keeps recording (never lose data), and a web-app problem never stops
+  acquisition.
+- **Always alert.** Send health alerts to email or a webhook; test a channel
+  before relying on it.
+- **Independent acquisition.** Recording can run as its own supervised service,
+  so restarting the web app never interrupts it.
+- **Clock drift gate.** Optionally pause recording when the clock drifts beyond a
+  tolerance.
+
+Internal: failure_modes matrix, alerts (AlertChannel + webhook/email), ADR-0007
+acquisition daemon (`ecallisto-ng acquire` + unit) + run_loops_in_web, drift gate;
+170 tests; sprints S040-S041.
+
 ## v0.5.0 -- 2026-06-25 (Milestone M15)
 
 Run the station, not just the science.

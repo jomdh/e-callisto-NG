@@ -11,6 +11,7 @@ origin, and motivation.
 | F8 | `astro` planning aid (source az/el vs horizon) | WINDOWS_FUNCTIONALITY §2 | observation planning; legacy parity (low priority) |
 | F12 | Host ops: reboot/shutdown + journald log viewer | DESIGN 8.4 | needs a least-privilege host hook; deferred from M15 |
 | F13 | Data-browser depth: calendar/heatmap, in-browser FITS viewer, bulk ops | DESIGN 8.1 | richer browsing; deferred from M15 |
+| F14 | DB-backed recorder run-state (cross-process status) | ADR-0007 | so the web app sees acquisition state when the daemon owns the loops |
 
 ## Promoted to v0.5 milestones
 

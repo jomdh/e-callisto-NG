@@ -11,3 +11,4 @@ index in the same commit.** Status: Proposed | Accepted | Superseded | Open.
 | [ADR-0004](ADR-0004-outputwriter-takes-recording.md) | OutputWriter takes a Recording, not loose frames | Accepted |
 | [ADR-0005](ADR-0005-bench-capable-contract.md) | BenchCapable: optional bench/commissioning driver contract | Accepted |
 | [ADR-0006](ADR-0006-audit-log.md) | Append-only audit log for security-sensitive actions | Accepted |
+| [ADR-0007](ADR-0007-acquisition-process-isolation.md) | Acquisition as an isolated, supervised process | Accepted |

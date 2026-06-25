@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     archive_dir: str = ""
     # Block recording when the clock is known-unsynced (DESIGN 12a).
     require_clock_sync: bool = False
+    # Max tolerated clock offset (ms) before drift-gating pauses (0 = off).
+    max_clock_offset_ms: float = 0.0
+    # Run the scheduler/uploader loops inside the web process. Set false when
+    # the `ecallisto-ng acquire` daemon owns them (ADR-0007).
+    run_loops_in_web: bool = True
     # Shared token that lets an observatory poll this station's fleet health.
     # Empty disables the fleet-health endpoint.
     fleet_token: str = ""
