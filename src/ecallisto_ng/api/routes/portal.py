@@ -156,3 +156,10 @@ def audit_page(
     request: Request, user: User | None = Depends(auth.optional_user)
 ) -> object:
     return _page(request, "audit", user)
+
+
+@router.get("/portal/settings", response_class=HTMLResponse)
+def settings_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "settings", user)

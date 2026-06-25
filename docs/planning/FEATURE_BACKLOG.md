@@ -9,6 +9,8 @@ origin, and motivation.
 | -- | -- | -- | -- |
 | F3 | GPS/PPS high-accuracy timing add-on | DESIGN 12a | sub-ms absolute timing |
 | F8 | `astro` planning aid (source az/el vs horizon) | WINDOWS_FUNCTIONALITY §2 | observation planning; legacy parity (low priority) |
+| F12 | Host ops: reboot/shutdown + journald log viewer | DESIGN 8.4 | needs a least-privilege host hook; deferred from M15 |
+| F13 | Data-browser depth: calendar/heatmap, in-browser FITS viewer, bulk ops | DESIGN 8.1 | richer browsing; deferred from M15 |
 
 ## Promoted to v0.5 milestones
 

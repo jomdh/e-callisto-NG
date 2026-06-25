@@ -54,6 +54,46 @@
     });
   }
 
+  // ---- station settings (system info + config backup/restore) ---------
+  const sysinfo = document.getElementById("sysinfo");
+  if (sysinfo) {
+    api("GET", "/api/v1/system/info").then((i) => {
+      const gb = (n) => (n / 1e9).toFixed(1) + " GB";
+      sysinfo.textContent =
+        `version ${i.version}\n` +
+        `disk ${gb(i.disk_free)} free of ${gb(i.disk_total)} ` +
+        `(${i.disk_pct_free}%)\n` +
+        `clock synced: ${i.clock_synced}\n` +
+        `retention: ${i.retention_days} days` +
+        (i.archive_dir ? `  archive: ${i.archive_dir}` : "") +
+        `\ndata dir: ${i.data_dir}`;
+    }).catch((e) => { sysinfo.textContent = e.message; });
+  }
+
+  const cfgExport = document.getElementById("cfg-export");
+  if (cfgExport) {
+    const cmsg = document.getElementById("cfg-msg");
+    cfgExport.addEventListener("click", async () => {
+      try {
+        const cfg = await api("GET", "/api/v1/config/export");
+        const blob = new Blob([JSON.stringify(cfg, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "ecallisto-config.json";
+        a.click();
+      } catch (e) { cmsg.textContent = e.message; }
+    });
+    document.getElementById("cfg-import").addEventListener("click", async () => {
+      try {
+        const data = JSON.parse(document.getElementById("cfg-text").value);
+        const res = await api("POST", "/api/v1/config/import", data);
+        cmsg.textContent = "restored: " + JSON.stringify(res);
+      } catch (e) { cmsg.textContent = e.message; }
+    });
+  }
+
   // ---- audit log -------------------------------------------------------
   const auditView = document.getElementById("audit-view");
   if (auditView) {

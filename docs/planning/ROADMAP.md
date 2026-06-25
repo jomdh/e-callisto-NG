@@ -74,7 +74,7 @@ dropped per the F6 decision. Branch `0.5-dev` from `main` after the v0.4 close.
 
 | Milestone | Was (design proposal) | Closes | Scope |
 | -- | -- | -- | -- |
-| **M15 — Station Settings** (§8.4) | M12 | v0.5.0 | users + audit log, Time/drift page, Storage/retention, Software (config backup/restore), System (journald log viewer, receiver reconnect, reboot/shutdown) |
+| **M15 — Station Settings** (§8.4) ✓ done (S038-S039) | M12 | v0.5.0 | users + audit log + config backup/restore + system info (host reboot/log-viewer + data-browser depth -> F12/F13) |
 | **M16 — Resilience & supervision** (§14a/§12a) | M14 | v0.5.1 | acquisition as an **isolated supervised process**, degrade-don't-die **failure-mode matrix**, **alert channels** (email/webhook) -- the deep model beyond the M11 watchdog (F10) |
 | **M17 — Updates & deployment** (§15) | M15 | v0.5.2 | update **channels + rollback**, config **backup/restore**, **SD image**, **support-bundle** export (F5, F11) |
 | **M18 — Wizard completeness** (§9) | M16 | v0.5.3 / version close | full multi-step **resumable** wizard, map picker, clone/import branch (F9) |

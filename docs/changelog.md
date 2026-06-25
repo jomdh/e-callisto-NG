@@ -2,6 +2,23 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.5.0 -- 2026-06-25 (Milestone M15)
+
+Run the station, not just the science.
+
+- **User management + audit log.** Admins create accounts, set roles, and disable
+  users; every security-sensitive action (and each login) is recorded in an
+  append-only audit log.
+- **Config backup & restore.** Download the whole station configuration
+  (instruments, schedules, programs, calibration, targets, access) and restore it
+  -- the fast path to provisioning a second station.
+- **System & settings page.** See version, disk usage, clock sync, and retention
+  at a glance.
+
+Internal: AuditEvent + services/audit (ADR-0006), user CRUD, config_backup
+export/import, system-info endpoint, Settings/Audit pages; 161 tests; sprints
+S038-S039.
+
 ## v0.4.3 -- 2026-06-25 (Milestone M14, v0.4 release)
 
 Get your data out, and plan around interference.
