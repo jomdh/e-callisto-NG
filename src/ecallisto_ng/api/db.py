@@ -77,6 +77,12 @@ def _add_missing_columns(engine: Engine) -> None:
 
 def init_db() -> None:
     """Create all registered tables, then add any new columns."""
+    # Ensure every model is registered on SQLModel.metadata before create_all
+    # / the column migration -- otherwise a caller that ran init_db before
+    # importing the models would silently skip those tables (no create, no
+    # ALTER), surfacing later as "no such column".
+    import ecallisto_ng.api.models  # noqa: F401
+
     engine = get_engine()
     SQLModel.metadata.create_all(engine)
     _add_missing_columns(engine)
