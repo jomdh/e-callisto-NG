@@ -22,6 +22,26 @@ fi
 # shellcheck disable=SC1091
 . "$VENV/bin/activate"
 
+# Self-heal deps after a `git pull` adds one (e.g. the websocket library the
+# live waterfall needs) without recreating the venv.
+if ! python -c "import websockets" >/dev/null 2>&1; then
+  echo "== installing/updating dependencies =="
+  pip install -q -e .
+fi
+
+# Preflight: serial access. Recording from a serial Callisto (/dev/ttyUSB*)
+# needs the 'dialout' group; warn early instead of failing at record time.
+if ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx dialout; then
+  if ls /dev/ttyUSB* /dev/ttyACM* >/dev/null 2>&1; then
+    echo
+    echo "WARNING: '$USER' is not in the 'dialout' group -- opening a serial"
+    echo "  Callisto will be denied (Permission denied: /dev/ttyUSB0)."
+    echo "  Fix once:  sudo usermod -aG dialout $USER"
+    echo "  then log out and back in (or reboot), and re-run this script."
+    echo
+  fi
+fi
+
 if [ ! -f .env ]; then
   echo "== writing .env (generated secret key + repo-local ./data) =="
   cp .env.example .env

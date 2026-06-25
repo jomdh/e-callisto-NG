@@ -19,6 +19,7 @@ dependencies = [
     "pyserial>=3.5",
     "fastapi>=0.115",
     "uvicorn>=0.30",
+    "websockets>=12",
     "sqlmodel>=0.0.22",
     "pydantic-settings>=2.4",
     "jinja2>=3.1",

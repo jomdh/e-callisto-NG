@@ -71,6 +71,22 @@ def _get(db: DbSession, instrument_id: int) -> Instrument:
     return obj
 
 
+def _hw_error(exc: OSError) -> HTTPException:
+    """Turn a hardware/serial open failure into a clear 503 (not a raw 500)."""
+    msg = str(exc)
+    hint = ""
+    if "Permission denied" in msg:
+        hint = (
+            " -- add the user to the 'dialout' group "
+            "(sudo usermod -aG dialout <user>) then log out and back in"
+        )
+    elif "could not open port" in msg or "No such file" in msg:
+        hint = " -- check the address and that the device is plugged in"
+    return HTTPException(
+        status.HTTP_503_SERVICE_UNAVAILABLE, f"hardware error: {msg}{hint}"
+    )
+
+
 @router.get("", dependencies=[Depends(_viewer)])
 def list_instruments(db: DbSession = Depends(get_session)) -> list[Instrument]:
     return list(db.exec(select(Instrument)).all())
@@ -203,14 +219,17 @@ def overview_instrument(
     )
     out_dir = get_settings().data_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-    prn, csv = run_overview(
-        driver,
-        out_dir,
-        inst.name,
-        datetime.now(UTC),
-        focus_code=inst.focus_code,
-        pwm=inst.gain,
-    )
+    try:
+        prn, csv = run_overview(
+            driver,
+            out_dir,
+            inst.name,
+            datetime.now(UTC),
+            focus_code=inst.focus_code,
+            pwm=inst.gain,
+        )
+    except OSError as exc:
+        raise _hw_error(exc) from exc
     return {"prn": prn.name, "csv": csv.name}
 
 
@@ -250,9 +269,11 @@ def bench_detector(
 ) -> dict[str, float]:
     """Tune + read the detector voltage once (legacy 'simple' tool)."""
     driver = _bench_driver(db, instrument_id)
-    driver.connect()  # type: ignore[attr-defined]
     try:
+        driver.connect()  # type: ignore[attr-defined]
         mv = bench_svc.read_detector(driver, freq, gain)
+    except OSError as exc:
+        raise _hw_error(exc) from exc
     finally:
         driver.close()  # type: ignore[attr-defined]
     return {"mv": mv, "freq": freq, "gain": float(gain)}
@@ -266,8 +287,8 @@ def bench_sweep(
 ) -> dict[str, object]:
     """Sweep detector voltage vs frequency (underlies NF/bandpass, M12)."""
     driver = _bench_driver(db, instrument_id)
-    driver.connect()  # type: ignore[attr-defined]
     try:
+        driver.connect()  # type: ignore[attr-defined]
         points = bench_svc.sweep(
             driver,
             body.f_min,
@@ -276,6 +297,8 @@ def bench_sweep(
             body.gain,
             body.relay,
         )
+    except OSError as exc:
+        raise _hw_error(exc) from exc
     finally:
         driver.close()  # type: ignore[attr-defined]
     return {"points": points}
@@ -326,6 +349,8 @@ def bench_noise_figure(
         cold = _sweep(body.cold_relay)
         warm = _sweep(body.warm_relay)
         hot = _sweep(body.hot_relay)
+    except OSError as exc:
+        raise _hw_error(exc) from exc
     finally:
         driver.close()  # type: ignore[attr-defined]
     freqs = [f for f, _ in cold]
@@ -367,11 +392,13 @@ def bench_agc_sweep(
 ) -> dict[str, object]:
     """AGC commissioning: detector voltage vs PWM gain (legacy AGC, C5)."""
     driver = _bench_driver(db, instrument_id)
-    driver.connect()  # type: ignore[attr-defined]
     try:
+        driver.connect()  # type: ignore[attr-defined]
         points = bench_svc.agc_sweep(
             driver, body.freq, body.pwm_min, body.pwm_max, body.pwm_step
         )
+    except OSError as exc:
+        raise _hw_error(exc) from exc
     finally:
         driver.close()  # type: ignore[attr-defined]
     return {"points": points}
@@ -392,11 +419,13 @@ def bench_scope(
 ) -> dict[str, object]:
     """Time-domain detector capture + optional trigger (legacy scope, C6)."""
     driver = _bench_driver(db, instrument_id)
-    driver.connect()  # type: ignore[attr-defined]
     try:
+        driver.connect()  # type: ignore[attr-defined]
         samples, triggered = bench_svc.scope(
             driver, body.freq, body.gain, body.n_samples, body.threshold_mv
         )
+    except OSError as exc:
+        raise _hw_error(exc) from exc
     finally:
         driver.close()  # type: ignore[attr-defined]
     return {"samples": samples, "triggered": triggered}
