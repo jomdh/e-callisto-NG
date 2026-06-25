@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     # Shared token that lets an observatory poll this station's fleet health.
     # Empty disables the fleet-health endpoint.
     fleet_token: str = ""
+    # SMTP for the email alert channel (DESIGN 14a).
+    smtp_host: str = ""
+    smtp_port: int = 25
+    smtp_from: str = "ecallisto@localhost"
 
 
 @lru_cache

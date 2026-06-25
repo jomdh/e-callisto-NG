@@ -108,6 +108,7 @@ class UploaderService:
     def __init__(self) -> None:
         self._thread: threading.Thread | None = None
         self._stop = threading.Event()
+        self._last_alert_sig = ""
 
     def tick(self, db: Session, now: datetime) -> None:
         settings = get_settings()
@@ -118,6 +119,26 @@ class UploaderService:
             archive_done(db, settings.data_dir, Path(settings.archive_dir))
         else:
             prune(db, settings.data_dir, settings.retention_days)
+        self._notify(db)
+
+    def _notify(self, db: Session) -> None:
+        """Dispatch health alerts to enabled channels, deduped per change."""
+        from ecallisto_ng.api.models import AlertChannelConfig
+        from ecallisto_ng.services import alerts
+        from ecallisto_ng.services.health_report import build_station_health
+
+        report = build_station_health(db)
+        active = list(getattr(report, "alerts", []) or [])
+        sig = "\n".join(sorted(active))
+        if sig == self._last_alert_sig:
+            return  # nothing new -> don't re-spam
+        self._last_alert_sig = sig
+        if not active:
+            return
+        rows = db.exec(select(AlertChannelConfig)).all()
+        channels = alerts.enabled_channels(rows)
+        if channels:
+            alerts.dispatch(channels, "e-Callisto NG alert", sig)
 
     def start_loop(self) -> None:
         interval = get_settings().uploader_tick_seconds

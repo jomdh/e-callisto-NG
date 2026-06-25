@@ -63,6 +63,18 @@ class Session(SQLModel, table=True):
     expires_at: datetime
 
 
+class AlertChannelConfig(SQLModel, table=True):
+    """A configured alert destination (DESIGN 14a)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    kind: str = "webhook"  # webhook / email
+    url: str = ""  # webhook URL
+    recipient: str = ""  # email recipient
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=_utcnow)
+
+
 class PeerStation(SQLModel, table=True):
     """Another station this observatory oversees (fleet view, DESIGN 8)."""
 
