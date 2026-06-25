@@ -33,13 +33,16 @@ from ecallisto_ng.api.templating import STATIC_DIR
 @asynccontextmanager
 async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
     from ecallisto_ng.services.scheduler_service import get_scheduler
+    from ecallisto_ng.services.uploader_service import get_uploader
 
     init_db()
     get_scheduler().start_loop()
+    get_uploader().start_loop()
     try:
         yield
     finally:
         get_scheduler().stop_loop()
+        get_uploader().stop_loop()
 
 
 def create_app() -> FastAPI:

@@ -79,6 +79,8 @@ class UploadTarget(SQLModel, table=True):
     username: str = ""
     password: str = ""
     dispatch: str = "manual"  # immediate / scheduled / manual
+    window_start: str = "00:00"  # scheduled-dispatch window (UTC HH:MM)
+    window_stop: str = "23:59"
     gzip: bool = True
     enabled: bool = True
     created_at: datetime = Field(default_factory=_utcnow)
