@@ -23,6 +23,7 @@ from ecallisto_ng.api.routes import calibration as calibration_routes
 from ecallisto_ng.api.routes import data as data_routes
 from ecallisto_ng.api.routes import instruments as instrument_routes
 from ecallisto_ng.api.routes import live as live_routes
+from ecallisto_ng.api.routes import migrate as migrate_routes
 from ecallisto_ng.api.routes import portal as portal_routes
 from ecallisto_ng.api.routes import programs as program_routes
 from ecallisto_ng.api.routes import schedules as schedule_routes
@@ -87,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(system_routes.router)
     app.include_router(calibration_routes.router)
     app.include_router(access_routes.router)
+    app.include_router(migrate_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:
