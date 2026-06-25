@@ -62,19 +62,27 @@
     <input id="instrument_name" name="instrument_name"
            placeholder="e.g. CALLISTO-01"
            value="{{ data.get('instrument_name', '') }}">
+    <small class="muted">Any label you like, e.g. CALLISTO-01.</small>
     <label for="instrument_class">Class</label>
     <select id="instrument_class" name="instrument_class">
       <option value="heterodyne">heterodyne</option>
       <option value="sdr_soft">sdr_soft</option>
       <option value="sdr_fpga">sdr_fpga</option>
     </select>
-    <label for="address">Address (serial port / host:port)</label>
+    <small class="muted">heterodyne = e-Callisto (serial) &middot;
+      sdr_soft = USB SDR / RX-888 &middot; sdr_fpga = FPGA SDR.</small>
+    <label for="address">Address</label>
     <input id="address" name="address"
-           placeholder="e.g. /dev/ttyUSB0 (blank = simulator)"
+           placeholder="/dev/ttyUSB0"
            value="{{ data.get('address', '') }}">
+    <small class="muted">Serial: <code>/dev/ttyUSB0</code> &middot;
+      USB SDR: <code>usb:04b4:00f3</code> or <code>rx888</code> &middot;
+      network: <code>host:port</code> &middot; blank = built-in simulator.</small>
     <label for="channels">Channels</label>
-    <input id="channels" name="channels" type="number"
+    <input id="channels" name="channels" type="number" min="2"
            value="{{ data.get('channels', 200) }}">
+    <small class="muted">Frequency channels per sweep (a whole number,
+      e.g. 200).</small>
 
     {% elif step_name == "review" %}
     <h3>Review</h3>

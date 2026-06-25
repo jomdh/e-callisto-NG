@@ -25,14 +25,14 @@
       del: (r) => `/api/v1/instruments/${r.id}`,
       columns: ["id", "name", "instrument_class", "channels", "unit", "enabled"],
       fields: [
-        { name: "name", required: true },
-        { name: "instrument_class", select: "instrument_class" },
-        { name: "channels", type: "number", value: 200 },
-        { name: "sweep_rate_hz", type: "number", value: 4 },
-        { name: "address", placeholder: "serial/host:port (blank=fake)" },
-        { name: "unit", select: "unit" },
-        { name: "output_mode", select: "output_mode" },
-        { name: "file_seconds", type: "number", value: 900 },
+        { name: "name", required: true, hint: "Any label, e.g. CALLISTO-01." },
+        { name: "instrument_class", select: "instrument_class", hint: "heterodyne = e-Callisto (serial) · sdr_soft = USB SDR / RX-888 · sdr_fpga = FPGA SDR." },
+        { name: "channels", type: "number", value: 200, hint: "Frequency channels per sweep (whole number, e.g. 200)." },
+        { name: "sweep_rate_hz", type: "number", value: 4, hint: "Sweeps per second (e.g. 4)." },
+        { name: "address", placeholder: "/dev/ttyUSB0", hint: "Serial: /dev/ttyUSB0 · USB SDR: usb:04b4:00f3 or rx888 · network: host:port · blank = simulator." },
+        { name: "unit", select: "unit", hint: "raw ADC (default) · sfu / kelvin need a calibration set." },
+        { name: "output_mode", select: "output_mode", hint: "standard or legacy FITS (legacy = byte-exact archive)." },
+        { name: "file_seconds", type: "number", value: 900, hint: "Seconds per FITS file (e.g. 900 = 15 min)." },
       ],
       actions: [
         { label: "open", href: (r) => `/portal/instruments/${r.id}` },
@@ -224,6 +224,7 @@
       if (f.placeholder) input.placeholder = f.placeholder;
     }
     form.append(input);
+    if (f.hint) form.append(el("small", { class: "muted", style: "display:block;margin:.1em 0 .4em" }, f.hint));
   });
   const submit = el("button", { class: "btn-filled", type: "submit", style: "margin-top:1rem" }, "Create");
   form.append(submit);
@@ -248,10 +249,10 @@
           const lbl = `${dev.address} — ${dev.detail || dev.description} [${dev.suggested_class}]`;
           sel.append(el("option", { value: String(i) }, lbl));
         });
-        msg.textContent = d.count ? "pick a device, then 'use selected'" : "none found";
+        msg.textContent = d.count ? "pick a device to fill the form" : "none found";
       } catch (e) { msg.textContent = e.message; }
     });
-    useBtn.addEventListener("click", () => {
+    function applySelected() {
       if (sel.value === "") return;
       const dev = devices[Number(sel.value)];
       if (!dev) return;
@@ -263,7 +264,9 @@
         form.elements.name.value = dev.kind === "serial" ? "Callisto" : "SDR";
       }
       msg.textContent = `filled from ${dev.address}`;
-    });
+    }
+    useBtn.addEventListener("click", applySelected);
+    sel.addEventListener("change", applySelected);  // auto-fill on pick
     panel.append(btn, sel, useBtn, msg);
     return panel;
   }

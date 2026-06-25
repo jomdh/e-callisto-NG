@@ -57,4 +57,6 @@
 
   btn.addEventListener("click", scan);
   use.addEventListener("click", applySelected);
+  // auto-fill the moment a device is picked (no extra click needed)
+  sel.addEventListener("change", applySelected);
 })();
