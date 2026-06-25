@@ -2,6 +2,27 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.4.3 -- 2026-06-25 (Milestone M14, v0.4 release)
+
+Get your data out, and plan around interference.
+
+- **SFTP uploads.** Ship files over SFTP (in addition to FTP and local mirrors),
+  with the same safe upload-then-rename behaviour.
+- **Dated backup archive.** Optionally move uploaded files into a dated
+  `YYYY/MM/DD` archive (the legacy FITbackup) instead of deleting them.
+- **Smarter frequency programs.** Generate programs that avoid an RFI band you
+  exclude, and convert between RF and IF for up/down-converters.
+- **Test a destination.** Check that an upload target is reachable before relying
+  on it.
+
+This is the **v0.4 release** -- legacy Windows parity: recorder behaviours (M11),
+bench tools (M12), spectrum viewer + light-curve publication (M13), and
+distribution + generator (M14). Existing heterodyne stations can migrate without
+losing functionality.
+
+Internal: transports/sftp.py (paramiko), uploader archive + connection test,
+freqgen exclude_band + rf_to_if; 151 tests; sprints S036-S037. Merged 0.4-dev -> main.
+
 ## v0.4.2 -- 2026-06-25 (Milestone M13)
 
 See your spectra and publish your light curves.

@@ -100,6 +100,7 @@
       ],
       actions: [
         { label: "run", run: (r) => api("POST", `/api/v1/upload/targets/${r.id}/run`), show: true },
+        { label: "test", run: (r) => api("POST", `/api/v1/upload/targets/${r.id}/test`), show: true },
       ],
     },
     peers: {

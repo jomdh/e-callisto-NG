@@ -52,7 +52,7 @@ around it.
 | **M11 — Recorder operational parity** | v0.4.0 ✓ done | S030-S031 |
 | **M12 — Bench & diagnostic tools** | v0.4.1 ✓ done | S032-S033 |
 | **M13 — Spectrum viewer & publication** | v0.4.2 ✓ done | S034-S035 |
-| **M14 — Distribution & generator parity** | v0.4.3 / version close | `milestones/V0.4_M14_distribution_parity.md` |
+| **M14 — Distribution & generator parity** | v0.4.3 ✓ done | S036-S037 |
 
 Order: M11 (what deployed stations rely on daily) → M12 (commissioning/bench) →
 M13 (visualization + public light curves) → M14 (distribution + generator);

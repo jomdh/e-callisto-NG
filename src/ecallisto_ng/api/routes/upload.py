@@ -99,3 +99,15 @@ def run_target(
     if target is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no such target")
     return uploader.upload_pending(db, target, get_settings().data_dir)
+
+
+@router.post("/targets/{target_id}/test", dependencies=[Depends(_operator)])
+def test_target(
+    target_id: int, db: DbSession = Depends(get_session)
+) -> dict[str, object]:
+    """Test the connection to a target (reachability)."""
+    target = db.get(UploadTarget, target_id)
+    if target is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such target")
+    ok, message = uploader.test_target(target)
+    return {"ok": ok, "message": message}

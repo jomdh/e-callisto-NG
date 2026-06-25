@@ -44,6 +44,8 @@ class GenerateIn(BaseModel):
     stop_mhz: float = 870.0
     n_channels: int = 200
     mode: str = "quiet"
+    exclude_from: float | None = None  # RFI-exclusion band start (MHz)
+    exclude_to: float | None = None
 
 
 def _out(p: FrequencyProgram) -> ProgramOut:
@@ -84,6 +86,9 @@ def create_program(
 def generate_program(
     body: GenerateIn, db: DbSession = Depends(get_session)
 ) -> ProgramOut:
+    band = None
+    if body.exclude_from is not None and body.exclude_to is not None:
+        band = (body.exclude_from, body.exclude_to)
     try:
         freqs = generate_frequencies(
             body.overview,
@@ -91,6 +96,7 @@ def generate_program(
             body.stop_mhz,
             body.n_channels,
             body.mode,
+            exclude_band=band,
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc

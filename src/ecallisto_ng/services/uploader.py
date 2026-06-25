@@ -85,6 +85,20 @@ def build_transport(target: UploadTarget) -> UploadTransport:
     raise ValueError(f"unknown protocol: {target.protocol}")
 
 
+def test_target(target: UploadTarget) -> tuple[bool, str]:
+    """Connect to a target and report reachability (connection test)."""
+    try:
+        transport = build_transport(target)
+    except ValueError as exc:
+        return False, str(exc)
+    try:
+        transport.connect()
+        transport.close()
+    except Exception as exc:  # noqa: BLE001 - any failure -> not reachable
+        return False, f"{type(exc).__name__}: {exc}"
+    return True, "ok"
+
+
 def upload_pending(
     db: Session, target: UploadTarget, data_dir: Path
 ) -> dict[str, int]:
