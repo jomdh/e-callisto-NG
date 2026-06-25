@@ -23,7 +23,7 @@ from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.drivers.callisto import CallistoConfig, CallistoDriver
 from ecallisto_ng.drivers.fake import FakeDriver
-from ecallisto_ng.services.acquisition import record
+from ecallisto_ng.services.acquisition import record, record_continuous
 from ecallisto_ng.services.watchdog import Watchdog
 from ecallisto_ng.writers.fits import StandardFitsWriter
 
@@ -110,7 +110,15 @@ class RecorderService:
         calibration: Calibration | None = None,
         writer: OutputWriter | None = None,
         on_state: Callable[[str, str | None], None] | None = None,
+        continuous: bool = False,
     ) -> None:
+        """Start a recording.
+
+        Bounded (``continuous=False``): record ``max_frames`` sweeps into one
+        file, then go idle. Continuous (``continuous=True``): record until
+        ``stop()``, rolling a new file every ``max_frames`` sweeps (the
+        per-file size) -- the legacy continuous-with-rollover behaviour.
+        """
         with self._lock:
             existing = self._jobs.get(instrument_id)
             if existing and existing.status.state is RecorderState.RECORDING:
@@ -133,6 +141,16 @@ class RecorderService:
                 if job:
                     job.status.messages.extend(lines)
 
+        def _on_file(path: Path) -> None:
+            # A continuous recording rolled a new file -- update last_file but
+            # stay RECORDING.
+            with self._lock:
+                job = self._jobs.get(instrument_id)
+                if job:
+                    job.status.last_file = str(path)
+            if on_state is not None:
+                on_state(RecorderState.RECORDING, str(path))
+
         def _run() -> None:
             from ecallisto_ng.services import port_lock
 
@@ -141,23 +159,43 @@ class RecorderService:
                 # op (possibly in the other process) gets a clean busy, not a
                 # corrupt read (ADR-0007 two-process model).
                 with port_lock.hold(instrument_id):
-                    path = record(
-                        driver,
-                        out_writer,
-                        channels,
-                        meta,
-                        out_dir,
-                        sweeps_per_second=sweep_rate_hz,
-                        max_frames=max_frames,
-                        unit=unit,
-                        calibration=calibration,
-                        on_frame=_publish,
-                        watchdog=Watchdog(),
-                        on_data_loss=_on_data_loss,
-                    )
-                self._finish(instrument_id, str(path), None)
+                    if continuous:
+                        paths = record_continuous(
+                            driver,
+                            out_writer,
+                            channels,
+                            meta,
+                            out_dir,
+                            sweeps_per_second=sweep_rate_hz,
+                            frames_per_file=max_frames,
+                            unit=unit,
+                            calibration=calibration,
+                            on_frame=_publish,
+                            watchdog=Watchdog(),
+                            on_data_loss=_on_data_loss,
+                            on_file=_on_file,
+                        )
+                        last = str(paths[-1]) if paths else None
+                    else:
+                        last = str(
+                            record(
+                                driver,
+                                out_writer,
+                                channels,
+                                meta,
+                                out_dir,
+                                sweeps_per_second=sweep_rate_hz,
+                                max_frames=max_frames,
+                                unit=unit,
+                                calibration=calibration,
+                                on_frame=_publish,
+                                watchdog=Watchdog(),
+                                on_data_loss=_on_data_loss,
+                            )
+                        )
+                self._finish(instrument_id, last, None)
                 if on_state is not None:
-                    on_state(RecorderState.IDLE, str(path))
+                    on_state(RecorderState.IDLE, last)
             except port_lock.InstrumentBusy:
                 self._finish(
                     instrument_id, None, "instrument busy (port in use)"
