@@ -47,7 +47,15 @@ class _Job:
 def build_driver(
     instrument_class: str, address: str, focus_code: int, channels: int
 ) -> InstrumentDriver:
-    """Pick a driver: a serial address -> Callisto, otherwise the fake."""
+    """Pick a driver by instrument class (DESIGN 5a).
+
+    sdr_soft -> host-DSP SDR; sdr_fpga -> FPGA SDR (network);
+    heterodyne+address -> Callisto serial; otherwise the hardware-free fake.
+    """
+    if instrument_class == "sdr_soft":
+        from ecallisto_ng.drivers.sdr.soft import SoftSdrDriver
+
+        return SoftSdrDriver(channels=channels)
     if address and instrument_class == "heterodyne":
         from ecallisto_ng.connections.serial_link import SerialConnection
 
