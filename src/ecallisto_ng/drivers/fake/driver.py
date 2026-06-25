@@ -56,6 +56,10 @@ class FakeDriver:
         self._running = False
         self._focus_code = 0
         self._sweep = 0
+        # bench (BenchCapable) state
+        self._bench_freq = 150.0
+        self._bench_gain = 120
+        self._relay = 0
 
     @property
     def capabilities(self) -> Capabilities:
@@ -114,6 +118,30 @@ class FakeDriver:
     def close(self) -> None:
         self._running = False
         self._connected = False
+
+    # -- BenchCapable (synthetic detector) --------------------------------
+
+    def tune(self, frequency_mhz: float) -> None:
+        self._bench_freq = frequency_mhz
+
+    def set_gain(self, pwm: int) -> None:
+        self._bench_gain = max(0, min(255, pwm))
+
+    def read_detector(self) -> float:
+        """Synthetic detector mV: a bandpass response scaled by gain + relay.
+
+        A Gaussian passband centred at 150 MHz, scaled by the gain fraction
+        (0-2500 mV like the legacy AD8307 range), with a small relay offset so
+        hot/cold/warm states differ. Deterministic (no noise) for tests.
+        """
+        dist = (self._bench_freq - 150.0) / 250.0
+        passband = pow(2.718281828, -0.5 * dist * dist)
+        gain_frac = self._bench_gain / 255.0
+        relay_offset = (self._relay & 0x3F) * 5.0
+        return round(2500.0 * passband * gain_frac + relay_offset, 3)
+
+    def set_relay(self, code: int) -> None:
+        self._relay = code & 0x3F
 
     def _make_frame(self) -> SpectrumFrame:
         """One sweep: a Gaussian peak drifting across channels, plus noise."""

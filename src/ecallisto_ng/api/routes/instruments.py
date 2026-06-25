@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session as DbSession
@@ -12,10 +14,14 @@ from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import CalibrationSet, Instrument, Role
 from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.core.calibration import Calibration
+from ecallisto_ng.core.contracts import BenchCapable
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
+from ecallisto_ng.services import bench as bench_svc
+from ecallisto_ng.services import noise_figure as nf_svc
 from ecallisto_ng.services.calibration_build import resolve
+from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
     RecorderState,
     build_driver,
@@ -147,6 +153,140 @@ def record_instrument(
 def stop_instrument(instrument_id: int) -> dict[str, bool]:
     get_recorder().stop(instrument_id)
     return {"ok": True}
+
+
+@router.post("/{instrument_id}/overview", dependencies=[Depends(_operator)])
+def overview_instrument(
+    instrument_id: int, db: DbSession = Depends(get_session)
+) -> dict[str, str]:
+    """Run a 45-870 MHz spectral overview now; write the OVS .prn/.csv pair."""
+    inst = _get(db, instrument_id)
+    if get_recorder().status(instrument_id).state is RecorderState.RECORDING:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "instrument is recording"
+        )
+    driver = build_driver(
+        inst.instrument_class, inst.address, inst.focus_code, inst.channels
+    )
+    out_dir = get_settings().data_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    prn, csv = run_overview(driver, out_dir, inst.name, datetime.now(UTC))
+    return {"prn": prn.name, "csv": csv.name}
+
+
+class BenchSweepIn(BaseModel):
+    f_min: float = 45.0
+    f_max: float = 870.0
+    n_points: int = 100
+    gain: int = 120
+    relay: int | None = None
+
+
+def _bench_driver(db: DbSession, instrument_id: int) -> BenchCapable:
+    inst = _get(db, instrument_id)
+    if get_recorder().status(instrument_id).state is RecorderState.RECORDING:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "instrument is recording"
+        )
+    driver = build_driver(
+        inst.instrument_class, inst.address, inst.focus_code, inst.channels
+    )
+    if not isinstance(driver, BenchCapable):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "instrument does not support bench mode",
+        )
+    return driver
+
+
+@router.get(
+    "/{instrument_id}/bench/detector", dependencies=[Depends(_operator)]
+)
+def bench_detector(
+    instrument_id: int,
+    freq: float = 150.0,
+    gain: int = 120,
+    db: DbSession = Depends(get_session),
+) -> dict[str, float]:
+    """Tune + read the detector voltage once (legacy 'simple' tool)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        mv = bench_svc.read_detector(driver, freq, gain)
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    return {"mv": mv, "freq": freq, "gain": float(gain)}
+
+
+@router.post("/{instrument_id}/bench/sweep", dependencies=[Depends(_operator)])
+def bench_sweep(
+    instrument_id: int,
+    body: BenchSweepIn,
+    db: DbSession = Depends(get_session),
+) -> dict[str, object]:
+    """Sweep detector voltage vs frequency (underlies NF/bandpass, M12)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        points = bench_svc.sweep(
+            driver,
+            body.f_min,
+            body.f_max,
+            body.n_points,
+            body.gain,
+            body.relay,
+        )
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    return {"points": points}
+
+
+class NoiseFigureIn(BaseModel):
+    f_min: float = 45.0
+    f_max: float = 870.0
+    n_points: int = 100
+    gain: int = 250
+    enr_db: float = 15.0
+    att_db: float = 10.1
+    cold_relay: int = 0
+    warm_relay: int = 3
+    hot_relay: int = 1
+
+
+@router.post(
+    "/{instrument_id}/bench/noise_figure", dependencies=[Depends(_operator)]
+)
+def bench_noise_figure(
+    instrument_id: int,
+    body: NoiseFigureIn,
+    db: DbSession = Depends(get_session),
+) -> dict[str, object]:
+    """Cold/warm/hot Y-factor noise figure + slope + bandpass (legacy NF)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        args = (body.f_min, body.f_max, body.n_points, body.gain)
+        cold = bench_svc.sweep(driver, *args, relay=body.cold_relay)
+        warm = bench_svc.sweep(driver, *args, relay=body.warm_relay)
+        hot = bench_svc.sweep(driver, *args, relay=body.hot_relay)
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    freqs = [f for f, _ in cold]
+    cold_mv = [v for _, v in cold]
+    warm_mv = [v for _, v in warm]
+    hot_mv = [v for _, v in hot]
+    slope = nf_svc.detector_slope(warm_mv, hot_mv, body.att_db)
+    nf = nf_svc.noise_figure(cold_mv, hot_mv, slope, body.enr_db)
+    bandpass = nf_svc.bandpass(cold_mv, hot_mv, slope)
+    nf_stat = nf_svc.stats(nf)
+    return {
+        "freqs": freqs,
+        "noise_figure": nf,
+        "slope_mv_db": slope,
+        "bandpass_db": bandpass,
+        "nf_mean": nf_stat.mean,
+        "nf_sigma": nf_stat.sigma,
+    }
 
 
 @router.get("/{instrument_id}/status", dependencies=[Depends(_viewer)])

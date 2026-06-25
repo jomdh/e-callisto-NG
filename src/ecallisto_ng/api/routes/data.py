@@ -9,7 +9,8 @@ from ecallisto_ng.api import auth
 from ecallisto_ng.api.models import Role, User
 from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.api.templating import templates
-from ecallisto_ng.services import catalog
+from ecallisto_ng.services import catalog, spectrum
+from ecallisto_ng.services.lightcurve_png import render_lightcurve_png
 
 router = APIRouter(tags=["data"])
 
@@ -19,6 +20,48 @@ _viewer = auth.require_role(Role.VIEWER)
 @router.get("/api/v1/files", dependencies=[Depends(_viewer)])
 def list_files() -> list[catalog.FileInfo]:
     return catalog.list_recordings(get_settings().data_dir)
+
+
+@router.get("/api/v1/spectra", dependencies=[Depends(_viewer)])
+def list_spectra() -> list[str]:
+    """Names of 2-column spectrum files (overviews etc.) for the viewer."""
+    return spectrum.list_spectra(get_settings().data_dir)
+
+
+@router.get("/api/v1/spectra/{name}", dependencies=[Depends(_viewer)])
+def get_spectrum(name: str) -> dict[str, list[float]]:
+    """Parsed (freqs, amps) of a 2-column spectrum file."""
+    path = catalog.resolve_in(get_settings().data_dir, name)
+    if path is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such file")
+    freqs, amps = spectrum.parse_two_column(path.read_text())
+    return {"freqs": freqs, "amps": amps}
+
+
+@router.get("/api/v1/lightcurves", dependencies=[Depends(_viewer)])
+def list_lightcurves() -> list[str]:
+    """Daily light-curve files (``LC*.txt``) available for rendering."""
+    data_dir = get_settings().data_dir
+    if not data_dir.is_dir():
+        return []
+    return sorted(
+        p.name
+        for p in data_dir.iterdir()
+        if p.is_file() and p.name.startswith("LC") and p.suffix == ".txt"
+    )
+
+
+@router.get("/api/v1/lightcurves/{name}/png", dependencies=[Depends(_viewer)])
+def lightcurve_png(name: str) -> FileResponse:
+    """Render the public 24-h UT light-curve PNG (wwwgeni parity)."""
+    settings = get_settings()
+    path = catalog.resolve_in(settings.data_dir, name)
+    if path is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such file")
+    out_dir = settings.data_dir / "lightcurves"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    png = render_lightcurve_png(path, out_dir)
+    return FileResponse(png, media_type="image/png")
 
 
 @router.get("/api/v1/files/{name}/download", dependencies=[Depends(_viewer)])

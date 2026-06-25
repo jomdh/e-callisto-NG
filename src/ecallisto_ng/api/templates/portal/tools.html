@@ -1,0 +1,46 @@
+{% extends "portal/base.html" %}
+{% block title %}Tools -- e-Callisto NG{% endblock %}
+{% block body %}
+{% include "portal/_nav.html" %}
+<div class="portal-main">
+  <h2>Bench tools</h2>
+  <p class="muted">Heterodyne instruments only (BenchCapable). Not available
+    while recording.</p>
+
+  <div class="card" style="max-width:560px">
+    <h3>Detector</h3>
+    <label for="bench-inst">Instrument id</label>
+    <input id="bench-inst" type="number" value="1">
+    <label for="bench-freq">Frequency [MHz]</label>
+    <input id="bench-freq" type="number" value="150">
+    <label for="bench-gain">Gain (0-255)</label>
+    <input id="bench-gain" type="number" value="200">
+    <div style="margin-top:1rem">
+      <button class="btn" id="bench-read" type="button">Read detector</button>
+    </div>
+    <div id="bench-gauge-wrap" style="margin-top:1rem">
+      <div style="background:var(--surface-variant,#333);border-radius:4px;height:1.4em;overflow:hidden">
+        <div id="bench-gauge" style="height:100%;width:0;background:var(--accent)"></div>
+      </div>
+      <p id="bench-mv" class="muted">-- mV</p>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:560px;margin-top:1rem">
+    <h3>Noise figure (Y-factor)</h3>
+    <label for="nf-inst">Instrument id</label>
+    <input id="nf-inst" type="number" value="1">
+    <label for="nf-n">Points</label>
+    <input id="nf-n" type="number" value="40">
+    <label for="nf-enr">ENR [dB]</label>
+    <input id="nf-enr" type="number" value="15">
+    <label for="nf-att">Att. [dB]</label>
+    <input id="nf-att" type="number" value="10.1">
+    <div style="margin-top:1rem">
+      <button class="btn" id="nf-run" type="button">Run NF</button>
+    </div>
+    <pre id="nf-out" class="muted" style="white-space:pre-wrap"></pre>
+  </div>
+</div>
+<script src="/static/js/tools.js"></script>
+{% endblock %}

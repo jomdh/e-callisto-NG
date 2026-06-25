@@ -32,6 +32,7 @@ class ProgramOut(BaseModel):
 class ProgramIn(BaseModel):
     name: str
     frequencies: list[float] = []
+    light_curve_indices: list[int] = []
     start_mhz: float = 45.0
     stop_mhz: float = 870.0
 
@@ -43,6 +44,8 @@ class GenerateIn(BaseModel):
     stop_mhz: float = 870.0
     n_channels: int = 200
     mode: str = "quiet"
+    exclude_from: float | None = None  # RFI-exclusion band start (MHz)
+    exclude_to: float | None = None
 
 
 def _out(p: FrequencyProgram) -> ProgramOut:
@@ -68,6 +71,7 @@ def create_program(
     prog = FrequencyProgram(
         name=body.name,
         frequencies_json=json.dumps(body.frequencies),
+        light_curve_indices_json=json.dumps(body.light_curve_indices),
         start_mhz=body.start_mhz,
         stop_mhz=body.stop_mhz,
         source="manual",
@@ -82,6 +86,9 @@ def create_program(
 def generate_program(
     body: GenerateIn, db: DbSession = Depends(get_session)
 ) -> ProgramOut:
+    band = None
+    if body.exclude_from is not None and body.exclude_to is not None:
+        band = (body.exclude_from, body.exclude_to)
     try:
         freqs = generate_frequencies(
             body.overview,
@@ -89,6 +96,7 @@ def generate_program(
             body.stop_mhz,
             body.n_channels,
             body.mode,
+            exclude_band=band,
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc

@@ -29,19 +29,62 @@ CSP are blocking -- v0.2 does not ship until both hold.**
 Order: M6 (autonomy) → M7 (the blocking gate) → M8 (adoption); version close
 merges `0.2-dev` → `main`.
 
-## v0.3 released (M9 SDR + M10 fleet)
+## v0.3 released (M9 SDR + M10 fleet + UI)
 
-`main` is at **v0.3.1**. Both SDR classes (host-DSP + FPGA) record through the
-same pipeline as the heterodyne receiver, and an observatory can aggregate the
-health of multiple stations. Tags v0.3.0-v0.3.1.
+`main` is at **v0.3.2**. Both SDR classes (host-DSP + FPGA) record through the
+same pipeline as the heterodyne receiver, an observatory aggregates many
+stations' health, and the portal surfaces every feature. Tags v0.3.0-v0.3.2.
 
-## Deferred (v0.4+)
+## v0.4 -- "No orphan users" (SELECTED, not started)
 
-- **M9** — SDR classes: class-2 host-DSP driver + USB backend (F1), then class-3
-  FPGA + network backend (F2) -- the headline extensibility, on the M0 seams.
-- **M10** — Observatory/fleet view across multiple stations (F4).
-- Bench-tool UI (noise figure), burst detection/flagging (F6), GPS/PPS timing
-  (F3), in-app help + support bundle (F5), full multi-step wizard, SD image.
+Theme: **feature parity with the legacy Windows (Borland) suite** so the
+heterodyne stations already in the field migrate without losing functionality.
+Driven by `legacy/sources/WINDOWS_FUNCTIONALITY.md`, not abstract design gaps.
+Branch `0.4-dev` from `main`.
+
+The recorder *protocol* is already faithful (tuner step, band-select, PLL
+dividers, firmware 1.5/1.7/1.8, EEPROM upload, overview command -- all from M0).
+The gaps are the *operational behaviors, bench tools, and publication outputs*
+around it.
+
+| Milestone | Closes | Plan |
+| -- | -- | -- |
+| **M11 — Recorder operational parity** | v0.4.0 ✓ done | S030-S031 |
+| **M12 — Bench & diagnostic tools** | v0.4.1 ✓ done | S032-S033 |
+| **M13 — Spectrum viewer & publication** | v0.4.2 ✓ done | S034-S035 |
+| **M14 — Distribution & generator parity** | v0.4.3 ✓ done | S036-S037 |
+
+Order: M11 (what deployed stations rely on daily) → M12 (commissioning/bench) →
+M13 (visualization + public light curves) → M14 (distribution + generator);
+version close merges `0.4-dev` → `main`.
+
+Owner decisions (from the milestone-gathering review): burst detection/flagging
+(F6) stays **out** -- acquisition-only, analysis lives in doncel. Core license
+(ADR-0003) **deferred** until the first public release. GPS/PPS timing (F3) and
+the `astro` planning aid remain backlog.
+
+## v0.5 -- "Station completeness" (SELECTED, after v0.4)
+
+Theme: the **design's pillars beyond legacy parity** -- the §8.4 settings depth,
+the §14a resilience model, the §15 deployment lifecycle, and the §9 full wizard.
+These are the proposed design-gap milestones, **renumbered M15+** and
+**de-duplicated against v0.4**: the earlier "Tools & Bench" and "Viewer & data
+depth" proposals are already delivered by parity **M12/M13**, and "Analysis" is
+dropped per the F6 decision. Branch `0.5-dev` from `main` after the v0.4 close.
+
+| Milestone | Was (design proposal) | Closes | Scope |
+| -- | -- | -- | -- |
+| **M15 — Station Settings** (§8.4) | M12 | v0.5.0 | users + audit log, Time/drift page, Storage/retention, Software (config backup/restore), System (journald log viewer, receiver reconnect, reboot/shutdown) |
+| **M16 — Resilience & supervision** (§14a/§12a) | M14 | v0.5.1 | acquisition as an **isolated supervised process**, degrade-don't-die **failure-mode matrix**, **alert channels** (email/webhook) -- the deep model beyond the M11 watchdog (F10) |
+| **M17 — Updates & deployment** (§15) | M15 | v0.5.2 | update **channels + rollback**, config **backup/restore**, **SD image**, **support-bundle** export (F5, F11) |
+| **M18 — Wizard completeness** (§9) | M16 | v0.5.3 / version close | full multi-step **resumable** wizard, map picker, clone/import branch (F9) |
+
+Folded in: a richer **data browser** (§8.1: calendar/heatmap, in-browser FITS
+viewer, bulk download/delete/re-queue) -- the part of the old "Viewer & data
+depth" not covered by parity M13 -- rides along in **M15**.
+
+Mapping note: old M11 (Tools & Bench) -> v0.4 **M12**; old M13 (Viewer & dB) ->
+v0.4 **M13**; old M17 (Analysis) -> **dropped** (F6 out). The rest shift to M15-M18.
 
 ## Completed
 

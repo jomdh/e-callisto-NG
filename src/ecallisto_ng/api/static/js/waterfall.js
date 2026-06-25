@@ -30,6 +30,54 @@
     }
   }
 
+  // --- live panels: single spectrum y(f) + light-curve y(t) -----------
+  const dbToggle = document.getElementById("live-db");
+  const specCv = document.getElementById("spectrum");
+  const lcCv = document.getElementById("lightcurve");
+  const lcBuf = [];
+
+  function accent() {
+    return (
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--accent")
+        .trim() || "#7bd"
+    );
+  }
+
+  function scale(v) {
+    return dbToggle && dbToggle.checked
+      ? 10 * Math.log10(Math.max(v, 1)) // 0..~24
+      : v; // 0..255
+  }
+
+  function plot(cv, values, asLine) {
+    if (!cv) return;
+    const c = cv.getContext("2d");
+    const w = cv.width;
+    const h = cv.height;
+    c.clearRect(0, 0, w, h);
+    if (!values.length) return;
+    const max = dbToggle && dbToggle.checked ? 24 : 255;
+    c.strokeStyle = accent();
+    c.beginPath();
+    values.forEach((v, i) => {
+      const x = (i / (values.length - 1 || 1)) * w;
+      const y = h - (Math.min(v, max) / max) * h;
+      if (i === 0) c.moveTo(x, y);
+      else c.lineTo(x, y);
+    });
+    c.stroke();
+  }
+
+  function updatePanels(values) {
+    plot(specCv, values.map(scale));
+    let peak = 0;
+    for (const v of values) if (v > peak) peak = v;
+    lcBuf.push(scale(peak));
+    if (lcBuf.length > lcCv.width) lcBuf.shift();
+    plot(lcCv, lcBuf);
+  }
+
   const proto = location.protocol === "https:" ? "wss" : "ws";
   const ws = new WebSocket(proto + "://" + location.host + "/ws/live/" + id);
   ws.onopen = function () {
@@ -40,6 +88,9 @@
   };
   ws.onmessage = function (ev) {
     const msg = JSON.parse(ev.data);
-    if (msg.values) drawColumn(msg.values);
+    if (msg.values) {
+      drawColumn(msg.values);
+      updatePanels(msg.values);
+    }
   };
 })();

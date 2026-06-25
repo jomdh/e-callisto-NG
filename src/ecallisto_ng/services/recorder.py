@@ -8,6 +8,7 @@ live-streamed recording arrives in M2; this is the start/stop/status baseline.
 
 from __future__ import annotations
 
+import logging
 import threading
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -21,7 +22,10 @@ from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.drivers.callisto import CallistoConfig, CallistoDriver
 from ecallisto_ng.drivers.fake import FakeDriver
 from ecallisto_ng.services.acquisition import record
+from ecallisto_ng.services.watchdog import Watchdog
 from ecallisto_ng.writers.fits import StandardFitsWriter
+
+_log = logging.getLogger(__name__)
 
 
 class RecorderState(StrEnum):
@@ -35,6 +39,7 @@ class RecorderStatus:
     state: RecorderState = RecorderState.IDLE
     last_file: str | None = None
     error: str | None = None
+    messages: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -110,6 +115,14 @@ class RecorderService:
         def _publish(frame: SpectrumFrame) -> None:
             hub.publish(instrument_id, frame)
 
+        def _on_data_loss(lines: list[str]) -> None:
+            for line in lines:
+                _log.warning("instrument %s: %s", instrument_id, line)
+            with self._lock:
+                job = self._jobs.get(instrument_id)
+                if job:
+                    job.status.messages.extend(lines)
+
         def _run() -> None:
             try:
                 path = record(
@@ -123,6 +136,8 @@ class RecorderService:
                     unit=unit,
                     calibration=calibration,
                     on_frame=_publish,
+                    watchdog=Watchdog(),
+                    on_data_loss=_on_data_loss,
                 )
                 self._finish(instrument_id, str(path), None)
             except Exception as exc:  # noqa: BLE001 - report any failure

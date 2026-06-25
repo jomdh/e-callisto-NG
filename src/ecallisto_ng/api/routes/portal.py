@@ -134,3 +134,17 @@ def fleet_page(
     request: Request, user: User | None = Depends(auth.optional_user)
 ) -> object:
     return _page(request, "fleet", user)
+
+
+@router.get("/portal/tools", response_class=HTMLResponse)
+def tools_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "tools", user)
+
+
+@router.get("/portal/viewer", response_class=HTMLResponse)
+def viewer_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "viewer", user)

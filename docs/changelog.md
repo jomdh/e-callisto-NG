@@ -2,6 +2,77 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.4.3 -- 2026-06-25 (Milestone M14, v0.4 release)
+
+Get your data out, and plan around interference.
+
+- **SFTP uploads.** Ship files over SFTP (in addition to FTP and local mirrors),
+  with the same safe upload-then-rename behaviour.
+- **Dated backup archive.** Optionally move uploaded files into a dated
+  `YYYY/MM/DD` archive (the legacy FITbackup) instead of deleting them.
+- **Smarter frequency programs.** Generate programs that avoid an RFI band you
+  exclude, and convert between RF and IF for up/down-converters.
+- **Test a destination.** Check that an upload target is reachable before relying
+  on it.
+
+This is the **v0.4 release** -- legacy Windows parity: recorder behaviours (M11),
+bench tools (M12), spectrum viewer + light-curve publication (M13), and
+distribution + generator (M14). Existing heterodyne stations can migrate without
+losing functionality.
+
+Internal: transports/sftp.py (paramiko), uploader archive + connection test,
+freqgen exclude_band + rf_to_if; 151 tests; sprints S036-S037. Merged 0.4-dev -> main.
+
+## v0.4.2 -- 2026-06-25 (Milestone M13)
+
+See your spectra and publish your light curves.
+
+- **Spectrum viewer.** Open any overview/spectrum file and explore it: LO
+  conversion, dB/log scaling, background subtraction, typed-range zoom, and PNG
+  export -- the legacy SXY/M9703A plotter, web-native.
+- **dB toggle.** Switch the live view and the viewer between raw and dB (never
+  automatic -- raw stays the default).
+- **Public light-curve images.** Render a day's light curve as a 24-hour UT PNG
+  with up to 10 coloured channels -- the website image the legacy wwwgeni made.
+- **Richer live view.** The live page now shows the waterfall plus a single
+  spectrum y(f) and a light curve y(t) of the peak channel.
+
+Internal: services/spectrum.py + viewer island, services/lightcurve_png.py
+(Pillow), spectra/lightcurve endpoints, live panels; 143 tests; sprints S034-S035.
+
+## v0.4.1 -- 2026-06-25 (Milestone M12)
+
+The commissioning bench, web-native.
+
+- **Detector readout.** Tune a frequency, set the gain, and read the detector
+  voltage live -- the legacy "simple" signal-check tool, on a Tools page.
+- **Noise figure.** Run a cold/warm/hot Y-factor noise-figure measurement and see
+  the noise figure, detector slope, and overall bandpass -- the legacy
+  NoiseFigurePlotter workflow.
+
+Bench tools are available on heterodyne instruments (not while recording).
+Internal: BenchCapable contract (ADR-0005), services/bench.py + noise_figure.py,
+bench endpoints, Tools page; 135 tests; sprints S032-S033.
+
+## v0.4.0 -- 2026-06-25 (Milestone M11)
+
+Legacy recorder parity, part 1 -- what fielded heterodyne stations rely on daily.
+
+- **Data-loss watchdog.** A garbled receiver stream auto-stops with the familiar
+  "Check RS232-connection!" warning, the good data so far is kept, and recording
+  auto-restarts -- no lost science, no stuck recorder.
+- **Scheduled overviews.** A schedule can trigger a 45-870 MHz spectral overview
+  at a set time (and you can run one on demand), written as the legacy
+  OVS .prn/.csv pair.
+- **Program-driven schedules.** A schedule records with a chosen frequency
+  program, including its light-curve channel flags.
+- **Legacy light-curve files.** Flagged channels are written as the legacy daily
+  `LC<date>_<ADU|SFU>_<instrument>.txt` (up to 10 channels).
+
+Internal: services/watchdog.py + acquisition wiring; services/overview.py;
+Schedule.program_id/overview_at, FrequencyProgram light-curve indices; console UI
+fields/actions; 123 tests; sprints S030-S031.
+
 ## v0.3.2 -- 2026-06-25 (Usability)
 
 Everything is now clickable.

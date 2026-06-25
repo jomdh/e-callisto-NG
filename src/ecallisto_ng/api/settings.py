@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     uploader_tick_seconds: int = 60
     # Days to keep uploaded local files; <0 disables pruning.
     retention_days: int = -1
+    # If set, uploaded files are moved into this dated YYYY/MM/DD archive
+    # (legacy FITbackup) instead of being pruned by retention.
+    archive_dir: str = ""
     # Block recording when the clock is known-unsynced (DESIGN 12a).
     require_clock_sync: bool = False
     # Shared token that lets an observatory poll this station's fleet health.

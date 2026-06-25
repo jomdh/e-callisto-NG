@@ -72,7 +72,31 @@ def build_transport(target: UploadTarget) -> UploadTransport:
             decrypt(target.password),  # B2: decrypt at point of use
             target.base_path,
         )
+    if target.protocol == "sftp":
+        from ecallisto_ng.api.crypto import decrypt
+        from ecallisto_ng.transports.sftp import SftpTransport
+
+        return SftpTransport(
+            target.host,
+            target.username,
+            decrypt(target.password),
+            target.base_path,
+        )
     raise ValueError(f"unknown protocol: {target.protocol}")
+
+
+def test_target(target: UploadTarget) -> tuple[bool, str]:
+    """Connect to a target and report reachability (connection test)."""
+    try:
+        transport = build_transport(target)
+    except ValueError as exc:
+        return False, str(exc)
+    try:
+        transport.connect()
+        transport.close()
+    except Exception as exc:  # noqa: BLE001 - any failure -> not reachable
+        return False, f"{type(exc).__name__}: {exc}"
+    return True, "ok"
 
 
 def upload_pending(

@@ -183,6 +183,31 @@ class CallistoDriver:
         self._conn.write(p.HALT)
         self._conn.close()
 
+    # -- BenchCapable (ADR-0005) ------------------------------------------
+
+    def tune(self, frequency_mhz: float) -> None:
+        self._conn.write(p.tune_command(frequency_mhz))
+
+    def set_gain(self, pwm: int) -> None:
+        self._conn.write(p.gain_command(pwm))
+
+    def read_detector(self) -> float:
+        self._conn.write(p.DETECTOR_QUERY)
+        empties = 0
+        while empties < _MAX_EMPTY_READS:
+            chunk = self._read_chunk()
+            if not chunk:
+                empties += 1
+                continue
+            empties = 0
+            mv = p.parse_detector(chunk.decode("ascii", "ignore"))
+            if mv is not None:
+                return mv
+        return 0.0
+
+    def set_relay(self, code: int) -> None:
+        self._conn.write(p.relay_command(code))
+
     # -- helpers -----------------------------------------------------------
 
     def _frame(self, values: list[int]) -> SpectrumFrame:
