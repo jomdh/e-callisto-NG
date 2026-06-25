@@ -72,3 +72,12 @@ def test_instruments_list_links_to_detail(client: TestClient) -> None:
     assert "/static/js/console.js" in page.text
     js = client.get("/static/js/console.js").text
     assert "/portal/instruments/" in js
+
+
+def test_console_serializes_operations(client: TestClient) -> None:
+    # the instrument console locks all controls while an op runs / records
+    js = client.get("/static/js/instrument.js").text
+    assert "runOp" in js  # operations run under a single-flight lock
+    assert "inFlight" in js
+    assert "lockAll" in js  # all port-touching controls disabled during an op
+    assert 'state === "recording"' in js  # recording -> only stop enabled
