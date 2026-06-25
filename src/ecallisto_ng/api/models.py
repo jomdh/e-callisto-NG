@@ -52,6 +52,18 @@ class Session(SQLModel, table=True):
     expires_at: datetime
 
 
+class AccessSettings(SQLModel, table=True):
+    """How the station is reached remotely (single row). DESIGN 10."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    mode: str = "lan"  # lan / public / tunnel
+    hostname: str = ""  # public-HTTPS / DDNS hostname
+    tls_email: str = ""  # Let's Encrypt account email (public mode)
+    ddns_update_url: str = ""  # template; {ip} is substituted
+    tunnel_relay: str = ""  # outbound relay target (tunnel mode)
+    updated_at: datetime = Field(default_factory=_utcnow)
+
+
 class Station(SQLModel, table=True):
     """This host's identity (single row), and its observatory + location."""
 

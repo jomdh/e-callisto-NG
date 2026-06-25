@@ -17,6 +17,7 @@ from sqlalchemy import text
 from ecallisto_ng import __version__
 from ecallisto_ng.api import models  # noqa: F401 -- register tables
 from ecallisto_ng.api.db import get_engine, init_db
+from ecallisto_ng.api.routes import access as access_routes
 from ecallisto_ng.api.routes import auth as auth_routes
 from ecallisto_ng.api.routes import calibration as calibration_routes
 from ecallisto_ng.api.routes import data as data_routes
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
     app.include_router(upload_routes.router)
     app.include_router(system_routes.router)
     app.include_router(calibration_routes.router)
+    app.include_router(access_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:
