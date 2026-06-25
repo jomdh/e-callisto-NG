@@ -31,4 +31,28 @@
       .then((d) => { log.textContent = (d.lines || []).join(""); })
       .catch((e) => { log.textContent = String(e); });
   }
+
+  // Serial-access preflight (the dialout-permission check).
+  const pf = document.getElementById("pf-serial");
+  if (pf) {
+    pf.addEventListener("click", async () => {
+      const chip = document.getElementById("pf-serial-status");
+      const m = document.getElementById("pf-serial-msg");
+      const detail = document.getElementById("pf-serial-detail");
+      chip.textContent = "checking...";
+      try {
+        const r = await fetch("/api/v1/system/preflight");
+        const d = await r.json();
+        const s = d.serial || {};
+        chip.textContent = s.status || "?";
+        m.textContent = s.message || "";
+        detail.textContent = (s.ports || [])
+          .map((p) => `${p.port}: ${p.ok ? "OK" : p.detail}`)
+          .join("\n");
+      } catch (e) {
+        chip.textContent = "error";
+        m.textContent = String(e);
+      }
+    });
+  }
 })();

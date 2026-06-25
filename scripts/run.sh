@@ -30,9 +30,24 @@ if ! python -c "import websockets" >/dev/null 2>&1; then
 fi
 
 # Preflight: serial access. Recording from a serial Callisto (/dev/ttyUSB*)
-# needs the 'dialout' group; warn early instead of failing at record time.
-if ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx dialout; then
-  if ls /dev/ttyUSB* /dev/ttyACM* >/dev/null 2>&1; then
+# needs the 'dialout' group. Distinguish "not in the group" from "in the group
+# but this login session predates the change" -- the latter is the common trap
+# (usermod was run, but the running shell/tmux still has the old groups).
+if ls /dev/ttyUSB* /dev/ttyACM* >/dev/null 2>&1; then
+  proc_groups=$(id -nG 2>/dev/null)            # this process's groups
+  user_groups=$(id -nG "$USER" 2>/dev/null)    # the account's groups (DB)
+  in_proc=$(echo " $proc_groups " | grep -c " dialout ")
+  in_user=$(echo " $user_groups " | grep -c " dialout ")
+  if [ "$in_proc" != "0" ]; then
+    : # this session can open serial ports
+  elif [ "$in_user" != "0" ]; then
+    echo
+    echo "WARNING: '$USER' IS in 'dialout', but THIS session predates it, so"
+    echo "  opening /dev/ttyUSB0 will still be denied. Apply the group now:"
+    echo "    log out and back in (full re-login), or reboot, or if you use"
+    echo "    tmux/screen:  tmux kill-server   then start fresh -- and re-run."
+    echo
+  else
     echo
     echo "WARNING: '$USER' is not in the 'dialout' group -- opening a serial"
     echo "  Callisto will be denied (Permission denied: /dev/ttyUSB0)."

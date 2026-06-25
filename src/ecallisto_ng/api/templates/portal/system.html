@@ -28,6 +28,18 @@
     </div>
   </div>
 
+  <h2 style="margin-top:1.5rem">Preflight</h2>
+  <p class="muted">Check the station can reach its hardware before recording.</p>
+  <div class="card">
+    <div class="data-toolbar">
+      <button class="btn-filled" id="pf-serial">Check serial access</button>
+      <span id="pf-serial-status" class="chip">&mdash;</span>
+      <span id="pf-serial-msg" class="muted"></span>
+    </div>
+    <pre id="pf-serial-detail" class="muted"
+         style="white-space:pre-wrap;margin:.4em 0 0"></pre>
+  </div>
+
   <h2 style="margin-top:1.5rem">Host control</h2>
   <p class="muted">Host actions run through a least-privilege hook; disabled
     until configured.</p>

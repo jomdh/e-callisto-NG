@@ -75,6 +75,14 @@ def update_status() -> dict[str, str]:
     return updates.update_info(get_settings().update_channel)
 
 
+@router.get("/api/v1/system/preflight", dependencies=[Depends(_viewer)])
+def system_preflight() -> dict[str, object]:
+    """Proactive checks: can this process open the serial ports (dialout)?"""
+    from ecallisto_ng.services.preflight import serial_access
+
+    return {"serial": serial_access()}
+
+
 @router.get("/api/v1/system/time", dependencies=[Depends(_viewer)])
 def system_time() -> dict[str, object]:
     """Active time source: name, lock, offset (DESIGN 12a / ADR-0009)."""
