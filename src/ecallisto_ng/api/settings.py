@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     retention_days: int = -1
     # Block recording when the clock is known-unsynced (DESIGN 12a).
     require_clock_sync: bool = False
+    # Shared token that lets an observatory poll this station's fleet health.
+    # Empty disables the fleet-health endpoint.
+    fleet_token: str = ""
 
 
 @lru_cache

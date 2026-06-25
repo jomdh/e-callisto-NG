@@ -5,17 +5,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session as DbSession
-from sqlmodel import func, select
 
 from ecallisto_ng.api import auth
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Instrument, Role, UploadJob, User
-from ecallisto_ng.api.settings import get_settings
+from ecallisto_ng.api.models import Role, User
 from ecallisto_ng.api.templating import templates
-from ecallisto_ng.services import catalog
-from ecallisto_ng.services.clock import clock_synced
-from ecallisto_ng.services.health import HealthReport, build_report
+from ecallisto_ng.services.health import HealthReport
+from ecallisto_ng.services.health_report import build_station_health
 
 router = APIRouter(tags=["system"])
 
@@ -23,23 +20,7 @@ _viewer = require_role(Role.VIEWER)
 
 
 def _report(db: DbSession) -> HealthReport:
-    data_dir = get_settings().data_dir
-    instruments = db.exec(select(func.count()).select_from(Instrument)).one()
-    recordings = catalog.list_recordings(data_dir)
-    done = {
-        j.filename
-        for j in db.exec(
-            select(UploadJob).where(UploadJob.state == "done")
-        ).all()
-    }
-    pending = sum(1 for r in recordings if r.name not in done)
-    return build_report(
-        data_dir,
-        int(instruments),
-        len(recordings),
-        pending,
-        clock_synced=clock_synced(),
-    )
+    return build_station_health(db)
 
 
 @router.get("/api/v1/system/health", dependencies=[Depends(_viewer)])

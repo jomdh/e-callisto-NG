@@ -2,6 +2,38 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.3.1 -- 2026-06-25 (Milestone M10, v0.3 release)
+
+Oversee a whole observatory, not just one station.
+
+- **Fleet view.** Register your other stations and see them all in one place --
+  each station's disk, instruments, recordings, upload backlog, and alerts --
+  with unreachable stations clearly flagged.
+- Stations share health over a token-gated endpoint, so an observatory can poll
+  them without sharing logins.
+
+This is the **v0.3 release** -- SDR instruments (host-DSP and FPGA) join the
+classic receiver, and an observatory can watch its fleet of stations.
+
+Internal: shared station-health builder, PeerStation registry, token-gated
+fleet-health endpoint, pure injectable fleet aggregation; 109 tests; sprint S028.
+Merged 0.2-dev -> main.
+
+## v0.3.0 -- 2026-06-25 (Milestone M9)
+
+Beyond the classic receiver: software-defined radios.
+
+- **SDR support.** Two new instrument types record through the exact same suite
+  as the classic Callisto: an **SDR with host-side processing** (the station's CPU
+  turns raw radio into a spectrogram) and an **SDR with an on-board FPGA** (the
+  device does the processing and streams ready spectra over the network).
+- Pick the instrument type when you add it; everything else -- recording,
+  scheduling, live view, uploads, calibration -- works unchanged.
+
+Internal: SoftSdrDriver (FFT host DSP), FpgaSdrDriver + NetworkConnection +
+simulator, registered in the driver factory; all three instrument classes share
+one pipeline; 105 tests; sprints S026-S027.
+
 ## v0.2.2 -- 2026-06-25 (Milestone M8, v0.2 release)
 
 A drop-in upgrade for existing stations.

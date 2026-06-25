@@ -29,7 +29,13 @@ CSP are blocking -- v0.2 does not ship until both hold.**
 Order: M6 (autonomy) → M7 (the blocking gate) → M8 (adoption); version close
 merges `0.2-dev` → `main`.
 
-## Deferred to v0.3+
+## v0.3 released (M9 SDR + M10 fleet)
+
+`main` is at **v0.3.1**. Both SDR classes (host-DSP + FPGA) record through the
+same pipeline as the heterodyne receiver, and an observatory can aggregate the
+health of multiple stations. Tags v0.3.0-v0.3.1.
+
+## Deferred (v0.4+)
 
 - **M9** — SDR classes: class-2 host-DSP driver + USB backend (F1), then class-3
   FPGA + network backend (F2) -- the headline extensibility, on the M0 seams.
