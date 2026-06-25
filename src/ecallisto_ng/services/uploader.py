@@ -63,10 +63,14 @@ def build_transport(target: UploadTarget) -> UploadTransport:
 
         return LocalTransport(target.host)
     if target.protocol == "ftp":
+        from ecallisto_ng.api.crypto import decrypt
         from ecallisto_ng.transports.ftp import FtpTransport
 
         return FtpTransport(
-            target.host, target.username, target.password, target.base_path
+            target.host,
+            target.username,
+            decrypt(target.password),  # B2: decrypt at point of use
+            target.base_path,
         )
     raise ValueError(f"unknown protocol: {target.protocol}")
 

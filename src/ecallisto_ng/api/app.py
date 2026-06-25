@@ -46,10 +46,33 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
         get_uploader().stop_loop()
 
 
+_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'nonce-{nonce}'; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src https://fonts.gstatic.com; "
+    "img-src 'self' data:; "
+    "connect-src 'self' ws: wss:"
+)
+
+
 def create_app() -> FastAPI:
+    import secrets
+
+    from starlette.requests import Request
+
     app = FastAPI(
         title="e-Callisto NG", version=__version__, lifespan=_lifespan
     )
+
+    @app.middleware("http")
+    async def _csp(request: Request, call_next: object) -> object:
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+        response = await call_next(request)  # type: ignore[operator]
+        response.headers["Content-Security-Policy"] = _CSP.format(nonce=nonce)
+        return response
+
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     app.include_router(auth_routes.router)
     app.include_router(instrument_routes.router)

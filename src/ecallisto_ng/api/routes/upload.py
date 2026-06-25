@@ -8,6 +8,7 @@ from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
+from ecallisto_ng.api.crypto import encrypt
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import Role, UploadJob, UploadTarget
 from ecallisto_ng.api.settings import get_settings
@@ -33,20 +34,56 @@ class TargetIn(BaseModel):
     enabled: bool = True
 
 
+class TargetOut(BaseModel):
+    """Public view of a target -- never includes the secret (B2)."""
+
+    id: int
+    name: str
+    protocol: str
+    host: str
+    base_path: str
+    username: str
+    dispatch: str
+    window_start: str
+    window_stop: str
+    gzip: bool
+    enabled: bool
+    has_password: bool
+
+
+def _out(t: UploadTarget) -> TargetOut:
+    return TargetOut(
+        id=t.id or 0,
+        name=t.name,
+        protocol=t.protocol,
+        host=t.host,
+        base_path=t.base_path,
+        username=t.username,
+        dispatch=t.dispatch,
+        window_start=t.window_start,
+        window_stop=t.window_stop,
+        gzip=t.gzip,
+        enabled=t.enabled,
+        has_password=bool(t.password),
+    )
+
+
 @router.get("/targets", dependencies=[Depends(_viewer)])
-def list_targets(db: DbSession = Depends(get_session)) -> list[UploadTarget]:
-    return list(db.exec(select(UploadTarget)).all())
+def list_targets(db: DbSession = Depends(get_session)) -> list[TargetOut]:
+    return [_out(t) for t in db.exec(select(UploadTarget)).all()]
 
 
 @router.post("/targets", status_code=201, dependencies=[Depends(_operator)])
 def create_target(
     body: TargetIn, db: DbSession = Depends(get_session)
-) -> UploadTarget:
-    obj = UploadTarget(**body.model_dump())
+) -> TargetOut:
+    data = body.model_dump()
+    data["password"] = encrypt(data["password"])  # B2: encrypt at rest
+    obj = UploadTarget(**data)
     db.add(obj)
     db.commit()
     db.refresh(obj)
-    return obj
+    return _out(obj)
 
 
 @router.get("/queue", dependencies=[Depends(_viewer)])
