@@ -256,9 +256,11 @@
       const dev = devices[Number(sel.value)];
       if (!dev) return;
       if (form.elements.instrument_class) form.elements.instrument_class.value = dev.suggested_class;
-      if (form.elements.address) form.elements.address.value = dev.kind === "serial" ? dev.address : "";
+      // keep the address for both serial (/dev/tty…) and USB (usb:vid:pid) so
+      // the driver can route (e.g. an RX-888 by its USB id).
+      if (form.elements.address) form.elements.address.value = dev.address;
       if (form.elements.name && !form.elements.name.value) {
-        form.elements.name.value = dev.callisto ? "Callisto" : (dev.kind === "serial" ? "Callisto" : "SDR");
+        form.elements.name.value = dev.kind === "serial" ? "Callisto" : "SDR";
       }
       msg.textContent = `filled from ${dev.address}`;
     });

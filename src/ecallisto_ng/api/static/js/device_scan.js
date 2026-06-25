@@ -46,7 +46,9 @@
     const addr = document.getElementById("address");
     const name = document.getElementById("instrument_name");
     if (cls) cls.value = dev.suggested_class;
-    if (addr) addr.value = dev.kind === "serial" ? dev.address : "";
+    // keep the address for serial (/dev/tty...) and USB (usb:vid:pid) alike so
+    // the driver can route (e.g. an RX-888 by its USB id).
+    if (addr) addr.value = dev.address;
     if (name && !name.value) {
       name.value = dev.kind === "serial" ? "Callisto" : "SDR";
     }
