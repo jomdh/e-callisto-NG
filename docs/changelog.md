@@ -2,6 +2,19 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.7.3 -- 2026-06-25 (Milestone M23)
+
+Plan your observations.
+
+- **Planning panel.** Plot a source -- the Sun, a planet, the Moon, or a strong
+  radio source (Cas A, Cyg A, Tau A, Vir A, Sgr A, Orion) -- as its elevation
+  across the day for your station, against the horizon.
+- **Map coordinate picker.** Set the station's latitude/longitude by clicking or
+  dragging on a map in the setup wizard (fully offline -- no internet needed).
+
+Internal: services/astro_track (astropy) + planning endpoint/page, Station
+horizon_deg, offline mappicker.js; 211 tests; sprints S051-S052.
+
 ## v0.7.2 -- 2026-06-25 (Milestone M22)
 
 Know your time.
