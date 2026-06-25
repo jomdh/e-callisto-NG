@@ -10,13 +10,14 @@ seam with two implementations:
   (record -> FITS) runs anywhere, including CI and a Pi without the RX-888
   backend installed. Its firmware reports ``synthetic`` so the provenance is
   never ambiguous.
-- ``_open_hardware_source`` -- the real seam: it lazily imports an RX-888
-  streaming backend (the ``e-Callisto_Py_RX-888_MK_II`` tooling / ``librx888``)
-  and raises a clear error if it is absent. This is where real FX3 streaming
-  plugs in on the station; it is not exercised in CI (no hardware).
+- ``SoapyRx888Source`` -- the real backend: it opens the RX-888 through
+  **SoapySDR** (``driver=rx888``), the same path the station's reference
+  tooling (``e-Callisto_Py_RX-888_MK_II/rx888.py``) uses. Lazily imported so
+  the suite
+  has no hard dependency on SoapySDR; not exercised in CI (no hardware).
 
-Selection: ``build_rx888_driver`` uses the hardware source when a backend is
-importable, else the synthetic source -- and ``identify`` reports which, so an
+Selection: ``build_rx888_driver`` uses SoapySDR when an ``rx888`` device
+enumerates, else the synthetic source -- and ``identify`` reports which, so an
 operator can always see whether a recording is real or synthetic.
 """
 
@@ -86,33 +87,74 @@ class SyntheticRx888Source:
         return None
 
 
+# RX-888 SoapySDR defaults (mirroring the station's rx888.py reference).
+RX888_CENTER_HZ = 64e6
+RX888_SAMPLE_RATE_HZ = 128e6
+RX888_GAIN_DB = 10.0
+
+
+class SoapyRx888Source:  # pragma: no cover - needs SoapySDR + hardware
+    """Real RX-888 IQ via SoapySDR ``driver=rx888`` (matches rx888.py)."""
+
+    firmware = "soapy:rx888"
+
+    def __init__(
+        self,
+        center_hz: float = RX888_CENTER_HZ,
+        sample_rate_hz: float = RX888_SAMPLE_RATE_HZ,
+        gain_db: float = RX888_GAIN_DB,
+    ) -> None:
+        import SoapySDR
+        from SoapySDR import SOAPY_SDR_CF32, SOAPY_SDR_RX
+
+        self._rx = SOAPY_SDR_RX
+        self._dev = SoapySDR.Device("driver=rx888")
+        self._dev.setSampleRate(self._rx, 0, sample_rate_hz)
+        self._dev.setFrequency(self._rx, 0, center_hz)
+        self._dev.setGain(self._rx, 0, gain_db)
+        try:
+            self._dev.setDCOffsetMode(self._rx, 0, True)
+        except Exception:  # noqa: BLE001 - optional on some firmwares
+            pass
+        self._stream = self._dev.setupStream(self._rx, SOAPY_SDR_CF32)
+        self._dev.activateStream(self._stream)
+
+    def read_iq(self, n: int) -> np.ndarray:
+        buff = np.zeros(n, np.complex64)
+        self._dev.readStream(self._stream, [buff], n)
+        return buff
+
+    def close(self) -> None:
+        try:
+            self._dev.deactivateStream(self._stream)
+            self._dev.closeStream(self._stream)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def _open_hardware_source(
     address: str,
-) -> IqSource:  # pragma: no cover - needs the RX-888 backend + hardware
-    """Open the real RX-888 IQ stream, or raise if the backend is absent.
-
-    On the station this imports the RX-888 streaming backend (the
-    ``e-Callisto_Py_RX-888_MK_II`` tooling / ``librx888``) and opens the FX3
-    device. Kept behind a lazy import so the suite has no hard dependency on
-    a hardware-only library.
-    """
+) -> IqSource:  # pragma: no cover - needs SoapySDR + hardware
+    """Open the real RX-888 IQ stream (SoapySDR), or raise if unavailable."""
     try:
-        import rx888
+        import SoapySDR  # noqa: F401
     except ImportError as exc:
         raise RuntimeError(
-            "RX-888 backend not installed; install the RX-888 streaming "
-            "library on the station, or run the instrument in synthetic mode"
+            "SoapySDR not installed; install SoapySDR + the SoapyRX888 module "
+            "on the station, or run the instrument in synthetic mode"
         ) from exc
-    return rx888.open_stream(address)
+    return SoapyRx888Source()
 
 
 def hardware_available() -> bool:
-    """True if a real RX-888 streaming backend can be imported."""
+    """True if a SoapySDR ``rx888`` device enumerates on this host."""
     try:
-        import rx888  # noqa: F401
-
-        return True
+        import SoapySDR
     except ImportError:
+        return False
+    try:  # pragma: no cover - needs hardware
+        return bool(SoapySDR.Device.enumerate("driver=rx888"))
+    except Exception:  # noqa: BLE001
         return False
 
 

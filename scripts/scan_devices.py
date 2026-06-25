@@ -85,6 +85,29 @@ def read_sys(path):
         return ""
 
 
+def check_soapy_rx888():
+    """Report whether SoapySDR can see an rx888 device (real backend check)."""
+    try:
+        import SoapySDR
+    except ImportError:
+        print("  SoapySDR not installed -> RX-888 runs SYNTHETIC")
+        return
+    try:
+        devs = SoapySDR.Device.enumerate("driver=rx888")
+    except Exception as exc:  # noqa: BLE001
+        print("  SoapySDR present, enumerate failed: %s" % exc)
+        return
+    if devs:
+        print("  RX-888 reachable via SoapySDR (driver=rx888) -> REAL")
+        for d in devs:
+            print("    %s" % dict(d))
+    else:
+        print(
+            "  SoapySDR present but no driver=rx888 device "
+            "(check firmware/SoapyRX888 module) -> SYNTHETIC"
+        )
+
+
 def list_usb_sdrs():
     out = []
     for vendor_path in glob.glob("/sys/bus/usb/devices/*/idVendor"):
@@ -142,6 +165,9 @@ def main(argv=None):
             mark = "CALLISTO" if ok else "not Callisto"
             print("      probe: %s -- %s" % (mark, info))
             found_callisto = found_callisto or ok
+
+    print("\n== RX-888 via SoapySDR ==")
+    check_soapy_rx888()
 
     print("\n== USB SDRs (recognized) ==")
     sdrs = list_usb_sdrs()
