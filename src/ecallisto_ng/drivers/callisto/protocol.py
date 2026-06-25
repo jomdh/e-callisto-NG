@@ -30,7 +30,7 @@ _CONTROL_CHARGEPUMP = 0x40
 # Framing bytes.
 MESSAGE_START = b"$"
 MESSAGE_END = b"\r"
-DATA_START = b"\x02"  # STX
+DATA_START = b"2"  # legacy callisto.h: '2' marks the start of hex sample data
 DATA_END = b"&"
 EEPROM_READY = b"]"
 END_MARKER = 0x2323  # a 4-hex-digit sample equal to this ends transmission

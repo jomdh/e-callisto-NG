@@ -82,8 +82,9 @@ def test_overview_collects_a_wide_frame() -> None:
 
 def test_parser_splits_messages_and_sweeps() -> None:
     parser = StreamParser(nchannels=2, data10bit=False)
-    # a message, then STX + two 4-hex samples (one sweep), then another
-    stream = b"$CRX:Started\r\x02" + b"000A" + b"00FF" + b"0010" + b"0020"
+    # a message, then DATA_START ('2') + two 4-hex samples (one sweep), then
+    # another -- the leading '2' marks data; subsequent '2's are hex digits
+    stream = b"$CRX:Started\r2" + b"000A" + b"00FF" + b"0010" + b"0020"
     items = list(parser.feed(stream))
     messages = [i for i in items if isinstance(i, ParsedMessage)]
     sweeps = [i for i in items if isinstance(i, ParsedSweep)]
@@ -94,7 +95,8 @@ def test_parser_splits_messages_and_sweeps() -> None:
 
 def test_parser_skips_end_marker() -> None:
     parser = StreamParser(nchannels=2, data10bit=False)
-    # END_MARKER (2323) must not count as a sample
-    items = list(parser.feed(b"\x02" + b"0005" + b"2323" + b"0007"))
+    # END_MARKER (2323) must not count as a sample (the leading '2' is the
+    # DATA_START; the '2323' that follows is read as a hex sample = 0x2323)
+    items = list(parser.feed(b"2" + b"0005" + b"2323" + b"0007"))
     sweeps = [i for i in items if isinstance(i, ParsedSweep)]
     assert sweeps == [ParsedSweep([0x05, 0x07])]

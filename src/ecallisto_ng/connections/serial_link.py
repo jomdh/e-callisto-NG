@@ -59,8 +59,8 @@ class SerialConnection:
         # Return what's actually waiting instead of blocking for the full
         # ``size`` -- pyserial's read(size) waits up to ``timeout`` for *size*
         # bytes, so a 1-byte ack (the EEPROM ``]``) cost a whole timeout each,
-        # making a 200-channel program take minutes. Grab the buffered bytes if
-        # any; otherwise block once for a single byte (so empty-on-timeout still
+        # making a 200-channel program take minutes. Grab the buffered bytes
+        # if any; else block once for a single byte (so empty-on-timeout still
         # works). Mirrors the legacy byte-at-a-time reader (serial.c).
         waiting = self._serial.in_waiting
         data: bytes = self._serial.read(min(size, waiting) if waiting else 1)

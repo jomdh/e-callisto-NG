@@ -69,12 +69,16 @@ class StreamParser:
                 self._message += char
             return
 
-        if not self._in_data and char == MESSAGE_START:
+        # A text message ('$ ... \r') can interleave the data stream.
+        if char == MESSAGE_START:
             self._in_message = True
             self._message = bytearray()
             return
 
-        if char == DATA_START:
+        # ``DATA_START`` ('2') marks the start of hex data only when we're not
+        # already in it -- once streaming, '2' is just a hex digit (legacy
+        # callisto.c: ``if (!in_data && c == DATA_START)``).
+        if not self._in_data and char == DATA_START:
             self._in_data = True
             self._hexbuf = bytearray()
             self._sweep = []
