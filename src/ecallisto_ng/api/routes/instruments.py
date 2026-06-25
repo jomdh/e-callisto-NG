@@ -203,7 +203,14 @@ def overview_instrument(
     )
     out_dir = get_settings().data_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-    prn, csv = run_overview(driver, out_dir, inst.name, datetime.now(UTC))
+    prn, csv = run_overview(
+        driver,
+        out_dir,
+        inst.name,
+        datetime.now(UTC),
+        focus_code=inst.focus_code,
+        pwm=inst.gain,
+    )
     return {"prn": prn.name, "csv": csv.name}
 
 

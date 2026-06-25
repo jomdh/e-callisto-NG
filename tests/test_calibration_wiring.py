@@ -74,7 +74,12 @@ def test_light_curves_written_for_flagged(tmp_path: Path) -> None:
     path = write_light_curves(rec, tmp_path)
     assert path is not None and path.exists()
     lines = path.read_text().splitlines()
-    assert lines[0] == "Time[UT.hours],100.000MHz,300.000MHz"  # flagged only
+    header = lines[0].split(",")
+    # legacy fixed-width: Time_UT + 10 channel cols + version + pwm trailer
+    assert header[0] == "Time_UT"
+    assert header[1].strip() == "100.000MHz"  # first flagged channel
+    assert header[3].strip() == "0.000MHz"  # inactive slot padded
+    assert len(header) == 1 + 10 + 2
     assert len(lines) == 5  # header + 4 frames
 
 

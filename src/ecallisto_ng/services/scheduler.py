@@ -108,3 +108,48 @@ def is_recording_desired(
         return False
     start, stop = window
     return start <= now < stop
+
+
+def _quantize_15(dt: datetime) -> datetime:
+    """Snap a time to the nearest quarter hour (legacy Sternzei.cpp)."""
+    minutes = dt.hour * 60 + dt.minute + round(dt.second / 60)
+    q = round(minutes / 15) * 15
+    base = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    return base + timedelta(minutes=q)
+
+
+def generate_sun_scheduler_cfg(
+    latitude_deg: float,
+    longitude_deg: float,
+    day: date_type,
+    focus_code: int = 1,
+    horizon_deg: float = 0.0,
+    overview: bool = True,
+) -> str:
+    """Build a SchedulerGeni-style ``scheduler.cfg`` for a day (audit B6).
+
+    Emits sunrise-start, transit-restart, and sunset-stop lines (focus +
+    quarter-hour-snapped, horizon-trimmed), plus an optional sunset+0.5h
+    monitoring overview (mode 8) -- matching legacy SchedulerGeni.
+    """
+    from ecallisto_ng.services.legacy_export import (
+        ExportEntry,
+        build_scheduler_cfg,
+    )
+
+    events = sun_events(latitude_deg, longitude_deg, day)
+    if events.sunrise is None or events.sunset is None:
+        return build_scheduler_cfg([])  # polar day/night -> header only
+    trim = timedelta(minutes=horizon_deg * 4.0)  # horizon/15 h
+    start = _quantize_15(events.sunrise + trim)
+    transit = _quantize_15(events.transit)
+    stop = _quantize_15(events.sunset - trim)
+    entries = [
+        ExportEntry(f"{start:%H:%M:%S}", focus_code, "3"),
+        ExportEntry(f"{transit:%H:%M:%S}", focus_code, "3"),  # restart
+        ExportEntry(f"{stop:%H:%M:%S}", focus_code, "0"),
+    ]
+    if overview:
+        ovs = _quantize_15(events.sunset + timedelta(minutes=30))
+        entries.append(ExportEntry(f"{ovs:%H:%M:%S}", focus_code, "8"))
+    return build_scheduler_cfg(entries)

@@ -59,3 +59,33 @@ def test_sun_window_uses_standard_altitude() -> None:  # B3
     assert win is not None
     assert 5 <= win[0].hour <= 7
     assert 17 <= win[1].hour <= 19
+
+
+def test_schedulergeni_cfg_generation() -> None:  # B6
+    from ecallisto_ng.services.scheduler import generate_sun_scheduler_cfg
+
+    cfg = generate_sun_scheduler_cfg(
+        47.0, 8.0, date(2026, 6, 21), focus_code=1, overview=True
+    )
+    lines = [ln for ln in cfg.splitlines() if not ln.startswith("//")]
+    modes = [ln.split(",")[2] for ln in lines]
+    # start(3), transit-restart(3), stop(0), sunset+0.5h overview(8)
+    assert modes == ["3", "3", "0", "8"]
+    # quarter-hour snapping: every minute field divisible by 15
+    for ln in lines:
+        mm = int(ln.split(",")[0].split(":")[1])
+        assert mm % 15 == 0
+
+
+def test_schedulergeni_horizon_shrinks_window() -> None:  # B6 + B2
+    from ecallisto_ng.services.scheduler import generate_sun_scheduler_cfg
+
+    flat = generate_sun_scheduler_cfg(
+        47.0, 8.0, date(2026, 6, 21), horizon_deg=0.0
+    )
+    trimmed = generate_sun_scheduler_cfg(
+        47.0, 8.0, date(2026, 6, 21), horizon_deg=15.0
+    )
+    start_flat = flat.splitlines()[1].split(",")[0]
+    start_trim = trimmed.splitlines()[1].split(",")[0]
+    assert start_trim >= start_flat  # horizon delays the start

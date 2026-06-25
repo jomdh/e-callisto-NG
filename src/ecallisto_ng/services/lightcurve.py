@@ -19,10 +19,12 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
+from ecallisto_ng import __version__
 from ecallisto_ng.core.recording import Recording
 from ecallisto_ng.core.units import UnitLevel
 
-MAX_LIGHT_CURVES = 10  # legacy ceiling
+MAX_LIGHT_CURVES = 10  # legacy ceiling (fixed-width LC file)
+_VERSION = f"e-CALLISTO NG {__version__}"
 
 _UNIT_TAG = {
     UnitLevel.RAW: "ADU",
@@ -51,14 +53,25 @@ def write_light_curves(recording: Recording, out_dir: Path) -> Path | None:
     tag = _UNIT_TAG.get(recording.unit, "ADU")
     name = f"LC{start:%Y%m%d}_{tag}_{recording.meta.instrument}.txt"
     path = out_dir / name
-    header = ["Time[UT.hours]"] + [
-        f"{recording.channels[i].frequency_mhz:.3f}MHz" for i in flagged
-    ]
+    pwm = recording.meta.pwm
+
+    # Byte-exact legacy layout (audit B5): a fixed MAX_LIGHT_CURVES columns
+    # (inactive slots are 0.000 MHz / 0.000), the literal ``Time_UT`` label,
+    # and a ``,<version>,pwm=<n>`` trailer on the header row.
+    freqs = [recording.channels[i].frequency_mhz for i in flagged]
+    freqs += [0.0] * (MAX_LIGHT_CURVES - len(freqs))
+    header = (
+        ["Time_UT"]
+        + [f"{f:6.3f}MHz" for f in freqs]
+        + [_VERSION, f"pwm={pwm}"]
+    )
     with path.open("w", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(header)
         for frame in recording.frames:
-            row: list[object] = [round(_ut_hours(frame.timestamp_utc), 6)]
-            row += [frame.values[i] for i in flagged]
+            values = [float(frame.values[i]) for i in flagged]
+            values += [0.0] * (MAX_LIGHT_CURVES - len(values))
+            row: list[str] = [f"{_ut_hours(frame.timestamp_utc):8.4f}"]
+            row += [f"{v:9.3f}" for v in values]
             writer.writerow(row)
     return path

@@ -2,6 +2,22 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.8.2 -- 2026-06-25 (Milestones M31 + M27)
+
+The RX-888 streams, and the schedule/overview/light-curve files are byte-faithful.
+
+- **RX-888 MkII SDR driver** (M31). The operator's RX-888 (Cypress FX3 USB3)
+  records through the same pipeline as a Callisto -- host DSP turns IQ into
+  spectra. Auto-selected from the device's USB id; runs synthetic (clearly
+  labelled) until the streaming backend is installed on the station.
+- **Scheduler & file fidelity** (M27). scheduler.cfg keeps its mode chars +
+  program-switch column; sun windows use the standard -0.8333 deg horizon and an
+  elevated-horizon trim; OVS and light-curve files match the legacy filename,
+  header, columns, and gating; a SchedulerGeni-style sun scheduler.cfg generator
+  (sunrise/transit/sunset/+0.5h overview).
+
+Internal: drivers/sdr/rx888; PARITY_AUDIT B1-B6; 254 tests; sprints S057/S060/M31.
+
 ## v0.8.1 -- 2026-06-25 (Milestone M26)
 
 Byte-faithful to the e-Callisto device + archive.

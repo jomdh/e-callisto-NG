@@ -104,6 +104,30 @@ def export_scheduler_cfg(db: DbSession = Depends(get_session)) -> str:
     return build_scheduler_cfg(entries)
 
 
+@router.get(
+    "/generate/scheduler.cfg",
+    dependencies=[Depends(_viewer)],
+    response_class=PlainTextResponse,
+)
+def generate_scheduler_cfg(
+    focus_code: int = 1,
+    overview: bool = True,
+    db: DbSession = Depends(get_session),
+) -> str:
+    """Generate a sun-derived scheduler.cfg for the station (SchedulerGeni)."""
+    from ecallisto_ng.services.scheduler import generate_sun_scheduler_cfg
+
+    st = _station(db)
+    return generate_sun_scheduler_cfg(
+        st.latitude_deg,
+        st.longitude_deg,
+        datetime.now(UTC).date(),
+        focus_code=focus_code,
+        horizon_deg=st.horizon_deg,
+        overview=overview,
+    )
+
+
 @router.get("/{schedule_id}/preview", dependencies=[Depends(_viewer)])
 def preview(
     schedule_id: int, db: DbSession = Depends(get_session)

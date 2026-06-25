@@ -157,10 +157,10 @@ def test_light_curve_legacy_name_and_cap(tmp_path: Path) -> None:
     assert path.name == "LC20260625_ADU_ALASKA.txt"  # legacy naming
     lines = path.read_text().splitlines()
     header = lines[0].split(",")
-    assert header[0] == "Time[UT.hours]"
-    assert len(header) == 1 + 10  # capped at 10 channels
+    assert header[0] == "Time_UT"  # legacy label
+    assert len(header) == 1 + 10 + 2  # 10 fixed cols + version + pwm trailer
     assert len(lines) == 1 + 3  # header + 3 sweeps
-    assert lines[1].split(",")[0] == "6.5"  # 06:30 UT -> 6.5 h
+    assert float(lines[1].split(",")[0]) == 6.5  # 06:30 UT -> 6.5 h
 
 
 def test_light_curve_unit_tag_sfu(tmp_path: Path) -> None:
