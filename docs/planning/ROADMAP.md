@@ -130,9 +130,9 @@ device functions **inside each instrument's own entry**, class-gated. Branch
 | **M25 — Per-instrument device console** ✓ done (S054) | v0.8.0 | done |
 | **M26 — Recorder/output accuracy** (audit A) ✓ done (S055-S056) | v0.8.1 | done |
 | **M27 — Scheduler & file-format fidelity** (B) ✓ done (S057,S060) | v0.8.2 | done |
-| **M28 — Generator & frq-file** (D1-D5) | v0.8.3 | `milestones/V0.8_M28_generator_frqfile.md` |
-| **M29 — Bench completeness** (C) | v0.8.4 | `milestones/V0.8_M29_bench_completeness.md` |
-| **M30 — Viewer & publication fidelity** (D6-D7) | v0.8.5 / version close | `milestones/V0.8_M30_viewer_publication.md` |
+| **M28 — Generator & frq-file** (D1-D5) ✓ done | v0.8.3 | done |
+| **M29 — Bench completeness** (C) ✓ done | v0.8.4 | done |
+| **M30 — Viewer & publication fidelity** (D6-D7) ✓ done | v0.8.5 / released | done |
 
 **M31** RX-888 MkII SDR driver done (v0.8.2). Order: **M25 (console) first**, then accuracy/fidelity fixes (M26-M30); version
 close merges `0.8-dev` -> `main`. Audit KEEP items (NG midnight rollover, ]-ack,
