@@ -2,6 +2,23 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.3.2 -- 2026-06-25 (Usability)
+
+Everything is now clickable.
+
+- **Full portal navigation.** A top nav reaches every section: Instruments,
+  Schedules, Frequency programs, Calibration, Uploads, Data, Fleet, Access,
+  Import, System.
+- **Manage from the browser.** Create/list/delete instruments, schedules,
+  programs, calibration sets, upload targets, and fleet peers -- and run
+  instrument actions (record, stop, diagnose, live) -- without touching the API.
+- **Settings pages.** Remote-access configuration (with a one-click Caddyfile),
+  legacy-station import (with dry-run preview), and the fleet overview.
+
+Previously these backends were reachable only through the API docs. Internal:
+config-driven CRUD island + settings island (CSP-safe JS over the cookie-authed
+API), nav partial, management/settings routes; 114 tests; sprint S029.
+
 ## v0.3.1 -- 2026-06-25 (Milestone M10, v0.3 release)
 
 Oversee a whole observatory, not just one station.
