@@ -55,6 +55,10 @@ class RecorderRuntime(SQLModel, table=True):
     instrument_id: int = Field(primary_key=True)
     state: str = "idle"
     last_file: str | None = None
+    # Operator intent for a free-run (manual / no-schedule) instrument: the
+    # scheduler keeps the device recording while this is True. Record/Stop set
+    # it; at daemon boot it is seeded from Instrument.start_on_boot.
+    desired: bool = False
     updated_at: datetime = Field(default_factory=_utcnow)
 
 
@@ -246,4 +250,8 @@ class Instrument(SQLModel, table=True):
         default=None, foreign_key="calibrationset.id"
     )
     enabled: bool = True
+    # Free-run (manual / no-schedule) survival: if True the acquire daemon
+    # auto-records on boot and keeps recording until a human Stops; if False a
+    # manual Record runs until Stop but does not survive a reboot.
+    start_on_boot: bool = False
     created_at: datetime = Field(default_factory=_utcnow)

@@ -66,12 +66,18 @@ class SchedulerService:
         gate_ok = may_record(
             settings.require_clock_sync, clock_synced()
         ) and within_drift(clock_offset_ms(), settings.max_clock_offset_ms)
-        for sched in db.exec(select(Schedule).where(Schedule.enabled)).all():
-            inst = db.get(Instrument, sched.instrument_id)
-            if inst is None or not inst.enabled or inst.id is None:
+        instruments = db.exec(
+            select(Instrument).where(Instrument.enabled)
+        ).all()
+        for inst in instruments:
+            if inst.id is None:
                 continue
-            window = self._window(sched, station, now)
-            desired = is_recording_desired(window, now)
+            sched = self._active_schedule(db, inst.id)
+            if sched is not None:  # fixed/sun: the window is the intent
+                window = self._window(sched, station, now)
+                desired = is_recording_desired(window, now)
+            else:  # free-run (manual / no schedule): the operator flag is
+                desired = recorder_state.get_desired(db, inst.id)
             state = recorder.status(inst.id).state
             if desired and gate_ok and state is not RecorderState.RECORDING:
                 self._start(db, inst, station, sched)
@@ -81,6 +87,21 @@ class SchedulerService:
                 recorder.stop(inst.id)
             else:
                 self._maybe_overview(db, inst, sched, now)
+
+    def _active_schedule(
+        self, db: Session, instrument_id: int
+    ) -> Schedule | None:
+        """The instrument's windowed (fixed/sun) schedule, if any.
+
+        A ``manual``-kind schedule -- or no enabled schedule -- means free-run
+        (the window is always open; the operator's desired flag decides).
+        """
+        return db.exec(
+            select(Schedule)
+            .where(Schedule.instrument_id == instrument_id)
+            .where(Schedule.enabled)
+            .where(Schedule.kind != "manual")
+        ).first()
 
     def _window(
         self, sched: Schedule, station: Station, now: datetime
@@ -96,7 +117,11 @@ class SchedulerService:
         )
 
     def _start(
-        self, db: Session, inst: Instrument, st: Station, sched: Schedule
+        self,
+        db: Session,
+        inst: Instrument,
+        st: Station,
+        sched: Schedule | None,
     ) -> None:
         assert inst.id is not None
         iid = inst.id
@@ -116,7 +141,9 @@ class SchedulerService:
             time_source=tsrc.name,
             clock_offset_ms=tsrc.offset_ms(),
         )
-        frames = max(int(inst.file_seconds * inst.sweep_rate_hz), 1)
+        # Record continuously, rolling a file every file_seconds; the scheduler
+        # stops it at window close (scheduled) or on operator Stop (free-run).
+        per_file = max(int(inst.file_seconds * inst.sweep_rate_hz), 1)
         data_dir = get_settings().data_dir
         data_dir.mkdir(parents=True, exist_ok=True)
         unit, calibration = self._calibration(db, inst)
@@ -127,25 +154,31 @@ class SchedulerService:
             meta,
             data_dir,
             sweep_rate_hz=inst.sweep_rate_hz,
-            max_frames=frames,
+            max_frames=per_file,
             unit=unit,
             calibration=calibration,
             writer=get_writer(inst.output_mode),
+            continuous=True,
             on_state=lambda st, lf: recorder_state.write(iid, st, lf),
         )
 
     def _channels(
-        self, db: Session, inst: Instrument, sched: Schedule
+        self, db: Session, inst: Instrument, sched: Schedule | None
     ) -> list[Channel]:
         """Channels for the run: the schedule's program overrides the
         instrument's own program, else a ramp (M32)."""
-        return resolve_channels(db, inst, sched.program_id)
+        program_id = sched.program_id if sched is not None else None
+        return resolve_channels(db, inst, program_id)
 
     def _maybe_overview(
-        self, db: Session, inst: Instrument, sched: Schedule, now: datetime
+        self,
+        db: Session,
+        inst: Instrument,
+        sched: Schedule | None,
+        now: datetime,
     ) -> None:
         """Trigger a scheduled overview at ``overview_at``, once per day."""
-        if not sched.overview_at or inst.id is None:
+        if sched is None or not sched.overview_at or inst.id is None:
             return
         today = now.strftime("%Y-%m-%d")
         if sched.last_overview_date == today:
@@ -176,10 +209,29 @@ class SchedulerService:
 
     # -- background loop ---------------------------------------------------
 
+    def seed_desired_from_boot(self, db: Session) -> None:
+        """Seed each free-run instrument's desired flag from start_on_boot.
+
+        Run once at daemon startup: a ``start_on_boot`` instrument resumes
+        recording after a reboot; a manual run (start_on_boot False) does not.
+        Scheduled (fixed/sun) instruments are window-driven and untouched.
+        """
+        for inst in db.exec(select(Instrument)).all():
+            if inst.id is None:
+                continue
+            if self._active_schedule(db, inst.id) is not None:
+                continue  # windowed schedule owns the intent
+            recorder_state.set_desired(inst.id, bool(inst.start_on_boot))
+
     def start_loop(self) -> None:
         interval = get_settings().scheduler_tick_seconds
         if interval <= 0 or self._thread is not None:
             return
+        try:
+            with Session(get_engine()) as db:
+                self.seed_desired_from_boot(db)
+        except Exception:  # noqa: BLE001 - never block startup
+            pass
 
         def _run() -> None:
             while not self._stop.wait(interval):

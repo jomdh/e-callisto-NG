@@ -54,6 +54,9 @@ class InstrumentIn(BaseModel):
     program_id: int | None = None  # frequency plan (range/channels), M32
     calibration_set_id: int | None = None
     enabled: bool = True
+    # Free-run survival: auto-record on boot + survive reboot (manual run
+    # without it does not survive a reboot).
+    start_on_boot: bool = False
 
 
 def _instrument_calibration(
@@ -145,9 +148,16 @@ def record_instrument(
     db: DbSession = Depends(get_session),
 ) -> dict[str, str]:
     """Start recording. ``frames=0`` (default) records **continuously** until
-    Stop, rolling a file every ``file_seconds``; ``frames>0`` is a bounded
-    test capture of that many sweeps."""
+    Stop: it sets the operator desired flag and the scheduler (in the acquire
+    daemon) starts a continuous, file-rolling recording -- so the recording
+    lives in the daemon, not the web request (ADR-0007). ``frames>0`` is a
+    bounded in-process test capture of that many sweeps."""
     inst = _get(db, instrument_id)
+    if frames <= 0:
+        # Continuous: express intent; the scheduler enacts it (and keeps it
+        # going / survives a web restart). Stop clears the flag.
+        recorder_state.set_desired(instrument_id, True)
+        return {"state": RecorderState.RECORDING}
     if port_lock.is_busy(instrument_id):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
@@ -194,6 +204,9 @@ def record_instrument(
 
 @router.post("/{instrument_id}/stop", dependencies=[Depends(_operator)])
 def stop_instrument(instrument_id: int) -> dict[str, bool]:
+    # Clear the operator intent (so the scheduler won't re-start a free-run
+    # recording) and stop any recording running in this process.
+    recorder_state.set_desired(instrument_id, False)
     get_recorder().stop(instrument_id)
     return {"ok": True}
 

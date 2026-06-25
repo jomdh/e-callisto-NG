@@ -11,7 +11,7 @@
     instrument_class: ["heterodyne", "sdr_soft", "sdr_fpga"],
     unit: ["raw", "sfu", "kelvin"],
     output_mode: ["standard", "legacy"],
-    kind: ["sun", "fixed"],
+    kind: ["sun", "fixed", "manual"],
     protocol: ["local", "ftp", "sftp"],
     dispatch: ["manual", "immediate", "scheduled"],
   };
@@ -34,10 +34,11 @@
         { name: "output_mode", select: "output_mode", hint: "standard or legacy FITS (legacy = byte-exact archive)." },
         { name: "program_id", type: "number", hint: "Frequency program ID from the Programs section (the range/channel list). Blank = 45+N MHz ramp." },
         { name: "file_seconds", type: "number", value: 900, hint: "Seconds per FITS file (e.g. 900 = 15 min)." },
+        { name: "start_on_boot", type: "checkbox", hint: "Free-run: auto-record on boot and keep recording until Stop (survives reboot). Off = a manual run that does not survive a reboot." },
       ],
       actions: [
         { label: "open", href: (r) => `/portal/instruments/${r.id}` },
-        { label: "record", run: (r) => api("POST", `/api/v1/instruments/${r.id}/record?frames=200`) },
+        { label: "record", run: (r) => api("POST", `/api/v1/instruments/${r.id}/record`) },
         { label: "stop", run: (r) => api("POST", `/api/v1/instruments/${r.id}/stop`) },
         { label: "live", href: (r) => `/portal/live/${r.id}` },
       ],
@@ -220,6 +221,9 @@
       SELECT[f.select].forEach((o) => input.append(el("option", {}, o)));
     } else if (f.json) {
       input = el("textarea", { id: f.name, name: f.name, rows: "2", placeholder: f.placeholder || "" });
+    } else if (f.type === "checkbox") {
+      input = el("input", { id: f.name, name: f.name, type: "checkbox" });
+      if (f.value) input.checked = true;
     } else {
       input = el("input", { id: f.name, name: f.name, type: f.type || "text" });
       if (f.value != null) input.value = f.value;
@@ -276,7 +280,9 @@
     ev.preventDefault();
     const payload = {};
     cfg.fields.forEach((f) => {
-      const v = form.elements[f.name].value;
+      const elt = form.elements[f.name];
+      if (f.type === "checkbox") { payload[f.name] = elt.checked; return; }
+      const v = elt.value;
       if (f.json) payload[f.name] = v ? JSON.parse(v) : [];
       else if (f.type === "number") {
         if (v !== "") payload[f.name] = Number(v); // blank -> server default
