@@ -37,7 +37,7 @@ stay semver-versioned. This is the load-bearing reason the boundary is a process
 **Contributions:** a **DCO** (Developer Certificate of Origin, sign-off line) is
 required; no CLA. Lightweight, keeps copyright with contributors.
 
-**Application (M25):** add `LICENSE` (AGPLv3 text), a short SPDX header
+**Application (M24):** add `LICENSE` (AGPLv3 text), a short SPDX header
 (`SPDX-License-Identifier: AGPL-3.0-or-later`) to source files, a `NOTICE`/README
 license section, and a plugin-governance note that the contract boundary permits
 independently-licensed drivers.

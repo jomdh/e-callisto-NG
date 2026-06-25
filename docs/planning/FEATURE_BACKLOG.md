@@ -5,7 +5,9 @@ origin, and motivation.
 
 ## Open
 
-_None — all open items are promoted to v0.7 milestones (below)._
+| ID | Feature | Origin | Motivation |
+| -- | -- | -- | -- |
+| F17 | doncel.dev integration (data + API) | DESIGN §1 | NG and doncel share domain/tech/design system but stay **disconnected for now** (owner, 2026-06-25); integration intended later but **not** via the push/pull API sketched in v0.7 -- approach TBD |
 
 ## Promoted to milestones
 
