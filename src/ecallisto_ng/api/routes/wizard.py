@@ -121,6 +121,7 @@ def _finalize(db: DbSession, data: dict[str, object]) -> object:
                 instrument_class=str(
                     data.get("instrument_class", "heterodyne")
                 ),
+                address=str(data.get("address", "")).strip(),
                 channels=int(str(data.get("channels", 200) or 200)),
             )
         )

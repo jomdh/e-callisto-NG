@@ -48,6 +48,16 @@
 
     {% elif step_name == "instrument" %}
     <h3>First instrument (optional)</h3>
+    <p class="muted">Scan to detect a connected Callisto or SDR, or fill in
+      manually. Each detected device is selectable by its address.</p>
+    <div class="data-toolbar" style="margin-bottom:.75rem">
+      <button class="btn-filled" id="scan-btn" type="button">Scan for devices</button>
+      <select id="scan-pick" style="min-width:16em">
+        <option value="">-- detected devices --</option>
+      </select>
+      <button class="btn-text" id="scan-use" type="button">use selected</button>
+      <span id="scan-msg" class="muted"></span>
+    </div>
     <label for="instrument_name">Instrument name</label>
     <input id="instrument_name" name="instrument_name"
            placeholder="e.g. CALLISTO-01"
@@ -58,6 +68,10 @@
       <option value="sdr_soft">sdr_soft</option>
       <option value="sdr_fpga">sdr_fpga</option>
     </select>
+    <label for="address">Address (serial port / host:port)</label>
+    <input id="address" name="address"
+           placeholder="e.g. /dev/ttyUSB0 (blank = simulator)"
+           value="{{ data.get('address', '') }}">
     <label for="channels">Channels</label>
     <input id="channels" name="channels" type="number"
            value="{{ data.get('channels', 200) }}">
@@ -79,4 +93,5 @@ instrument: {{ data.get('instrument_name', '(none)') }}</pre>
   </form>
 </div>
 <script src="/static/js/mappicker.js"></script>
+<script src="/static/js/device_scan.js"></script>
 {% endblock %}

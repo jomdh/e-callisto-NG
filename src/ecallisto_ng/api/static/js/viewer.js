@@ -37,12 +37,19 @@
       return f;
     });
     let amps = raw.amps.slice();
-    if ($("v-db").checked) amps = amps.map((a) => 10 * Math.log10(Math.max(a, 1e-6)));
+    // OVS files are detector mV; legacy converts to dB via the 25.4 mV/dB
+    // gradient (D6), distinct from the 10*log10 ADU/log path.
+    if ($("v-mvdb").checked) amps = amps.map((a) => a / 25.4);
+    else if ($("v-db").checked) amps = amps.map((a) => 10 * Math.log10(Math.max(a, 1e-6)));
     if ($("v-bg").checked) {
       const lo2 = Math.min(...amps);
       amps = amps.map((a) => a - lo2);
     }
     return { freqs, amps };
+  }
+
+  function unitLabel() {
+    return ($("v-mvdb").checked || $("v-db").checked) ? "dB" : "mV";
   }
 
   function draw() {
@@ -55,7 +62,8 @@
 
     const xmin = $("v-xmin").value !== "" ? Number($("v-xmin").value) : Math.min(...data.freqs);
     const xmax = $("v-xmax").value !== "" ? Number($("v-xmax").value) : Math.max(...data.freqs);
-    const ymin = Math.min(...data.amps), ymax = Math.max(...data.amps) || 1;
+    const ymin = $("v-ymin").value !== "" ? Number($("v-ymin").value) : Math.min(...data.amps);
+    const ymax = $("v-ymax").value !== "" ? Number($("v-ymax").value) : (Math.max(...data.amps) || 1);
     const px = (f) => padL + ((f - xmin) / (xmax - xmin || 1)) * (W - padL - padR);
     const py = (a) => H - padB - ((a - ymin) / (ymax - ymin || 1)) * (H - padT - padB);
 
@@ -64,7 +72,7 @@
     ctx.fillStyle = themed("--fg-muted", "#9aa");
     ctx.font = "11px sans-serif";
     ctx.fillText("Frequency [MHz]", W / 2 - 40, H - 6);
-    ctx.fillText($("v-db").checked ? "dB" : "amplitude", 4, padT + 10);
+    ctx.fillText(unitLabel(), 4, padT + 10);
 
     ctx.strokeStyle = themed("--accent", "#7bd");
     ctx.beginPath();
@@ -87,7 +95,8 @@
     } catch (e) { msg.textContent = e.message; }
   }
 
-  ["v-lo-mode", "v-lo", "v-db", "v-bg", "v-xmin", "v-xmax"].forEach((id) =>
+  ["v-lo-mode", "v-lo", "v-db", "v-mvdb", "v-bg", "v-xmin", "v-xmax",
+   "v-ymin", "v-ymax"].forEach((id) =>
     $(id).addEventListener("input", draw)
   );
   $("v-file").addEventListener("change", (e) => load(e.target.value));

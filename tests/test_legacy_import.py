@@ -66,7 +66,8 @@ def test_parse_calibration_prn() -> None:
 def test_parse_scheduler() -> None:
     entries = legacy_import.parse_scheduler_cfg(_SCHED)
     assert len(entries) == 3
-    assert entries[0].mode == 3 and entries[2].mode == 0
+    # audit B1: mode is the single char, not an int
+    assert entries[0].mode == "3" and entries[2].mode == "0"
 
 
 def _login(client: TestClient) -> None:

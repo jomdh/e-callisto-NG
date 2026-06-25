@@ -19,6 +19,7 @@
   const RESOURCES = {
     instruments: {
       title: "Instruments",
+      scan: true,
       list: "/api/v1/instruments",
       create: "/api/v1/instruments",
       del: (r) => `/api/v1/instruments/${r.id}`,
@@ -34,10 +35,9 @@
         { name: "file_seconds", type: "number", value: 900 },
       ],
       actions: [
+        { label: "open", href: (r) => `/portal/instruments/${r.id}` },
         { label: "record", run: (r) => api("POST", `/api/v1/instruments/${r.id}/record?frames=200`) },
         { label: "stop", run: (r) => api("POST", `/api/v1/instruments/${r.id}/stop`) },
-        { label: "overview", run: (r) => api("POST", `/api/v1/instruments/${r.id}/overview`), show: true },
-        { label: "diagnose", run: (r) => api("GET", `/api/v1/instruments/${r.id}/diagnose`), show: true },
         { label: "live", href: (r) => `/portal/live/${r.id}` },
       ],
     },
@@ -227,6 +227,46 @@
   });
   const submit = el("button", { class: "btn-filled", type: "submit", style: "margin-top:1rem" }, "Create");
   form.append(submit);
+
+  // Device scanner: detect hardware and fill the form for a chosen device.
+  // Several devices on one station are each selectable (by their address).
+  function scanPanel() {
+    const panel = el("div", { class: "data-toolbar", style: "margin-bottom:.75rem" });
+    const btn = el("button", { class: "btn-filled", type: "button" }, "Scan for devices");
+    const sel = el("select", { id: "scan-pick", style: "min-width:18em" });
+    sel.append(el("option", { value: "" }, "-- detected devices --"));
+    const useBtn = el("button", { class: "btn-text", type: "button" }, "use selected");
+    const msg = el("span", { class: "muted" });
+    let devices = [];
+    btn.addEventListener("click", async () => {
+      msg.textContent = "scanning + probing...";
+      try {
+        const d = await api("GET", "/api/v1/discovery/scan?probe=true");
+        devices = d.devices || [];
+        sel.replaceChildren(el("option", { value: "" }, `-- ${d.count} device(s) --`));
+        devices.forEach((dev, i) => {
+          const lbl = `${dev.address} — ${dev.detail || dev.description} [${dev.suggested_class}]`;
+          sel.append(el("option", { value: String(i) }, lbl));
+        });
+        msg.textContent = d.count ? "pick a device, then 'use selected'" : "none found";
+      } catch (e) { msg.textContent = e.message; }
+    });
+    useBtn.addEventListener("click", () => {
+      if (sel.value === "") return;
+      const dev = devices[Number(sel.value)];
+      if (!dev) return;
+      if (form.elements.instrument_class) form.elements.instrument_class.value = dev.suggested_class;
+      // keep the address for both serial (/dev/tty…) and USB (usb:vid:pid) so
+      // the driver can route (e.g. an RX-888 by its USB id).
+      if (form.elements.address) form.elements.address.value = dev.address;
+      if (form.elements.name && !form.elements.name.value) {
+        form.elements.name.value = dev.kind === "serial" ? "Callisto" : "SDR";
+      }
+      msg.textContent = `filled from ${dev.address}`;
+    });
+    panel.append(btn, sel, useBtn, msg);
+    return panel;
+  }
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const payload = {};
@@ -241,10 +281,9 @@
     catch (e) { note(e.message, "error"); }
   });
 
-  root.replaceChildren(
-    el("div", { class: "card", style: "margin-bottom:1rem" }, form),
-    body,
-    out
-  );
+  const card = el("div", { class: "card", style: "margin-bottom:1rem" });
+  if (cfg.scan) card.append(scanPanel());
+  card.append(form);
+  root.replaceChildren(card, body, out);
   refresh();
 })();

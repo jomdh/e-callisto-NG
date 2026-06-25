@@ -9,7 +9,8 @@ def test_detect_firmware() -> None:
     assert p.detect_firmware("$CRX:ChargePump=on") is p.FIRMWARE_15
     assert p.detect_firmware("$CRX:Debug=off") is p.FIRMWARE_17
     assert p.detect_firmware("$CRX:V1.8 / 25.43MHz") is p.FIRMWARE_18
-    assert p.detect_firmware("garbage") is None
+    # audit A5: unrecognized -> legacy default profile, not None
+    assert p.detect_firmware("garbage") is p.FIRMWARE_DEFAULT
 
 
 def test_firmware_traits() -> None:
@@ -19,10 +20,10 @@ def test_firmware_traits() -> None:
 
 
 def test_band_for() -> None:
-    assert p.band_for(100.0) == 1  # < 171
-    assert p.band_for(171.0) == 2  # boundary -> mid
+    assert p.band_for(100.0) == 1
+    assert p.band_for(171.0) == 1  # audit A1: legacy <= -> boundary stays low
     assert p.band_for(300.0) == 2
-    assert p.band_for(450.0) == 4  # boundary -> high
+    assert p.band_for(450.0) == 2  # boundary stays mid
     assert p.band_for(800.0) == 4
 
 

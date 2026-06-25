@@ -13,7 +13,13 @@ from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Instrument, Role, Schedule, Station
+from ecallisto_ng.api.models import (
+    FrequencyProgram,
+    Instrument,
+    Role,
+    Schedule,
+    Station,
+)
 from ecallisto_ng.services.legacy_export import (
     ExportEntry,
     build_scheduler_cfg,
@@ -84,10 +90,42 @@ def export_scheduler_cfg(db: DbSession = Depends(get_session)) -> str:
     for sched in db.exec(select(Schedule).where(Schedule.enabled)).all():
         inst = db.get(Instrument, sched.instrument_id)
         fc = inst.focus_code if inst else 1
+        prog = ""
+        if sched.program_id is not None:
+            fp = db.get(FrequencyProgram, sched.program_id)
+            if fp is not None:
+                prog = f"frq_{fp.name}.cfg"
         if sched.kind == "fixed":
-            entries.append(ExportEntry(sched.start_utc, fc, 3))
-            entries.append(ExportEntry(sched.stop_utc, fc, 0))
+            entries.append(ExportEntry(sched.start_utc, fc, "3", prog))
+            entries.append(ExportEntry(sched.stop_utc, fc, "0"))
+        # scheduled overview (mode 8), if configured.
+        if sched.overview_at:
+            entries.append(ExportEntry(sched.overview_at, fc, "8"))
     return build_scheduler_cfg(entries)
+
+
+@router.get(
+    "/generate/scheduler.cfg",
+    dependencies=[Depends(_viewer)],
+    response_class=PlainTextResponse,
+)
+def generate_scheduler_cfg(
+    focus_code: int = 1,
+    overview: bool = True,
+    db: DbSession = Depends(get_session),
+) -> str:
+    """Generate a sun-derived scheduler.cfg for the station (SchedulerGeni)."""
+    from ecallisto_ng.services.scheduler import generate_sun_scheduler_cfg
+
+    st = _station(db)
+    return generate_sun_scheduler_cfg(
+        st.latitude_deg,
+        st.longitude_deg,
+        datetime.now(UTC).date(),
+        focus_code=focus_code,
+        horizon_deg=st.horizon_deg,
+        overview=overview,
+    )
 
 
 @router.get("/{schedule_id}/preview", dependencies=[Depends(_viewer)])

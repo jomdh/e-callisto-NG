@@ -2,6 +2,51 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.8.2 -- 2026-06-25 (Milestones M31 + M27)
+
+The RX-888 streams, and the schedule/overview/light-curve files are byte-faithful.
+
+- **RX-888 MkII SDR driver** (M31). The operator's RX-888 (Cypress FX3 USB3)
+  records through the same pipeline as a Callisto -- host DSP turns IQ into
+  spectra. Auto-selected from the device's USB id; runs synthetic (clearly
+  labelled) until the streaming backend is installed on the station.
+- **Scheduler & file fidelity** (M27). scheduler.cfg keeps its mode chars +
+  program-switch column; sun windows use the standard -0.8333 deg horizon and an
+  elevated-horizon trim; OVS and light-curve files match the legacy filename,
+  header, columns, and gating; a SchedulerGeni-style sun scheduler.cfg generator
+  (sunrise/transit/sunset/+0.5h overview).
+
+Internal: drivers/sdr/rx888; PARITY_AUDIT B1-B6; 254 tests; sprints S057/S060/M31.
+
+## v0.8.1 -- 2026-06-25 (Milestone M26)
+
+Byte-faithful to the e-Callisto device + archive.
+
+- **Tuner commands** now match the Borland firmware exactly: inclusive band
+  boundaries (171/450 MHz), `F0045.000` tune format (3 decimals, no aliasing),
+  10-bit tuners force the correct control byte, and an unrecognized receiver
+  falls back to the legacy default profile instead of being rejected.
+- **Legacy FITS output** carries the exact `BUNIT` strings the archive/JavaViewer
+  read (`45*log(sfu+10)`, `40*log(Tant)`), the binary-table scale/display cards,
+  and DATAMIN/DATAMAX over the written image.
+
+Internal: PARITY_AUDIT A1-A7; protocol band/F0/control/firmware + FITS
+BUNIT/table/DATAMIN; 228 tests; sprints S055-S056.
+
+## v0.8.0 -- 2026-06-25 (Milestone M25)
+
+Every instrument has its own console.
+
+- **Per-instrument device page.** Click an instrument to open its own page with
+  status and one-click operate actions (record, stop, overview, diagnose,
+  reconnect, live).
+- **Class-aware tools.** An e-Callisto (heterodyne) instrument exposes its full
+  toolset -- the detector bench and Y-factor noise figure -- right on its page;
+  SDR instruments show the applicable subset.
+
+Internal: /api/v1/instruments/{id}/capabilities, /portal/instruments/{id} detail
+page + instrument.js, class-gated panels; 220 tests; sprint S054.
+
 ## v0.7.4 -- 2026-06-25 (Milestone M24, v0.7 release / v1.0 candidate)
 
 Ready to share.

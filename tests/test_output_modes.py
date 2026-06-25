@@ -60,7 +60,7 @@ def test_legacy_writer_adds_comments(tmp_path: Path) -> None:
 
 def test_build_scheduler_cfg() -> None:
     out = build_scheduler_cfg(
-        [ExportEntry("18:00", 1, 0), ExportEntry("06:30", 1, 3)]
+        [ExportEntry("18:00", 1, "0"), ExportEntry("06:30", 1, "3")]
     )
     lines = out.strip().splitlines()
     assert lines[0].startswith("//")

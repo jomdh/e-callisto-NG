@@ -76,13 +76,29 @@ class StandardFitsWriter:
 
         path = out_dir / self.filename(recording)
         hdu = fits.PrimaryHDU(data=image)
-        self._fill_header(hdu.header, recording, rows, cols, dt)
+        self._fill_header(hdu.header, recording, rows, cols, dt, image)
 
         time_axis = np.arange(cols, dtype=np.float64) * dt
         freq_axis = np.array(
             [c.frequency_mhz for c in recording.channels], dtype=np.float64
         )[::-1]
-        table = fits.BinTableHDU.from_columns(
+        table = self._build_table(rows, cols, time_axis, freq_axis)
+        fits.HDUList([hdu, table]).writeto(path, overwrite=True)
+        return path
+
+    def _bunit(self, unit: UnitLevel) -> str:
+        """BUNIT string for the z-axis (overridden for the legacy archive)."""
+        return _BUNIT[unit]
+
+    def _build_table(
+        self,
+        rows: int,
+        cols: int,
+        time_axis: np.ndarray,
+        freq_axis: np.ndarray,
+    ) -> fits.BinTableHDU:
+        """Time/frequency axis HDU (legacy adds display + scale cards)."""
+        return fits.BinTableHDU.from_columns(
             [
                 fits.Column(
                     name="TIME", format=f"{cols}D", array=time_axis[None, :]
@@ -94,8 +110,6 @@ class StandardFitsWriter:
                 ),
             ]
         )
-        fits.HDUList([hdu, table]).writeto(path, overwrite=True)
-        return path
 
     def _fill_header(
         self,
@@ -104,12 +118,15 @@ class StandardFitsWriter:
         rows: int,
         cols: int,
         dt: float,
+        image: np.ndarray,
     ) -> None:
         meta = recording.meta
         start = recording.frames[0].timestamp_utc
         end = start + timedelta(seconds=cols * dt)
-        image_min = min(min(f.values) for f in recording.frames)
-        image_max = max(max(f.values) for f in recording.frames)
+        # DATAMIN/DATAMAX describe the *written* (calibrated) image, not the
+        # raw frame values -- they differ under SFU/Kelvin (audit A7).
+        image_min = int(image.min())
+        image_max = int(image.max())
 
         header["DATE"] = (f"{start:%Y-%m-%d}", "Time of observation")
         # Long value -> no comment so the card fits in 80 chars.
@@ -127,7 +144,7 @@ class StandardFitsWriter:
         header["TIME-END"] = (f"{end:%H:%M:%S}", "Time observation ends")
         header["BZERO"] = (0.0, "scaling offset")
         header["BSCALE"] = (1.0, "scaling factor")
-        header["BUNIT"] = (_BUNIT[recording.unit], "z-axis title")
+        header["BUNIT"] = (self._bunit(recording.unit), "z-axis title")
         header["DATAMIN"] = (image_min, "minimum element in image")
         header["DATAMAX"] = (image_max, "maximum element in image")
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlmodel import Session as DbSession
 from sqlmodel import select
@@ -13,7 +14,8 @@ from sqlmodel import select
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import FrequencyProgram, Role
-from ecallisto_ng.services.freqgen import generate_frequencies
+from ecallisto_ng.services.freqgen import generate_frequencies, rf_to_if
+from ecallisto_ng.services.legacy_export import build_frequency_program_cfg
 
 router = APIRouter(prefix="/api/v1/programs", tags=["programs"])
 
@@ -47,6 +49,12 @@ class GenerateIn(BaseModel):
     mode: str = "quiet"
     exclude_from: float | None = None  # RFI-exclusion band start (MHz)
     exclude_to: float | None = None
+    nonlinear_start: int = 0  # channels pinned to start_mhz (D2)
+    # External up/down-converter (D3). The band above is the RF the user wants;
+    # the receiver tunes the IF = converter(RF, LO). No RF range limit -- the
+    # converter places the chosen band wherever the operator needs it.
+    converter: str = "direct"  # direct | usb | lsb | up
+    local_oscillator: float = 0.0  # converter LO (MHz)
 
 
 def _out(p: FrequencyProgram) -> ProgramOut:
@@ -98,7 +106,12 @@ def generate_program(
             body.n_channels,
             body.mode,
             exclude_band=band,
+            nonlinear_start=body.nonlinear_start,
         )
+        # D3: validate the chosen RF maps through the converter (no RF limit;
+        # this just confirms the converter/LO is well-formed for each channel).
+        for rf in freqs:
+            rf_to_if(rf, body.local_oscillator, body.converter)
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
     prog = FrequencyProgram(
@@ -112,6 +125,27 @@ def generate_program(
     db.commit()
     db.refresh(prog)
     return _out(prog)
+
+
+@router.get(
+    "/{program_id}/export/frq",
+    dependencies=[Depends(_viewer)],
+    response_class=PlainTextResponse,
+)
+def export_frq(
+    program_id: int,
+    external_lo: float = 0.0,
+    db: DbSession = Depends(get_session),
+) -> str:
+    """Export a program as a legacy ``frqXXXXX.cfg`` file (audit D1)."""
+    prog = db.get(FrequencyProgram, program_id)
+    if prog is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such program")
+    return build_frequency_program_cfg(
+        json.loads(prog.frequencies_json),
+        json.loads(prog.light_curve_indices_json),
+        external_lo=external_lo,
+    )
 
 
 @router.delete(

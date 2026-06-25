@@ -1,0 +1,24 @@
+{% extends "portal/base.html" %}
+{% block title %}Hardware -- e-Callisto NG{% endblock %}
+{% block body %}
+<div class="portal-main">
+  <h2>Hardware</h2>
+  <p class="muted">Scan USB-serial + USB for a Callisto receiver or an SDR.
+    "Probe" opens each serial port and tries the Callisto handshake.</p>
+  <div class="card">
+    <div class="data-toolbar">
+      <button class="btn-filled" id="hw-scan" type="button">Scan</button>
+      <button class="btn-text" id="hw-probe" type="button">Scan + probe</button>
+      <span id="hw-msg" class="muted"></span>
+    </div>
+    <table class="data-table" id="hw-table" style="margin-top:0.75em">
+      <thead><tr>
+        <th>Address</th><th>Description</th><th>USB ID</th>
+        <th>Suggested</th><th></th>
+      </tr></thead>
+      <tbody id="hw-rows"></tbody>
+    </table>
+  </div>
+</div>
+<script src="/static/js/hardware.js"></script>
+{% endblock %}

@@ -96,6 +96,37 @@ _MANAGE = {
 }
 
 
+@router.get("/portal/instruments/{instrument_id}", response_class=HTMLResponse)
+def instrument_detail(
+    request: Request,
+    instrument_id: int,
+    user: User | None = Depends(auth.optional_user),
+    db: DbSession = Depends(get_session),
+) -> object:
+    if user is None:
+        return RedirectResponse("/", status_code=303)
+    from ecallisto_ng.api.models import Instrument
+    from ecallisto_ng.core.contracts import BenchCapable
+    from ecallisto_ng.services.recorder import build_driver
+
+    inst = db.get(Instrument, instrument_id)
+    if inst is None:
+        raise HTTPException(404, "no such instrument")
+    driver = build_driver(
+        inst.instrument_class, inst.address, inst.focus_code, inst.channels
+    )
+    return templates.TemplateResponse(
+        request,
+        "portal/instrument_detail.html",
+        {
+            "user": user,
+            "inst": inst,
+            "bench": isinstance(driver, BenchCapable),
+            "overview": driver.capabilities.supports_overview,
+        },
+    )
+
+
 @router.get("/portal/manage/{resource}", response_class=HTMLResponse)
 def manage(
     request: Request,
@@ -182,3 +213,10 @@ def planning_page(
     request: Request, user: User | None = Depends(auth.optional_user)
 ) -> object:
     return _page(request, "planning", user)
+
+
+@router.get("/portal/hardware", response_class=HTMLResponse)
+def hardware_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "hardware", user)

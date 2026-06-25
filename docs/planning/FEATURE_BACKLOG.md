@@ -49,3 +49,20 @@ Legacy Windows parity is the v0.4 theme; the specific gaps are enumerated in the
 M11-M14 milestone plans (watchdog, scheduler modes, overview output, light-curve
 format, bench/NF tools, spectrum viewer, public LC PNG, dB view, SFTP, backup
 tree, generator LO/RFI). Source of truth: `legacy/sources/WINDOWS_FUNCTIONALITY.md`.
+
+## F18 — General-purpose band plan (decided 2026-06-25)
+
+Make the suite multi-config, not Callisto-range-bound. Per-instrument
+**band plan**: multiple segments (start/stop or center/span + channels,
+per-segment resolution/dwell), validated against each driver's declared
+`Capabilities.bands_mhz`. Callisto stays fixed 45-870; SDRs/FPGAs declare
+their own. Derive channel-gen, overview, freqgen, and FITS axes from the
+plan instead of the hardcoded 45-870. **Owner chose the full band-plan
+model; scheduled AFTER M28-M30 fidelity.** Needs an ADR (core/contract +
+schema change) and ties to the DB-migration gap (Alembic).
+
+**Converter note (2026-06-25):** a Callisto is commonly run with an
+up/down-converter, so it has **no RF limit** -- the converter+LO map the
+user's chosen RF band into the tuner's native IF (45-870). The band plan
+must carry a per-segment converter+LO; capability validation is on the
+**IF after conversion**, not the RF. The user defines the exact config.

@@ -60,6 +60,13 @@ def build_driver(
     heterodyne+address -> Callisto serial; otherwise the hardware-free fake.
     """
     if instrument_class == "sdr_soft":
+        from ecallisto_ng.drivers.sdr.rx888 import (
+            build_rx888_driver,
+            is_rx888_address,
+        )
+
+        if is_rx888_address(address):
+            return build_rx888_driver(address, channels)
         from ecallisto_ng.drivers.sdr.soft import SoftSdrDriver
 
         return SoftSdrDriver(channels=channels)

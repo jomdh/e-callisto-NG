@@ -27,17 +27,37 @@ from ecallisto_ng.services.scheduler_service import SchedulerService
 def test_write_overview_pair(tmp_path: Path) -> None:
     prn, csv = write_overview(
         [45.0, 100.0, 870.0],
-        [10, 20, 30],
+        [100, 200, 300],  # all within the 50<amp<2500 gate
         tmp_path,
         "ALASKA",
         datetime(2026, 6, 25, 17, 30, tzinfo=UTC),
+        focus_code=1,
+        pwm=120,
     )
-    assert prn.name == "OVS_ALASKA_20260625_173000.prn"
-    assert csv.name == "OVS_ALASKA_20260625_173000.csv"
+    # legacy filename: OVS_<inst>_<title>_<ts>_<FCx> (audit B4)
+    assert prn.name == "OVS_ALASKA__20260625_173000_01.prn"
+    assert csv.name == "OVS_ALASKA__20260625_173000_01.csv"
     prn_lines = prn.read_text().splitlines()
-    assert prn_lines[0] == "Freq[MHz];Amplitude"
-    assert prn_lines[1] == "45.0000;10"
-    assert csv.read_text().splitlines()[1] == "45.0000,10"
+    assert prn_lines[0].startswith(
+        "Frequency[MHz];Amplitude RX1[mV] at pwm=120;"
+    )
+    assert prn_lines[1] == f"{45.0:7.3f};100"  # %7.3f, semicolon
+    # legacy wrote the same semicolon layout to the .csv too
+    assert csv.read_text().splitlines()[1] == f"{45.0:7.3f};100"
+
+
+def test_overview_amplitude_gate(tmp_path: Path) -> None:
+    # amplitudes outside 50<amp<2500 (or freq outside 45-870) are dropped
+    prn, _ = write_overview(
+        [45.0, 100.0, 200.0],
+        [10, 200, 3000],  # 10 too low, 3000 too high -> only the middle kept
+        tmp_path,
+        "GATE",
+        datetime(2026, 6, 25, 12, 0, tzinfo=UTC),
+    )
+    rows = prn.read_text().splitlines()[1:]
+    assert len(rows) == 1
+    assert rows[0] == f"{100.0:7.3f};200"
 
 
 def test_run_overview_from_driver(tmp_path: Path) -> None:
@@ -48,8 +68,10 @@ def test_run_overview_from_driver(tmp_path: Path) -> None:
         datetime(2026, 6, 25, 12, 0, tzinfo=UTC),
     )
     assert prn.exists() and csv.exists()
-    # 32 amplitudes -> 32 freq;amp rows + header
-    assert len(prn.read_text().splitlines()) == 1 + 32
+    lines = prn.read_text().splitlines()
+    # header + at most 32 rows (some may be gated out by amplitude)
+    assert 1 <= len(lines) <= 1 + 32
+    assert lines[0].startswith("Frequency[MHz];")
 
 
 def _instrument(s: Session) -> int:

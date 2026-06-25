@@ -115,6 +115,29 @@ tech, and a design system, but stay **disconnected for now** (owner decision,
 2026-06-25). Integration is intended for the future but **not via the push/pull
 API** sketched earlier — the approach is TBD. Not in v0.7.
 
+## v0.8 -- "Heterodyne fidelity & device console" (SELECTED, not started)
+
+Theme: a line-by-line audit (`docs/parity/PARITY_AUDIT.md`) of the Windows
+Borland suite (built for the e-Callisto heterodyne device) found the math +
+protocol skeleton faithful but real inaccuracies in **exact wire/file formats**
+and **missing commissioning tools**. v0.8 makes the heterodyne reproduction
+**byte-exact for archive/JavaViewer compatibility** (owner decision) and puts the
+device functions **inside each instrument's own entry**, class-gated. Branch
+`0.8-dev` from `main`.
+
+| Milestone | Closes | Plan |
+| -- | -- | -- |
+| **M25 — Per-instrument device console** ✓ done (S054) | v0.8.0 | done |
+| **M26 — Recorder/output accuracy** (audit A) ✓ done (S055-S056) | v0.8.1 | done |
+| **M27 — Scheduler & file-format fidelity** (B) ✓ done (S057,S060) | v0.8.2 | done |
+| **M28 — Generator & frq-file** (D1-D5) ✓ done | v0.8.3 | done |
+| **M29 — Bench completeness** (C) ✓ done | v0.8.4 | done |
+| **M30 — Viewer & publication fidelity** (D6-D7) ✓ done | v0.8.5 / released | done |
+
+**M31** RX-888 MkII SDR driver done (v0.8.2). Order: **M25 (console) first**, then accuracy/fidelity fixes (M26-M30); version
+close merges `0.8-dev` -> `main`. Audit KEEP items (NG midnight rollover, ]-ack,
+per-point slope as an option) are documented, not reverted.
+
 ## Completed
 
 ### M0 — Core contracts + record loop  (v0.1.0, 2026-06-25)

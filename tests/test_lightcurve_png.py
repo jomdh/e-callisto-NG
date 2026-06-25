@@ -65,3 +65,33 @@ def test_live_page_has_panels(client: TestClient) -> None:
     assert 'id="spectrum"' in page.text
     assert 'id="lightcurve"' in page.text
     assert 'id="live-db"' in page.text  # dB toggle
+
+
+def test_d7_sfu_clamp_and_legacy_names(tmp_path: Path) -> None:  # D7
+    lc = tmp_path / "LC20260625_SFU_ALASKA.txt"
+    lc.write_text("Time_UT,100.000MHz\n0.0,99\n12.0,-50\n23.0,25\n")
+    png = render_lightcurve_png(lc, tmp_path)
+    assert png.name == "LC20260625_SFU_ALASKA.png"  # primary unchanged
+    # legacy publication name + dated archive also written
+    assert (tmp_path / "LightcurvesALASKA.png").exists()
+    assert (tmp_path / "LightcurvesALASKA_20260625.png").exists()
+
+
+def test_d7_unit_and_convert() -> None:  # D7
+    from ecallisto_ng.services.lightcurve_png import _convert, _unit
+
+    assert _unit("SFU") == "[SFU]"
+    assert _unit("ADU") == "[dB]"
+    # SFU clamps to [-10, 50]; ADU converts to dB via /25.4
+    assert _convert([99.0, -50.0], "SFU") == [50.0, -10.0]
+    assert _convert([25.4], "ADU") == [1.0]
+
+
+def test_d6_viewer_has_mvdb_and_yrange(client: TestClient) -> None:  # D6
+    _login(client)
+    page = client.get("/portal/viewer")
+    assert 'id="v-mvdb"' in page.text  # OVS mV->dB toggle
+    assert 'id="v-ymin"' in page.text and 'id="v-ymax"' in page.text
+    js = client.get("/static/js/viewer.js").text
+    assert "/ 25.4" in js  # OVS mV->dB gradient
+    assert "v-ymin" in js  # typed Y-range zoom

@@ -114,10 +114,17 @@ def parse_calibration_prn(text: str) -> list[list[float]]:
 class ScheduleEntry:
     time_utc: str  # HH:MM:SS
     focus_code: int
-    mode: int
+    mode: str  # single char: 0=stop, 8=overview, else=start (incl. A-Z)
+    program: str = ""  # 4th column: frqXXXXX.cfg program-switch (audit B1)
 
 
 def parse_scheduler_cfg(text: str) -> list[ScheduleEntry]:
+    """Parse a legacy ``scheduler.cfg`` losslessly (audit B1).
+
+    Keeps the mode as a single character (the legacy ``%1c`` accepts ``0-9``
+    and ``A-Z``) and the optional 4th ``fprog`` program-switch column, instead
+    of dropping them.
+    """
     entries: list[ScheduleEntry] = []
     for line in text.splitlines():
         line = line.strip()
@@ -127,13 +134,19 @@ def parse_scheduler_cfg(text: str) -> list[ScheduleEntry]:
         if len(parts) < 3:
             continue
         try:
-            entries.append(
-                ScheduleEntry(
-                    time_utc=parts[0],
-                    focus_code=int(parts[1]),
-                    mode=int(parts[2]),
-                )
-            )
+            focus = int(parts[1])
         except ValueError:
             continue
+        mode = parts[2].strip()[:1].upper()
+        if not mode:
+            continue
+        program = parts[3].strip() if len(parts) > 3 else ""
+        entries.append(
+            ScheduleEntry(
+                time_utc=parts[0],
+                focus_code=focus,
+                mode=mode,
+                program=program,
+            )
+        )
     return entries
