@@ -23,8 +23,9 @@ def test_generate_quiet_picks_minimum() -> None:
 
 
 def test_generate_even_spacing() -> None:
+    # even mode records the bin edge (D4), snapped to the 0.0625 grid
     freqs = generate_frequencies([], 0.0, 100.0, 4, "even")
-    assert freqs == [12.5, 37.5, 62.5, 87.5]
+    assert freqs == [0.0, 25.0, 50.0, 75.0]
 
 
 def test_generate_validates() -> None:

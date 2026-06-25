@@ -13,6 +13,15 @@ from collections.abc import Sequence
 
 OverviewPoint = tuple[float, float]  # (frequency_mhz, amplitude)
 
+# Tuner synthesizer step (MHz); channels snap to this grid (audit D4).
+SYNTHESIZER_RESOLUTION = 0.0625
+
+
+def _snap(freq: float) -> float:
+    """Snap a frequency to the 0.0625 MHz synthesizer grid (legacy)."""
+    step = SYNTHESIZER_RESOLUTION
+    return round(round(freq / step) * step, 4)
+
 
 def _excluded(band: tuple[float, float] | None, freq: float) -> bool:
     return band is not None and band[0] <= freq <= band[1]
@@ -45,19 +54,19 @@ def generate_frequencies(
     for i in range(n_channels):
         lo = start_mhz + i * step
         hi = lo + step
-        center = lo + step / 2.0
-        if _excluded(exclude_band, center):
-            continue  # RFI-excluded bin
         if mode == "even":
-            freq = center
-        else:  # quiet: lowest-amplitude non-RFI point in the bin, else center
+            freq = lo  # legacy records the bin edge, not the centre (D4)
+        else:  # quiet: lowest-amplitude non-RFI point in the bin, else edge
             window = [
                 p
                 for p in points
                 if lo <= p[0] < hi and not _excluded(exclude_band, p[0])
             ]
-            freq = min(window, key=lambda p: p[1])[0] if window else center
-        result.append(round(freq, 3))
+            freq = min(window, key=lambda p: p[1])[0] if window else lo
+        freq = _snap(freq)  # snap to the synthesizer grid (D4)
+        if _excluded(exclude_band, freq):
+            continue  # RFI-excluded (checked on the final selected freq)
+        result.append(freq)
     return result
 
 

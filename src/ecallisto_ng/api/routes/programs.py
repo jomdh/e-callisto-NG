@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlmodel import Session as DbSession
 from sqlmodel import select
@@ -14,6 +15,7 @@ from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import FrequencyProgram, Role
 from ecallisto_ng.services.freqgen import generate_frequencies
+from ecallisto_ng.services.legacy_export import build_frequency_program_cfg
 
 router = APIRouter(prefix="/api/v1/programs", tags=["programs"])
 
@@ -112,6 +114,27 @@ def generate_program(
     db.commit()
     db.refresh(prog)
     return _out(prog)
+
+
+@router.get(
+    "/{program_id}/export/frq",
+    dependencies=[Depends(_viewer)],
+    response_class=PlainTextResponse,
+)
+def export_frq(
+    program_id: int,
+    external_lo: float = 0.0,
+    db: DbSession = Depends(get_session),
+) -> str:
+    """Export a program as a legacy ``frqXXXXX.cfg`` file (audit D1)."""
+    prog = db.get(FrequencyProgram, program_id)
+    if prog is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such program")
+    return build_frequency_program_cfg(
+        json.loads(prog.frequencies_json),
+        json.loads(prog.light_curve_indices_json),
+        external_lo=external_lo,
+    )
 
 
 @router.delete(
