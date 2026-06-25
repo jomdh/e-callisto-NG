@@ -14,9 +14,11 @@ from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import CalibrationSet, Instrument, Role
 from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.core.calibration import Calibration
+from ecallisto_ng.core.contracts import BenchCapable
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
+from ecallisto_ng.services import bench as bench_svc
 from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
@@ -169,6 +171,73 @@ def overview_instrument(
     out_dir.mkdir(parents=True, exist_ok=True)
     prn, csv = run_overview(driver, out_dir, inst.name, datetime.now(UTC))
     return {"prn": prn.name, "csv": csv.name}
+
+
+class BenchSweepIn(BaseModel):
+    f_min: float = 45.0
+    f_max: float = 870.0
+    n_points: int = 100
+    gain: int = 120
+    relay: int | None = None
+
+
+def _bench_driver(db: DbSession, instrument_id: int) -> BenchCapable:
+    inst = _get(db, instrument_id)
+    if get_recorder().status(instrument_id).state is RecorderState.RECORDING:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "instrument is recording"
+        )
+    driver = build_driver(
+        inst.instrument_class, inst.address, inst.focus_code, inst.channels
+    )
+    if not isinstance(driver, BenchCapable):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "instrument does not support bench mode",
+        )
+    return driver
+
+
+@router.get(
+    "/{instrument_id}/bench/detector", dependencies=[Depends(_operator)]
+)
+def bench_detector(
+    instrument_id: int,
+    freq: float = 150.0,
+    gain: int = 120,
+    db: DbSession = Depends(get_session),
+) -> dict[str, float]:
+    """Tune + read the detector voltage once (legacy 'simple' tool)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        mv = bench_svc.read_detector(driver, freq, gain)
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    return {"mv": mv, "freq": freq, "gain": float(gain)}
+
+
+@router.post("/{instrument_id}/bench/sweep", dependencies=[Depends(_operator)])
+def bench_sweep(
+    instrument_id: int,
+    body: BenchSweepIn,
+    db: DbSession = Depends(get_session),
+) -> dict[str, object]:
+    """Sweep detector voltage vs frequency (underlies NF/bandpass, M12)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        points = bench_svc.sweep(
+            driver,
+            body.f_min,
+            body.f_max,
+            body.n_points,
+            body.gain,
+            body.relay,
+        )
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    return {"points": points}
 
 
 @router.get("/{instrument_id}/status", dependencies=[Depends(_viewer)])

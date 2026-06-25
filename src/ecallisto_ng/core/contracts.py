@@ -28,8 +28,32 @@ from ecallisto_ng.core.spectra import (
     SpectrumFrame,
 )
 
-# 0.2.0: OutputWriter takes a Recording instead of (frames, unit) -- ADR-0004.
-CONTRACT_VERSION = "0.2.0"
+# 0.3.0: add the optional BenchCapable protocol -- ADR-0005 (additive).
+CONTRACT_VERSION = "0.3.0"
+
+
+@runtime_checkable
+class BenchCapable(Protocol):
+    """Optional bench/commissioning primitives (legacy ``simple``/NF parity).
+
+    A driver MAY implement this in addition to :class:`InstrumentDriver` to
+    support the Tools bench pages (detector voltage, noise figure, bandpass,
+    relay switching). Independent of the streaming contract -- a driver that
+    can't do bench work simply doesn't implement it (ADR-0005). The detector
+    reading is in **millivolts**.
+    """
+
+    def tune(self, frequency_mhz: float) -> None:
+        """Tune the receiver to a single frequency (legacy ``F0``)."""
+
+    def set_gain(self, pwm: int) -> None:
+        """Set the AGC/PWM gain level 0-255 (legacy ``O``)."""
+
+    def read_detector(self) -> float:
+        """Read the detector voltage in millivolts (legacy ``A0``)."""
+
+    def set_relay(self, code: int) -> None:
+        """Switch the focus/relay tree to a 6-bit code (legacy ``fs``)."""
 
 
 @runtime_checkable

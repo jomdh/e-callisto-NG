@@ -9,6 +9,7 @@ from __future__ import annotations
 from ecallisto_ng.core.calibration import Calibration, ChannelCal
 from ecallisto_ng.core.contracts import (
     CONTRACT_VERSION,
+    BenchCapable,
     InstrumentDriver,
     OutputWriter,
     UploadTransport,
@@ -30,6 +31,7 @@ from ecallisto_ng.core.units import (
 
 __all__ = [
     "CONTRACT_VERSION",
+    "BenchCapable",
     "InstrumentDriver",
     "OutputWriter",
     "UploadTransport",

@@ -158,6 +158,41 @@ def start_commands(focuscode: int, nchannels: int) -> bytes:
 
 STOP = b"GD\r"
 HALT = b"S0\r"
+DETECTOR_QUERY = b"A0\r"  # read detector voltage (bench)
+
+
+def tune_command(frequency_mhz: float) -> bytes:
+    """Tune the receiver to one frequency (legacy ``F0``)."""
+    return f"F0{frequency_mhz:.1f}\r".encode("ascii")
+
+
+def gain_command(pwm: int) -> bytes:
+    """Set the AGC/PWM gain 0-255 (legacy ``O``)."""
+    return f"O{max(0, min(255, pwm)):03d}\r".encode("ascii")
+
+
+def relay_command(code: int) -> bytes:
+    """Switch the focus/relay tree to a 6-bit code (legacy ``fs``)."""
+    return f"fs{code & 0x3F:02d}\r".encode("ascii")
+
+
+def parse_detector(text: str) -> float | None:
+    """Parse a ``$CRX:ADC0=<mV>`` detector reply; mV or None."""
+    marker = "ADC0="
+    idx = text.find(marker)
+    if idx < 0:
+        return None
+    tail = text[idx + len(marker) :].strip()
+    digits = ""
+    for ch in tail:
+        if ch.isdigit() or ch in ".-":
+            digits += ch
+        else:
+            break
+    try:
+        return float(digits)
+    except ValueError:
+        return None
 
 
 def to_8bit(value: int, data10bit: bool) -> int:
