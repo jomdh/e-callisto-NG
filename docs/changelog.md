@@ -2,6 +2,20 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.8.0 -- 2026-06-25 (Milestone M25)
+
+Every instrument has its own console.
+
+- **Per-instrument device page.** Click an instrument to open its own page with
+  status and one-click operate actions (record, stop, overview, diagnose,
+  reconnect, live).
+- **Class-aware tools.** An e-Callisto (heterodyne) instrument exposes its full
+  toolset -- the detector bench and Y-factor noise figure -- right on its page;
+  SDR instruments show the applicable subset.
+
+Internal: /api/v1/instruments/{id}/capabilities, /portal/instruments/{id} detail
+page + instrument.js, class-gated panels; 220 tests; sprint S054.
+
 ## v0.7.4 -- 2026-06-25 (Milestone M24, v0.7 release / v1.0 candidate)
 
 Ready to share.

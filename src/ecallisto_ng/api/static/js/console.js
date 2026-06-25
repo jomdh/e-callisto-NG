@@ -34,10 +34,9 @@
         { name: "file_seconds", type: "number", value: 900 },
       ],
       actions: [
+        { label: "open", href: (r) => `/portal/instruments/${r.id}` },
         { label: "record", run: (r) => api("POST", `/api/v1/instruments/${r.id}/record?frames=200`) },
         { label: "stop", run: (r) => api("POST", `/api/v1/instruments/${r.id}/stop`) },
-        { label: "overview", run: (r) => api("POST", `/api/v1/instruments/${r.id}/overview`), show: true },
-        { label: "diagnose", run: (r) => api("GET", `/api/v1/instruments/${r.id}/diagnose`), show: true },
         { label: "live", href: (r) => `/portal/live/${r.id}` },
       ],
     },

@@ -328,6 +328,25 @@ def instrument_status(instrument_id: int) -> dict[str, object]:
     return {"state": st.state, "last_file": st.last_file, "error": st.error}
 
 
+@router.get("/{instrument_id}/capabilities", dependencies=[Depends(_viewer)])
+def instrument_capabilities(
+    instrument_id: int, db: DbSession = Depends(get_session)
+) -> dict[str, object]:
+    """What device functions this instrument supports (class-gated, M25)."""
+    inst = _get(db, instrument_id)
+    driver = build_driver(
+        inst.instrument_class, inst.address, inst.focus_code, inst.channels
+    )
+    caps = driver.capabilities
+    return {
+        "instrument_class": inst.instrument_class,
+        "bench": isinstance(driver, BenchCapable),
+        "overview": caps.supports_overview,
+        "processing": caps.processing_location,
+        "link": caps.link,
+    }
+
+
 @router.get("/{instrument_id}/diagnose", dependencies=[Depends(_operator)])
 def diagnose_instrument(
     instrument_id: int, db: DbSession = Depends(get_session)
