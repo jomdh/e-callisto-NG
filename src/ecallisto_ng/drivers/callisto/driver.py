@@ -94,11 +94,12 @@ class CallistoDriver:
             raise RuntimeError(f"not a Callisto (ID failed): {line!r}")
         self._conn.write(p.STATUS_QUERY)
         status = self._read_line()
-        firmware = p.detect_firmware(status)
-        if firmware is None:
-            raise RuntimeError(f"unsupported firmware: {status!r}")
-        self._firmware = firmware
-        return InstrumentInfo(model="Callisto", firmware=firmware.version)
+        # Unrecognized devices fall back to the default profile (10-bit,
+        # 27 MHz) like the legacy code, not rejected (audit A5).
+        self._firmware = p.detect_firmware(status)
+        return InstrumentInfo(
+            model="Callisto", firmware=self._firmware.version
+        )
 
     def configure(
         self, channels: Sequence[Channel], sample_rate_hz: float

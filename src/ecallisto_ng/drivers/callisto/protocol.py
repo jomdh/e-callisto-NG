@@ -63,26 +63,38 @@ FIRMWARE_17 = Firmware("1.7", if_init=37.7, data10bit=True, eeprom_info=False)
 FIRMWARE_18 = Firmware("1.8", if_init=36.13, data10bit=True, eeprom_info=True)
 
 
-def detect_firmware(first_status_line: str) -> Firmware | None:
+# Default for an undetected device: legacy continues as 10-bit / 27 MHz LO
+# (if_init 37.70); it does NOT reject (mainunit.cpp:151,174,180). Audit A5.
+FIRMWARE_DEFAULT = Firmware(
+    "default", if_init=37.7, data10bit=True, eeprom_info=False
+)
+
+
+def detect_firmware(first_status_line: str) -> Firmware:
     """Map the first line of the ``?`` response to a firmware profile.
 
-    Returns ``None`` for an unrecognized (unsupported) device.
+    Legacy keys on substrings and falls back to the default (10-bit, 27 MHz)
+    for anything unrecognized, rather than rejecting (audit A5).
     """
     line = first_status_line
-    if line.startswith("$CRX:ChargePump="):
+    if "ChargePump" in line:  # 8-bit CD1316LV (legacy substring match)
         return FIRMWARE_15
-    if line.startswith("$CRX:Debug="):
-        return FIRMWARE_17
-    if line.startswith("$CRX:V1.8 / "):
+    if "V1.8" in line:  # 25.43 MHz oscillator -> if_init 36.13
         return FIRMWARE_18
-    return None
+    if "Debug" in line:
+        return FIRMWARE_17
+    return FIRMWARE_DEFAULT
 
 
 def band_for(freq_mhz: float) -> int:
-    """Band-select byte for a tuner frequency (1=low, 2=mid, 4=high)."""
-    if freq_mhz < LOW_BAND:
+    """Band-select byte for a tuner frequency (1=low, 2=mid, 4=high).
+
+    Boundaries are inclusive (``<=``), matching legacy EEPROM.cpp:259-266
+    (audit A1): exactly 171.0 -> band 1, exactly 450.0 -> band 2.
+    """
+    if freq_mhz <= LOW_BAND:
         return 1
-    if freq_mhz < MID_BAND:
+    if freq_mhz <= MID_BAND:
         return 2
     return 4
 
@@ -109,7 +121,12 @@ def channel_command(
     """
     effective = abs(freq_mhz - local_oscillator)
     div_hi, div_lo = divider_bytes(effective, firmware.if_init)
-    control = _CONTROL_BASE | (_CONTROL_CHARGEPUMP if chargepump else 0)
+    # 10-bit tuners (CD1316LS/IV-3) force chargepump-on (0xC6) regardless of
+    # config; 8-bit honors the chargepump flag (EEPROM.cpp:249-256, audit A4).
+    if firmware.data10bit:
+        control = _CONTROL_BASE | _CONTROL_CHARGEPUMP
+    else:
+        control = _CONTROL_BASE | (_CONTROL_CHARGEPUMP if chargepump else 0)
     band = band_for(effective)
     return (
         f"FE{index + 1},{div_hi:03d},{div_lo:03d},"
@@ -163,8 +180,12 @@ DETECTOR_QUERY = b"A0\r"  # read detector voltage (bench)
 
 
 def tune_command(frequency_mhz: float) -> bytes:
-    """Tune the receiver to one frequency (legacy ``F0``)."""
-    return f"F0{frequency_mhz:.1f}\r".encode("ascii")
+    """Tune the receiver to one frequency (legacy ``F0%07.3f``).
+
+    Zero-padded width 7 + 3 decimals (audit A2/C1): ``F0045.000`` -- the 3
+    decimals avoid aliasing sub-0.1 MHz NF sweep steps.
+    """
+    return f"F0{frequency_mhz:07.3f}\r".encode("ascii")
 
 
 def gain_command(pwm: int) -> bytes:
