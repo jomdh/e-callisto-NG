@@ -1,7 +1,6 @@
 {% extends "portal/base.html" %}
 {% block title %}Access -- e-Callisto NG{% endblock %}
 {% block body %}
-{% include "portal/_nav.html" %}
 <div class="portal-main">
   <h2>Remote access</h2>
   <form id="access-form" class="card" style="max-width:520px">
@@ -20,8 +19,8 @@
     <label for="tunnel_relay">Tunnel relay</label>
     <input id="tunnel_relay" name="tunnel_relay">
     <div style="margin-top:1rem">
-      <button class="btn" type="submit">Save</button>
-      <a class="btn btn-ghost" href="/api/v1/access/caddyfile" target="_blank">view Caddyfile</a>
+      <button class="btn-filled" type="submit">Save</button>
+      <a class="btn-text" href="/api/v1/access/caddyfile" target="_blank">view Caddyfile</a>
     </div>
     <pre id="access-msg" class="muted" style="white-space:pre-wrap"></pre>
   </form>

@@ -180,7 +180,7 @@
         if (a.href) {
           td.append(el("a", { href: a.href(r), style: "margin-right:.6em" }, a.label));
         } else {
-          const b = el("button", { class: "btn btn-ghost", style: "margin-right:.4em;padding:.2em .6em" }, a.label);
+          const b = el("button", { class: "btn-text", style: "margin-right:.4em;padding:.2em .6em" }, a.label);
           b.addEventListener("click", async () => {
             try { const res = await a.run(r); note(a.show ? res : `${a.label}: ok`, "ok"); refresh(); }
             catch (e) { note(e.message, "error"); }
@@ -189,7 +189,7 @@
         }
       });
       if (cfg.del) {
-        const d = el("button", { class: "btn btn-ghost", style: "padding:.2em .6em" }, "delete");
+        const d = el("button", { class: "btn-text", style: "padding:.2em .6em" }, "delete");
         d.addEventListener("click", async () => {
           try { await api("DELETE", cfg.del(r)); refresh(); } catch (e) { note(e.message, "error"); }
         });
@@ -225,7 +225,7 @@
     }
     form.append(input);
   });
-  const submit = el("button", { class: "btn", type: "submit", style: "margin-top:1rem" }, "Create");
+  const submit = el("button", { class: "btn-filled", type: "submit", style: "margin-top:1rem" }, "Create");
   form.append(submit);
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();

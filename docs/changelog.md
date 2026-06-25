@@ -2,6 +2,24 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.6.0 -- 2026-06-25 (Milestone M19)
+
+A new look: the doncel visual language.
+
+- **Left sidebar navigation.** Every section now lives in a fixed vertical menu
+  on the left, with an icon each, grouped into Operations / Configure / Tools /
+  Distribution / Administration -- the active page is highlighted.
+- **Collapsible + mobile.** Click the logo to collapse the sidebar to icons; on
+  small screens it becomes a drawer.
+- **Theme toggle in the sidebar.** Switch Nebula (dark) / Supernova (light).
+- **Refreshed components.** Material 3 buttons and cards, consistent page
+  headings -- sharing doncel's shared design system, in our Nebula/Supernova
+  palette.
+
+Internal: adopted material-design-system.css, new portal.css sidebar shell,
+base.html + _sidebar.html + sidebar.js, M3 button variants; 180 tests; sprints
+S044-S045. Merged 0.6-dev -> main.
+
 ## v0.5.3 -- 2026-06-25 (Milestone M18, v0.5 release)
 
 A guided first run that you can't lose your place in.

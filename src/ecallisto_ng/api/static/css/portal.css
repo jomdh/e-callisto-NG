@@ -1,35 +1,239 @@
-/* Portal layout (structure only; colours come from the M3 design system). */
+/* e-Callisto NG portal -- layout & structure.
+   Visual tokens, buttons, cards, chips come from material-design-system.css
+   (the shared, versioned M3 design system). This file owns the left-sidebar
+   shell + a small compatibility shim for class/token names our pages use.
+   Loaded AFTER the design system so layout rules win. */
 
-.topbar {
+/* ---- compat shim (classes/tokens our templates use) ---- */
+:root {
+  --sidebar-w: 232px;
+  --surface: var(--md-sys-color-surface-container);
+  --surface-variant: var(--md-sys-color-surface-container-high);
+  --radius: 6px;
+  --transition: 150ms ease;
+}
+.muted { color: var(--fg-muted); }
+
+/* ---- app shell: fixed sidebar + scrolling main ---- */
+body {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: width 0.2s ease;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 1em 1.1em;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.sidebar-header .brand {
+  font-family: var(--font-brand, 'DM Sans', sans-serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+.sidebar-header .material-icons { color: var(--accent); }
+
+.sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0.5em 0;
+  flex: 1;
+}
+.nav-section-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  opacity: 0.55;
+  padding: 0.9em 1.2em 0.3em;
+}
+.sidebar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  margin: 1px 0.5em;
+  padding: 0.5em 0.7em;
+  border-radius: var(--radius);
+  color: var(--fg-muted);
+  font-size: 0.86rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.sidebar-nav .nav-link .material-icons {
+  font-size: 20px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.sidebar-nav .nav-link:hover {
+  background: var(--bg-hover);
+  color: var(--fg);
+}
+.sidebar-nav .nav-link.active {
+  background: var(--bg-hover);
+  color: var(--accent);
+  font-weight: 600;
+}
+.sidebar-nav .nav-link.active .material-icons { opacity: 1; }
+
+.nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.5em 1.1em;
+}
+
+.sidebar-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  gap: 0.5em;
+  padding: 0.8em 1.1em;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--fg-muted);
 }
-.topbar .brand { font-family: var(--font-brand); font-weight: 700; font-size: 1.05rem; }
-.topbar { flex-wrap: wrap; gap: 0.5rem; }
-.navlinks { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.9rem; }
-.navlinks a { color: var(--fg); }
-.navlinks a:hover { color: var(--accent); }
-.navright { display: flex; align-items: center; gap: 0.7rem; }
+.sidebar-footer a { color: var(--fg-muted); }
+.sidebar-footer a:hover { color: var(--accent); }
 
-.portal-main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+/* theme toggle pill */
+.theme-toggle {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  margin: 0 1.1em 0.6em;
+  width: fit-content;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.theme-toggle button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9em;
+  height: 1.9em;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--fg-muted);
+}
+.theme-toggle button.active {
+  background: var(--accent);
+  color: var(--md-sys-color-on-primary);
+}
 
+/* ---- main content area ---- */
+.app-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  height: 100vh;
+}
+.portal-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.6rem 2rem;
+}
+.portal-main h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+.portal-main h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+}
+.portal-main .card { margin-bottom: 1rem; }
+/* compact row-action buttons in console tables */
+.portal-main table .btn-text {
+  padding: 0.2em 0.6em;
+  font-size: 0.8rem;
+}
+
+/* ---- collapsed sidebar (icon-only) ---- */
+.sidebar.collapsed { width: 60px; }
+.sidebar.collapsed .brand,
+.sidebar.collapsed .nav-link > span:not(.material-icons),
+.sidebar.collapsed .nav-section-label,
+.sidebar.collapsed .theme-toggle,
+.sidebar.collapsed .sidebar-footer span,
+.sidebar.collapsed .sidebar-footer a span:not(.material-icons) {
+  display: none;
+}
+.sidebar.collapsed .nav-link { justify-content: center; }
+
+/* ---- mobile drawer ---- */
+.sidebar-backdrop { display: none; }
+@media (max-width: 840px) {
+  .sidebar {
+    position: fixed;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar-backdrop.open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+  }
+  .mobile-fab {
+    position: fixed;
+    top: 0.6em;
+    left: 0.6em;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4em;
+    height: 2.4em;
+    border-radius: var(--radius);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .portal-main { padding: 3em 1.2rem 1.5rem; }
+}
+.mobile-fab { display: none; }
+
+/* ---- shared bits ---- */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--gap);
+  gap: var(--gap, 1rem);
 }
-
 .login-wrap {
   min-height: 100vh;
+  flex: 1;
   display: grid;
   place-items: center;
   padding: 1.5rem;
 }
 .login-card { width: 100%; max-width: 360px; }
-
-.theme-toggle { background: none; border: 1px solid var(--border); color: var(--fg);
-  border-radius: 999px; padding: 0.3em 0.8em; cursor: pointer; font-size: 0.8rem; }

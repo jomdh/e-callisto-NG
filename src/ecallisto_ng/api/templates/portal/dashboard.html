@@ -1,14 +1,13 @@
 {% extends "portal/base.html" %}
 {% block title %}Dashboard -- e-Callisto NG{% endblock %}
 {% block body %}
-{% include "portal/_nav.html" %}
 <div class="portal-main">
   <h2>Station</h2>
   <p class="muted">{{ station.name }} &mdash; {{ station.observatory or "no observatory set" }}</p>
 
   <div style="display:flex;justify-content:space-between;align-items:center">
     <h2>Instruments</h2>
-    <a class="btn" href="/portal/manage/instruments">Manage instruments</a>
+    <a class="btn-filled" href="/portal/manage/instruments">Manage instruments</a>
   </div>
   {% if instruments %}
   <div class="card">
