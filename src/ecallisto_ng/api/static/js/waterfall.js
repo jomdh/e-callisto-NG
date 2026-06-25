@@ -17,15 +17,34 @@
     return "rgb(" + r + "," + g + "," + Math.max(0, b) + ")";
   }
 
-  function drawColumn(values) {
+  // Rolling auto-contrast: track the recent min/max so faint noise-floor
+  // structure fills the colormap instead of collapsing to near-black. The
+  // range eases toward each frame's extremes, so a burst widens it smoothly.
+  let wfLo = null;
+  let wfHi = null;
+
+  function drawColumn(rawValues) {
+    const vals = rawValues.map(scale); // honors the dB toggle
+    let fmin = Infinity;
+    let fmax = -Infinity;
+    for (const v of vals) {
+      if (v < fmin) fmin = v;
+      if (v > fmax) fmax = v;
+    }
+    const a = 0.1; // adaptation rate
+    wfLo = wfLo === null ? fmin : wfLo + (fmin - wfLo) * a;
+    wfHi = wfHi === null ? fmax : wfHi + (fmax - wfHi) * a;
+    const span = wfHi - wfLo || 1;
+
     // scroll left by 1px
     const img = ctx.getImageData(1, 0, W - 1, H);
     ctx.putImageData(img, 0, 0);
-    const n = values.length;
+    const n = vals.length;
     for (let i = 0; i < n; i++) {
       const y0 = Math.floor((i / n) * H);
       const y1 = Math.floor(((i + 1) / n) * H);
-      ctx.fillStyle = color(values[i] & 0xff);
+      const norm = Math.max(0, Math.min(255, ((vals[i] - wfLo) / span) * 255));
+      ctx.fillStyle = color(norm);
       ctx.fillRect(W - 1, y0, 1, Math.max(1, y1 - y0));
     }
   }
