@@ -60,3 +60,9 @@ their own. Derive channel-gen, overview, freqgen, and FITS axes from the
 plan instead of the hardcoded 45-870. **Owner chose the full band-plan
 model; scheduled AFTER M28-M30 fidelity.** Needs an ADR (core/contract +
 schema change) and ties to the DB-migration gap (Alembic).
+
+**Converter note (2026-06-25):** a Callisto is commonly run with an
+up/down-converter, so it has **no RF limit** -- the converter+LO map the
+user's chosen RF band into the tuner's native IF (45-870). The band plan
+must carry a per-segment converter+LO; capability validation is on the
+**IF after conversion**, not the RF. The user defines the exact config.

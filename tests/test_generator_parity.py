@@ -11,13 +11,13 @@ from ecallisto_ng.api.models import Role
 from ecallisto_ng.services.freqgen import generate_frequencies, rf_to_if
 
 
-def test_exclude_band_drops_rfi_channels() -> None:
-    # even mode, 10 bins of 10 MHz over 45-145; exclude 85-105
+def test_exclude_band_keeps_channel_count() -> None:
+    # even mode over 45-145, exclude 85-105: legacy keeps N, skips the gap (D5)
     freqs = generate_frequencies(
         [], 45.0, 145.0, 10, mode="even", exclude_band=(85.0, 105.0)
     )
-    assert all(not (85.0 <= f <= 105.0) for f in freqs)
-    assert len(freqs) < 10  # excluded bins dropped
+    assert len(freqs) == 10  # channel count preserved (compaction)
+    assert all(not (85.0 < f < 105.0) for f in freqs)  # nothing inside the gap
 
 
 def test_quiet_avoids_rfi_points() -> None:
@@ -64,7 +64,8 @@ def test_generate_endpoint_excludes(client: TestClient) -> None:
     )
     assert r.status_code == 201
     freqs = r.json()["frequencies"]
-    assert all(not (85.0 <= f <= 105.0) for f in freqs)
+    assert len(freqs) == 10  # keep-N (D5)
+    assert all(not (85.0 < f < 105.0) for f in freqs)
 
 
 def test_connection_test_endpoint(

@@ -67,3 +67,39 @@ def test_frq_export_endpoint(client: TestClient) -> None:
     assert r.status_code == 200
     assert "[target]=CALLISTO" in r.text
     assert "[0001]=0045.000,1" in r.text  # channel 0 flagged
+
+
+def test_nonlinear_start_pins_channels() -> None:  # D2
+    freqs = generate_frequencies(
+        [], 45.0, 145.0, 10, mode="even", nonlinear_start=3
+    )
+    assert len(freqs) == 10
+    assert freqs[0] == freqs[1] == freqs[2] == 45.0  # first 3 pinned to start
+    assert freqs[-1] > 45.0  # the linear sweep progresses up the band
+
+
+def test_keep_n_with_exclusion() -> None:  # D5
+    freqs = generate_frequencies(
+        [], 45.0, 145.0, 10, mode="even", exclude_band=(85.0, 105.0)
+    )
+    assert len(freqs) == 10  # channel count preserved
+    assert all(not (85.0 < f < 105.0) for f in freqs)
+
+
+def test_generate_endpoint_converter(client: TestClient) -> None:  # D3
+    _login(client)
+    r = client.post(
+        "/api/v1/programs/generate",
+        json={
+            "name": "DC",
+            "overview": [],
+            "start_mhz": 1200.0,  # RF above the Callisto IF -> downconverter
+            "stop_mhz": 1800.0,
+            "n_channels": 8,
+            "mode": "even",
+            "converter": "usb",
+            "local_oscillator": 1155.0,  # IF = RF - LO lands in 45-870
+        },
+    )
+    assert r.status_code == 201  # no RF limit; converter maps it (user config)
+    assert len(r.json()["frequencies"]) == 8
