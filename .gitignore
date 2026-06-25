@@ -27,9 +27,13 @@ venv/
 # Local-only; not part of the NG repo.
 legacy/
 
-# Planning, ADRs, sprint logs, milestone plans, changelog, parity audit.
-# Maintainer-local methodology -- kept on the computer, not pushed.
-docs/
+# Planning, sprint logs, milestone plans, changelog, parity audit, research --
+# maintainer-local methodology, kept on the computer, not pushed. EXCEPT
+# docs/architecture/ (ADRs): third-party driver authors build against the
+# plugin contracts, so the architecture-decision record ships.
+docs/*
+!docs/architecture/
+**/.DS_Store
 
 # stray SQLite DBs -- the station creates its own
 *.db
