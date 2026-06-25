@@ -237,6 +237,11 @@ class Instrument(SQLModel, table=True):
     file_seconds: int = 900  # length of one recording/FITS file
     unit: str = "raw"  # raw / sfu / kelvin (calibrated output, DESIGN 6b)
     output_mode: str = "standard"  # legacy / standard / custom (DESIGN 6a)
+    # The instrument's frequency plan: a program defines the range + channel
+    # list used by manual AND scheduled recording. None -> a 45+N MHz ramp.
+    program_id: int | None = Field(
+        default=None, foreign_key="frequencyprogram.id"
+    )
     calibration_set_id: int | None = Field(
         default=None, foreign_key="calibrationset.id"
     )

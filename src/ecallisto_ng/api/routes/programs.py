@@ -40,6 +40,11 @@ class ProgramIn(BaseModel):
     stop_mhz: float = 870.0
 
 
+class FrqImportIn(BaseModel):
+    name: str
+    text: str  # the pasted/uploaded legacy frqXXXXX.cfg content
+
+
 class GenerateIn(BaseModel):
     name: str
     overview: list[tuple[float, float]]  # (freq_mhz, amplitude)
@@ -120,6 +125,31 @@ def generate_program(
         start_mhz=body.start_mhz,
         stop_mhz=body.stop_mhz,
         source="generated",
+    )
+    db.add(prog)
+    db.commit()
+    db.refresh(prog)
+    return _out(prog)
+
+
+@router.post("/import/frq", status_code=201, dependencies=[Depends(_operator)])
+def import_frq(
+    body: FrqImportIn, db: DbSession = Depends(get_session)
+) -> ProgramOut:
+    """Create a program from a pasted/uploaded legacy frqXXXXX.cfg (M32)."""
+    from ecallisto_ng.services.legacy_import import parse_frequency_program
+
+    cfg = parse_frequency_program(body.text)
+    if not cfg.frequencies:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "no channels found in the frq file"
+        )
+    prog = FrequencyProgram(
+        name=body.name,
+        frequencies_json=json.dumps(cfg.frequencies),
+        start_mhz=min(cfg.frequencies),
+        stop_mhz=max(cfg.frequencies),
+        source="imported",
     )
     db.add(prog)
     db.commit()

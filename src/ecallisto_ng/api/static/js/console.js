@@ -32,6 +32,7 @@
         { name: "address", placeholder: "/dev/ttyUSB0", hint: "Serial: /dev/ttyUSB0 · USB SDR: usb:04b4:00f3 or rx888 · network: host:port · blank = simulator." },
         { name: "unit", select: "unit", hint: "raw ADC (default) · sfu / kelvin need a calibration set." },
         { name: "output_mode", select: "output_mode", hint: "standard or legacy FITS (legacy = byte-exact archive)." },
+        { name: "program_id", type: "number", hint: "Frequency program ID from the Programs section (the range/channel list). Blank = 45+N MHz ramp." },
         { name: "file_seconds", type: "number", value: 900, hint: "Seconds per FITS file (e.g. 900 = 15 min)." },
       ],
       actions: [
@@ -62,13 +63,14 @@
     },
     programs: {
       title: "Frequency programs",
+      build: true,
       list: "/api/v1/programs",
       create: "/api/v1/programs",
       del: (r) => `/api/v1/programs/${r.id}`,
       columns: ["id", "name", "start_mhz", "stop_mhz", "source"],
       fields: [
-        { name: "name", required: true },
-        { name: "frequencies", json: true, placeholder: "[45.0, 55.0, 65.0]" },
+        { name: "name", required: true, hint: "Name this plan; reference its id on the instrument." },
+        { name: "frequencies", json: true, placeholder: "[45.0, 55.0, 65.0]", hint: "Or paste an explicit channel list (MHz)." },
         { name: "light_curve_indices", json: true, placeholder: "[0, 2] (channel indices, max 10)" },
         { name: "start_mhz", type: "number", value: 45 },
         { name: "stop_mhz", type: "number", value: 870 },
@@ -284,8 +286,61 @@
     catch (e) { note(e.message, "error"); }
   });
 
+  // Programs: build a frequency list within a range (generate) or upload a frq.
+  function buildPanel() {
+    const wrap = el("div", { style: "margin-bottom:1rem" });
+    const lbl = (t) => el("span", { class: "muted", style: "margin-right:.3em" }, t);
+
+    const g = el("div", { class: "data-toolbar" });
+    const gname = el("input", { placeholder: "name", style: "width:8em" });
+    const gstart = el("input", { type: "number", value: "45", style: "width:5em", title: "start MHz" });
+    const gstop = el("input", { type: "number", value: "870", style: "width:5em", title: "stop MHz" });
+    const gn = el("input", { type: "number", value: "200", style: "width:5em", title: "channels" });
+    const gmode = el("select", { title: "mode" });
+    ["even", "quiet"].forEach((m) => gmode.append(el("option", {}, m)));
+    const gbtn = el("button", { class: "btn-filled", type: "button" }, "Generate in range");
+    const gmsg = el("span", { class: "muted" });
+    gbtn.addEventListener("click", async () => {
+      gmsg.textContent = "generating...";
+      try {
+        await api("POST", "/api/v1/programs/generate", {
+          name: gname.value || "program",
+          overview: [],
+          start_mhz: Number(gstart.value),
+          stop_mhz: Number(gstop.value),
+          n_channels: Number(gn.value),
+          mode: gmode.value,
+        });
+        gmsg.textContent = "created"; gname.value = ""; refresh();
+      } catch (e) { gmsg.textContent = e.message; }
+    });
+    g.append(lbl("Generate:"), gname, lbl("from"), gstart, lbl("to"), gstop, lbl("×"), gn, gmode, gbtn, gmsg);
+
+    const u = el("div", { class: "data-toolbar", style: "margin-top:.5em" });
+    const uname = el("input", { placeholder: "name", style: "width:8em" });
+    const ufile = el("input", { type: "file", accept: ".cfg,.frq,.txt" });
+    const ubtn = el("button", { class: "btn-text", type: "button" }, "Upload frq file");
+    const umsg = el("span", { class: "muted" });
+    ubtn.addEventListener("click", async () => {
+      const f = ufile.files && ufile.files[0];
+      if (!f) { umsg.textContent = "pick a .cfg/.frq file"; return; }
+      umsg.textContent = "importing...";
+      try {
+        const text = await f.text();
+        await api("POST", "/api/v1/programs/import/frq", { name: uname.value || f.name, text });
+        umsg.textContent = "imported"; refresh();
+      } catch (e) { umsg.textContent = e.message; }
+    });
+    u.append(lbl("Upload frq:"), uname, ufile, ubtn, umsg);
+
+    wrap.append(g, u, el("small", { class: "muted", style: "display:block;margin-top:.3em" },
+      "Generate snaps to the 0.0625 MHz grid; 'quiet' needs an overview, else ≈ even. Or paste a list / set start-stop below."));
+    return wrap;
+  }
+
   const card = el("div", { class: "card", style: "margin-bottom:1rem" });
   if (cfg.scan) card.append(scanPanel());
+  if (cfg.build) card.append(buildPanel());
   card.append(form);
   root.replaceChildren(card, body, out);
   refresh();
