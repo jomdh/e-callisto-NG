@@ -47,8 +47,11 @@ class SchedulerService:
         self._stop = threading.Event()
 
     def tick(self, db: Session, now: datetime) -> None:
+        from ecallisto_ng.services.clock import clock_synced, may_record
+
         station = db.exec(select(Station)).first() or Station()
         recorder = get_recorder()
+        gate_ok = may_record(get_settings().require_clock_sync, clock_synced())
         for sched in db.exec(select(Schedule).where(Schedule.enabled)).all():
             inst = db.get(Instrument, sched.instrument_id)
             if inst is None or not inst.enabled or inst.id is None:
@@ -56,9 +59,11 @@ class SchedulerService:
             window = self._window(sched, station, now)
             desired = is_recording_desired(window, now)
             state = recorder.status(inst.id).state
-            if desired and state is not RecorderState.RECORDING:
+            if desired and gate_ok and state is not RecorderState.RECORDING:
                 self._start(db, inst, station)
-            elif not desired and state is RecorderState.RECORDING:
+            elif (
+                not desired or not gate_ok
+            ) and state is RecorderState.RECORDING:
                 recorder.stop(inst.id)
 
     def _window(

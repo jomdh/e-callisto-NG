@@ -14,6 +14,7 @@ from ecallisto_ng.api.models import Instrument, Role, UploadJob, User
 from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.api.templating import templates
 from ecallisto_ng.services import catalog
+from ecallisto_ng.services.clock import clock_synced
 from ecallisto_ng.services.health import HealthReport, build_report
 
 router = APIRouter(tags=["system"])
@@ -32,7 +33,13 @@ def _report(db: DbSession) -> HealthReport:
         ).all()
     }
     pending = sum(1 for r in recordings if r.name not in done)
-    return build_report(data_dir, int(instruments), len(recordings), pending)
+    return build_report(
+        data_dir,
+        int(instruments),
+        len(recordings),
+        pending,
+        clock_synced=clock_synced(),
+    )
 
 
 @router.get("/api/v1/system/health", dependencies=[Depends(_viewer)])

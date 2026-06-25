@@ -1,0 +1,42 @@
+#!/bin/sh
+# Post-install: create the callisto user + dirs, build the venv, enable service.
+set -e
+
+APP_DIR=/opt/ecallisto-ng
+DATA_DIR=/var/lib/callisto
+CONF_DIR=/etc/callisto
+USER=callisto
+
+case "$1" in
+    configure)
+        if ! id "$USER" >/dev/null 2>&1; then
+            adduser --system --home "$APP_DIR" --group "$USER"
+        fi
+        mkdir -p "$DATA_DIR" "$CONF_DIR"
+        chown "$USER:$USER" "$DATA_DIR" "$CONF_DIR"
+
+        if [ ! -d "$APP_DIR/.venv" ]; then
+            python3 -m venv "$APP_DIR/.venv"
+            "$APP_DIR/.venv/bin/pip" install --upgrade pip
+            "$APP_DIR/.venv/bin/pip" install "$APP_DIR"
+        fi
+
+        if [ ! -f "$CONF_DIR/ecallisto.env" ]; then
+            cat > "$CONF_DIR/ecallisto.env" <<EOF
+ECALLISTO_BIND=0.0.0.0
+ECALLISTO_PORT=8000
+ECALLISTO_DATA_DIR=$DATA_DIR
+ECALLISTO_CONFIG_DIR=$CONF_DIR
+ECALLISTO_SECRET_KEY=$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')
+EOF
+            chown "$USER:$USER" "$CONF_DIR/ecallisto.env"
+            chmod 0600 "$CONF_DIR/ecallisto.env"
+        fi
+
+        systemctl daemon-reload || true
+        systemctl enable --now ecallisto-web || true
+        ;;
+esac
+
+#DEBHELPER#
+exit 0

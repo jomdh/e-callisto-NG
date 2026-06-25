@@ -2,6 +2,25 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.2.1 -- 2026-06-25 (Milestone M7)
+
+Safe to expose and simple to ship.
+
+- **Encrypted credentials.** Upload passwords are stored encrypted and never
+  shown again -- the API only reports whether one is set.
+- **Hardened browser security.** A Content-Security-Policy is enforced on every
+  page.
+- **Remote access your way.** Choose LAN/VPN, public HTTPS with dynamic DNS, or
+  an outbound relay tunnel; the matching Caddy config is generated for you.
+- **Clock awareness.** Health shows real NTP synchronization; recording can be
+  set to pause if the clock is known out of sync.
+- **One-command install.** A Debian package sets up the user, service, and a
+  generated secret on install.
+
+Internal: Fernet credential encryption, CSP middleware + nonce, access settings +
+Caddyfile/DDNS generation, timedatectl clock probe + gate, debian/ packaging;
+87 tests; sprints S021-S023.
+
 ## v0.2.0 -- 2026-06-25 (Milestone M6)
 
 The station now runs itself.

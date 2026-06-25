@@ -1,0 +1,16 @@
+Source: ecallisto-ng
+Section: science
+Priority: optional
+Maintainer: e-Callisto NG <noreply@e-callisto.example>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-venv
+Standards-Version: 4.6.2
+Homepage: https://github.com/jomdh/e-callisto-NG
+
+Package: ecallisto-ng
+Architecture: any
+Depends: ${misc:Depends}, python3 (>= 3.12), python3-venv, chrony, adduser
+Recommends: caddy
+Description: Web-based solar radio spectrometer suite for a station
+ e-Callisto NG runs on a Debian/Raspberry Pi OS station and controls one or
+ more Callisto receivers, fully operated from a web browser: install wizard,
+ live waterfall, scheduling, data browsing, uploads, and health monitoring.
