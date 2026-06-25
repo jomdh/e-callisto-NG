@@ -58,12 +58,28 @@ def _next_action(
 
 
 def instrument_cockpit(db: Session, now: datetime) -> list[dict[str, Any]]:
-    """One status row per instrument for the dashboard."""
+    """One status row per instrument for the dashboard.
+
+    State/last-file come from the persisted runtime (cross-process, ADR-0007),
+    falling back to this process's in-memory recorder view.
+    """
+    from ecallisto_ng.services import recorder_state
+
     station = db.exec(select(Station)).first() or Station()
     recorder = get_recorder()
+    runtimes = recorder_state.read(db)
     rows: list[dict[str, Any]] = []
     for inst in db.exec(select(Instrument)).all():
         status = recorder.status(inst.id) if inst.id is not None else None
+        runtime = runtimes.get(inst.id) if inst.id is not None else None
+        state = (
+            runtime.state if runtime else (status.state if status else "idle")
+        )
+        last_file = (
+            runtime.last_file
+            if runtime
+            else (status.last_file if status else None)
+        )
         last_upload = db.exec(
             select(UploadJob)
             .where(
@@ -88,8 +104,8 @@ def instrument_cockpit(db: Session, now: datetime) -> list[dict[str, Any]]:
                 "instrument_class": inst.instrument_class,
                 "channels": inst.channels,
                 "enabled": inst.enabled,
-                "state": status.state if status else "idle",
-                "last_file": status.last_file if status else None,
+                "state": state,
+                "last_file": last_file,
                 "next_action": _next_action(db, inst, station, now),
                 "last_upload": (last_upload.filename if last_upload else None),
                 "program": program,

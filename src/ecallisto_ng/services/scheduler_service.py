@@ -28,6 +28,7 @@ from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
+from ecallisto_ng.services import recorder_state
 from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
@@ -96,6 +97,7 @@ class SchedulerService:
         self, db: Session, inst: Instrument, st: Station, sched: Schedule
     ) -> None:
         assert inst.id is not None
+        iid = inst.id
         driver = build_driver(
             inst.instrument_class, inst.address, inst.focus_code, inst.channels
         )
@@ -124,6 +126,7 @@ class SchedulerService:
             unit=unit,
             calibration=calibration,
             writer=get_writer(inst.output_mode),
+            on_state=lambda st, lf: recorder_state.write(iid, st, lf),
         )
 
     def _channels(

@@ -43,6 +43,20 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class RecorderRuntime(SQLModel, table=True):
+    """Persisted recorder run-state per instrument (ADR-0007 / F14).
+
+    Written by whichever process owns the recording (web or the `acquire`
+    daemon), read by the web app -- so the dashboard reflects acquisition state
+    across the process boundary.
+    """
+
+    instrument_id: int = Field(primary_key=True)
+    state: str = "idle"
+    last_file: str | None = None
+    updated_at: datetime = Field(default_factory=_utcnow)
+
+
 class WizardState(SQLModel, table=True):
     """Resumable first-run wizard state (single row, DESIGN 9)."""
 

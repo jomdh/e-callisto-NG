@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -100,6 +101,7 @@ class RecorderService:
         unit: UnitLevel = UnitLevel.RAW,
         calibration: Calibration | None = None,
         writer: OutputWriter | None = None,
+        on_state: Callable[[str, str | None], None] | None = None,
     ) -> None:
         with self._lock:
             existing = self._jobs.get(instrument_id)
@@ -140,13 +142,19 @@ class RecorderService:
                     on_data_loss=_on_data_loss,
                 )
                 self._finish(instrument_id, str(path), None)
+                if on_state is not None:
+                    on_state(RecorderState.IDLE, str(path))
             except Exception as exc:  # noqa: BLE001 - report any failure
                 self._finish(instrument_id, None, str(exc))
+                if on_state is not None:
+                    on_state(RecorderState.ERROR, None)
 
         thread = threading.Thread(target=_run, daemon=True)
         status = RecorderStatus(state=RecorderState.RECORDING)
         with self._lock:
             self._jobs[instrument_id] = _Job(driver, thread, status)
+        if on_state is not None:
+            on_state(RecorderState.RECORDING, None)
         thread.start()
 
     def stop(self, instrument_id: int) -> None:

@@ -20,6 +20,7 @@ from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services import bench as bench_svc
 from ecallisto_ng.services import noise_figure as nf_svc
+from ecallisto_ng.services import recorder_state
 from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
@@ -143,6 +144,9 @@ def record_instrument(
             unit=unit,
             calibration=calibration,
             writer=get_writer(inst.output_mode),
+            on_state=lambda st, lf: recorder_state.write(
+                instrument_id, st, lf
+            ),
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
