@@ -15,13 +15,17 @@ from dataclasses import dataclass
 class ExportEntry:
     time_utc: str  # HH:MM[:SS]
     focus_code: int
-    mode: int  # 3 = start, 0 = stop, 8 = overview
+    mode: str  # "3"=start, "0"=stop, "8"=overview (audit B1)
+    program: str = ""  # 4th column: frqXXXXX.cfg program-switch
 
 
 def build_scheduler_cfg(entries: Iterable[ExportEntry]) -> str:
-    """Render ``hh:mm:ss,fc,mode`` lines with the legacy header comment."""
+    """Render ``hh:mm:ss,fc,mode[,fprog]`` lines (legacy header comment)."""
     lines = ["// scheduler.cfg exported by e-Callisto NG"]
     for e in sorted(entries, key=lambda x: x.time_utc):
         hhmmss = e.time_utc if len(e.time_utc) == 8 else f"{e.time_utc}:00"
-        lines.append(f"{hhmmss},{e.focus_code:02d},{e.mode}")
+        line = f"{hhmmss},{e.focus_code:02d},{e.mode}"
+        if e.program:
+            line += f",{e.program}"
+        lines.append(line)
     return "\r\n".join(lines) + "\r\n"

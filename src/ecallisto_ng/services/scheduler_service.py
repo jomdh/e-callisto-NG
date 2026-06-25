@@ -93,6 +93,7 @@ class SchedulerService:
             station.longitude_deg,
             now.date(),
             sched.margin_minutes,
+            station.horizon_deg,
         )
 
     def _start(

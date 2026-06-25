@@ -13,7 +13,13 @@ from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Instrument, Role, Schedule, Station
+from ecallisto_ng.api.models import (
+    FrequencyProgram,
+    Instrument,
+    Role,
+    Schedule,
+    Station,
+)
 from ecallisto_ng.services.legacy_export import (
     ExportEntry,
     build_scheduler_cfg,
@@ -84,9 +90,17 @@ def export_scheduler_cfg(db: DbSession = Depends(get_session)) -> str:
     for sched in db.exec(select(Schedule).where(Schedule.enabled)).all():
         inst = db.get(Instrument, sched.instrument_id)
         fc = inst.focus_code if inst else 1
+        prog = ""
+        if sched.program_id is not None:
+            fp = db.get(FrequencyProgram, sched.program_id)
+            if fp is not None:
+                prog = f"frq_{fp.name}.cfg"
         if sched.kind == "fixed":
-            entries.append(ExportEntry(sched.start_utc, fc, 3))
-            entries.append(ExportEntry(sched.stop_utc, fc, 0))
+            entries.append(ExportEntry(sched.start_utc, fc, "3", prog))
+            entries.append(ExportEntry(sched.stop_utc, fc, "0"))
+        # scheduled overview (mode 8), if configured.
+        if sched.overview_at:
+            entries.append(ExportEntry(sched.overview_at, fc, "8"))
     return build_scheduler_cfg(entries)
 
 

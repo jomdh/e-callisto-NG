@@ -110,8 +110,10 @@ def import_legacy(
         db.add(fp)
 
     # Legacy scheduler entries -> a fixed window (earliest start, latest stop).
-    starts = [e for e in sched if e.mode not in (0,)]
-    stops = [e for e in sched if e.mode == 0]
+    # Mode "0"=stop, "8"=scheduled overview, anything else=start (audit B1).
+    starts = [e for e in sched if e.mode not in ("0", "8")]
+    stops = [e for e in sched if e.mode == "0"]
+    overviews = [e for e in sched if e.mode == "8"]
     if starts and inst.id is not None:
         start = min(e.time_utc for e in starts)[:5]
         stop = max(e.time_utc for e in stops)[:5] if stops else "23:59"
@@ -121,7 +123,12 @@ def import_legacy(
                 kind="fixed",
                 start_utc=start,
                 stop_utc=stop,
+                # earliest mode-8 line -> scheduled overview time.
+                overview_at=(
+                    min(e.time_utc for e in overviews)[:5] if overviews else ""
+                ),
             )
         )
+        summary["schedule_overviews"] = len(overviews)
     db.commit()
     return summary
