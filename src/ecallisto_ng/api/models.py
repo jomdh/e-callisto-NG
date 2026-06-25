@@ -138,5 +138,6 @@ class Instrument(SQLModel, table=True):
     gain: int = 120
     channels: int = 200
     sweep_rate_hz: float = 4.0
+    file_seconds: int = 900  # length of one recording/FITS file
     enabled: bool = True
     created_at: datetime = Field(default_factory=_utcnow)
