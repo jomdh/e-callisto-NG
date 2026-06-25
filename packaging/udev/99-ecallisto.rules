@@ -1,0 +1,17 @@
+# e-Callisto NG device rules.
+# Installed to /etc/udev/rules.d/ by scripts/install.sh.
+
+# --- USB-serial Callisto bridges: keep ModemManager out of the port ---
+# ModemManager probes new ttyUSB* and can hold a PL2303/FTDI/CP2102 for
+# seconds, breaking the Callisto handshake. Mark them ignored.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# --- USB SDRs: allow non-root access via the plugdev group ---
+# RX-888 MkII (Cypress FX3), RTL-SDR (Realtek), Airspy/HackRF (Great Scott),
+# SDRplay.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", MODE="0660", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", MODE="0660", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d50", MODE="0660", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1df7", MODE="0660", GROUP="plugdev"

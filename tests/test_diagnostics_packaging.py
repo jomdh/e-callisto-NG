@@ -33,7 +33,7 @@ def test_diagnose_probes_device(client: TestClient) -> None:
 
 
 def test_systemd_unit_present() -> None:
-    unit = _ROOT / "packaging" / "systemd" / "ecallisto-web.service"
+    unit = _ROOT / "packaging" / "systemd" / "ecallisto-web.service.in"
     assert unit.exists()
     text = unit.read_text()
     assert "ExecStart=" in text

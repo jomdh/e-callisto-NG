@@ -134,24 +134,36 @@ class RecorderService:
                     job.status.messages.extend(lines)
 
         def _run() -> None:
+            from ecallisto_ng.services import port_lock
+
             try:
-                path = record(
-                    driver,
-                    out_writer,
-                    channels,
-                    meta,
-                    out_dir,
-                    sweeps_per_second=sweep_rate_hz,
-                    max_frames=max_frames,
-                    unit=unit,
-                    calibration=calibration,
-                    on_frame=_publish,
-                    watchdog=Watchdog(),
-                    on_data_loss=_on_data_loss,
-                )
+                # Hold the device for the whole recording so a bench/overview
+                # op (possibly in the other process) gets a clean busy, not a
+                # corrupt read (ADR-0007 two-process model).
+                with port_lock.hold(instrument_id):
+                    path = record(
+                        driver,
+                        out_writer,
+                        channels,
+                        meta,
+                        out_dir,
+                        sweeps_per_second=sweep_rate_hz,
+                        max_frames=max_frames,
+                        unit=unit,
+                        calibration=calibration,
+                        on_frame=_publish,
+                        watchdog=Watchdog(),
+                        on_data_loss=_on_data_loss,
+                    )
                 self._finish(instrument_id, str(path), None)
                 if on_state is not None:
                     on_state(RecorderState.IDLE, str(path))
+            except port_lock.InstrumentBusy:
+                self._finish(
+                    instrument_id, None, "instrument busy (port in use)"
+                )
+                if on_state is not None:
+                    on_state(RecorderState.ERROR, None)
             except Exception as exc:  # noqa: BLE001 - report any failure
                 self._finish(instrument_id, None, str(exc))
                 if on_state is not None:

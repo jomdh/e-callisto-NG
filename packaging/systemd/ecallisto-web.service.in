@@ -1,0 +1,18 @@
+[Unit]
+Description=e-Callisto NG web service
+After=network-online.target chrony.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USER@
+WorkingDirectory=@APP_DIR@
+EnvironmentFile=@ENV_FILE@
+# Recording is independent of this unit (the acquire daemon owns the loops);
+# restarting/ crashing the web app never stops acquisition (ADR-0007).
+ExecStart=@VENV@/bin/uvicorn ecallisto_ng.api.app:create_app --factory --host @BIND@ --port @PORT@
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

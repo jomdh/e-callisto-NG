@@ -26,7 +26,8 @@ def test_acquire_subcommand_registered() -> None:
 
 
 def test_acquire_unit_packaged() -> None:
-    unit = _ROOT / "packaging" / "systemd" / "ecallisto-acquire.service"
+    # templated unit (rendered per-deployment by scripts/install.sh)
+    unit = _ROOT / "packaging" / "systemd" / "ecallisto-acquire.service.in"
     assert unit.exists()
     text = unit.read_text()
     assert "ecallisto-ng acquire" in text
