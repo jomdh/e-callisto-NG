@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -20,7 +22,7 @@ from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services import bench as bench_svc
 from ecallisto_ng.services import noise_figure as nf_svc
-from ecallisto_ng.services import recorder_state
+from ecallisto_ng.services import port_lock, recorder_state
 from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.channels import resolve_channels
 from ecallisto_ng.services.overview import run_overview
@@ -143,6 +145,11 @@ def record_instrument(
     db: DbSession = Depends(get_session),
 ) -> dict[str, str]:
     inst = _get(db, instrument_id)
+    if port_lock.is_busy(instrument_id):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "instrument is busy (a bench/overview op is using the port)",
+        )
     driver = build_driver(
         inst.instrument_class, inst.address, inst.focus_code, inst.channels
     )
@@ -221,14 +228,20 @@ def overview_instrument(
     out_dir = get_settings().data_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     try:
-        prn, csv = run_overview(
-            driver,
-            out_dir,
-            inst.name,
-            datetime.now(UTC),
-            focus_code=inst.focus_code,
-            pwm=inst.gain,
-        )
+        with port_lock.hold(instrument_id):
+            prn, csv = run_overview(
+                driver,
+                out_dir,
+                inst.name,
+                datetime.now(UTC),
+                focus_code=inst.focus_code,
+                pwm=inst.gain,
+            )
+    except port_lock.InstrumentBusy as exc:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "instrument is busy (the port is in use by another operation)",
+        ) from exc
     except OSError as exc:
         raise _hw_error(exc) from exc
     return {"prn": prn.name, "csv": csv.name}
@@ -259,6 +272,32 @@ def _bench_driver(db: DbSession, instrument_id: int) -> BenchCapable:
     return driver
 
 
+@contextmanager
+def _bench_session(
+    db: DbSession, instrument_id: int
+) -> Iterator[BenchCapable]:
+    """Bench driver + exclusive port lock + connect/close + error mapping.
+
+    Serializes serial access: a second bench/overview op while one is running
+    gets a clean 409 instead of a pyserial "multiple access" collision.
+    """
+    driver = _bench_driver(db, instrument_id)
+    try:
+        with port_lock.hold(instrument_id):
+            driver.connect()  # type: ignore[attr-defined]
+            try:
+                yield driver
+            finally:
+                driver.close()  # type: ignore[attr-defined]
+    except port_lock.InstrumentBusy as exc:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "instrument is busy (the port is in use by another operation)",
+        ) from exc
+    except OSError as exc:
+        raise _hw_error(exc) from exc
+
+
 @router.get(
     "/{instrument_id}/bench/detector", dependencies=[Depends(_operator)]
 )
@@ -269,14 +308,8 @@ def bench_detector(
     db: DbSession = Depends(get_session),
 ) -> dict[str, float]:
     """Tune + read the detector voltage once (legacy 'simple' tool)."""
-    driver = _bench_driver(db, instrument_id)
-    try:
-        driver.connect()  # type: ignore[attr-defined]
+    with _bench_session(db, instrument_id) as driver:
         mv = bench_svc.read_detector(driver, freq, gain)
-    except OSError as exc:
-        raise _hw_error(exc) from exc
-    finally:
-        driver.close()  # type: ignore[attr-defined]
     return {"mv": mv, "freq": freq, "gain": float(gain)}
 
 
@@ -287,9 +320,7 @@ def bench_sweep(
     db: DbSession = Depends(get_session),
 ) -> dict[str, object]:
     """Sweep detector voltage vs frequency (underlies NF/bandpass, M12)."""
-    driver = _bench_driver(db, instrument_id)
-    try:
-        driver.connect()  # type: ignore[attr-defined]
+    with _bench_session(db, instrument_id) as driver:
         points = bench_svc.sweep(
             driver,
             body.f_min,
@@ -298,10 +329,6 @@ def bench_sweep(
             body.gain,
             body.relay,
         )
-    except OSError as exc:
-        raise _hw_error(exc) from exc
-    finally:
-        driver.close()  # type: ignore[attr-defined]
     return {"points": points}
 
 
@@ -331,29 +358,23 @@ def bench_noise_figure(
     db: DbSession = Depends(get_session),
 ) -> dict[str, object]:
     """Cold/warm/hot Y-factor noise figure + slope + bandpass (legacy NF)."""
-    driver = _bench_driver(db, instrument_id)
-    driver.connect()  # type: ignore[attr-defined]
+    with _bench_session(db, instrument_id) as driver:
 
-    def _sweep(relay: int) -> list[tuple[float, float]]:
-        return bench_svc.sweep(
-            driver,
-            body.f_min,
-            body.f_max,
-            body.n_points,
-            body.gain,
-            relay=relay,
-            integration=body.integration,
-            settle_s=body.settle_s,
-        )
+        def _sweep(relay: int) -> list[tuple[float, float]]:
+            return bench_svc.sweep(
+                driver,
+                body.f_min,
+                body.f_max,
+                body.n_points,
+                body.gain,
+                relay=relay,
+                integration=body.integration,
+                settle_s=body.settle_s,
+            )
 
-    try:
         cold = _sweep(body.cold_relay)
         warm = _sweep(body.warm_relay)
         hot = _sweep(body.hot_relay)
-    except OSError as exc:
-        raise _hw_error(exc) from exc
-    finally:
-        driver.close()  # type: ignore[attr-defined]
     freqs = [f for f, _ in cold]
     cold_mv = [v for _, v in cold]
     warm_mv = [v for _, v in warm]
@@ -392,16 +413,10 @@ def bench_agc_sweep(
     db: DbSession = Depends(get_session),
 ) -> dict[str, object]:
     """AGC commissioning: detector voltage vs PWM gain (legacy AGC, C5)."""
-    driver = _bench_driver(db, instrument_id)
-    try:
-        driver.connect()  # type: ignore[attr-defined]
+    with _bench_session(db, instrument_id) as driver:
         points = bench_svc.agc_sweep(
             driver, body.freq, body.pwm_min, body.pwm_max, body.pwm_step
         )
-    except OSError as exc:
-        raise _hw_error(exc) from exc
-    finally:
-        driver.close()  # type: ignore[attr-defined]
     return {"points": points}
 
 
@@ -419,16 +434,10 @@ def bench_scope(
     db: DbSession = Depends(get_session),
 ) -> dict[str, object]:
     """Time-domain detector capture + optional trigger (legacy scope, C6)."""
-    driver = _bench_driver(db, instrument_id)
-    try:
-        driver.connect()  # type: ignore[attr-defined]
+    with _bench_session(db, instrument_id) as driver:
         samples, triggered = bench_svc.scope(
             driver, body.freq, body.gain, body.n_samples, body.threshold_mv
         )
-    except OSError as exc:
-        raise _hw_error(exc) from exc
-    finally:
-        driver.close()  # type: ignore[attr-defined]
     return {"samples": samples, "triggered": triggered}
 
 
