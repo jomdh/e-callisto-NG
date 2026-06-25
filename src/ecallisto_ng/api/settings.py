@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     # Server-side session signing; overridden in production via env.
     secret_key: str = "dev-insecure-change-me"
     # Background loop tick intervals (seconds); 0 disables (used in tests).
-    scheduler_tick_seconds: int = 30
+    # The scheduler also enacts operator Record/Stop (via the desired flag), so
+    # keep it short enough to feel responsive.
+    scheduler_tick_seconds: int = 5
     uploader_tick_seconds: int = 60
     # Days to keep uploaded local files; <0 disables pruning.
     retention_days: int = -1
