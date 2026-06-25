@@ -40,6 +40,10 @@ RESET = b"D0\rGD\rS0\r"
 ID_QUERY = b"S0\r"
 ID_RESPONSE = b"$CRX:Stopped\r"
 STATUS_QUERY = b"?\r"
+# Serial detector output-format select (legacy bench tools, audit C2):
+# %2 = fixed millivolts ("simple"), %5 = "MHz,mV" (NoiseFigurePlotter).
+FORMAT_MV = b"%2\r"
+FORMAT_MHZ_MV = b"%5\r"
 OVERVIEW = b"T0\rM2\r%5\rF0045.0\rL13200\rP2\r"
 
 

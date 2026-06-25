@@ -13,6 +13,17 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from math import log10
 
+# A per-point measured slope vector, or a single scalar detector gradient
+# (mV/dB) -- the legacy NF.cpp uses one config constant (audit C4).
+SlopeLike = Sequence[float] | float
+
+
+def _slopes(slope: SlopeLike, n: int) -> list[float]:
+    """Broadcast a scalar gradient to ``n`` points, or pass a vector."""
+    if isinstance(slope, (int, float)):
+        return [float(slope)] * n
+    return list(slope)
+
 
 @dataclass(frozen=True)
 class Stat:
@@ -40,16 +51,18 @@ def detector_slope(
 def noise_figure(
     cold: Sequence[float],
     hot: Sequence[float],
-    slope_mv_db: Sequence[float],
+    slope_mv_db: SlopeLike,
     enr_db: float,
 ) -> list[float]:
     """Y-factor noise figure per point (dB).
 
     ``ydb = |hot-cold| / slope``; ``ylin = 10^(ydb/10)``;
     ``NF = ENR - 10*log10(ylin - 0.999)`` (the legacy guard avoids log(<=0)).
+    ``slope_mv_db`` is a per-point vector or a single scalar gradient (C4).
     """
+    slopes = _slopes(slope_mv_db, len(cold))
     out: list[float] = []
-    for c, h, g in zip(cold, hot, slope_mv_db, strict=False):
+    for c, h, g in zip(cold, hot, slopes, strict=False):
         if g <= 0:
             out.append(0.0)
             continue
@@ -61,12 +74,16 @@ def noise_figure(
 def bandpass(
     cold: Sequence[float],
     hot: Sequence[float],
-    slope_mv_db: Sequence[float],
+    slope_mv_db: SlopeLike,
 ) -> list[float]:
-    """Overall bandpass (dB), normalized so the passband peak is 0 dB."""
+    """Overall bandpass (dB), normalized so the passband peak is 0 dB.
+
+    ``slope_mv_db`` is a per-point vector or a single scalar gradient (C4).
+    """
+    slopes = _slopes(slope_mv_db, len(cold))
     raw = [
         (abs(h - c) / g if g > 0 else 0.0)
-        for c, h, g in zip(cold, hot, slope_mv_db, strict=False)
+        for c, h, g in zip(cold, hot, slopes, strict=False)
     ]
     peak = max(raw) if raw else 0.0
     return [round(r - peak, 4) for r in raw]

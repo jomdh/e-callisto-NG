@@ -17,3 +17,5 @@ remote
 # Connection.read parameter (kept for interface conformance; some backends,
 # like the simulator, do not need it)
 timeout
+protocol.FORMAT_MV  # C2: bench output-format select (hardware wire path)
+protocol.FORMAT_MHZ_MV

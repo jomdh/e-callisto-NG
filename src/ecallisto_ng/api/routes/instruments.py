@@ -291,6 +291,11 @@ class NoiseFigureIn(BaseModel):
     cold_relay: int = 0
     warm_relay: int = 3
     hot_relay: int = 1
+    integration: int = 1  # reads averaged per point (C3)
+    settle_s: float = 0.0  # relay-settle delay (C7)
+    # A fixed detector gradient (mV/dB) to use instead of the measured
+    # per-point slope -- legacy single-constant NF (C4); None = per-point.
+    gradient: float | None = None
 
 
 @router.post(
@@ -304,11 +309,23 @@ def bench_noise_figure(
     """Cold/warm/hot Y-factor noise figure + slope + bandpass (legacy NF)."""
     driver = _bench_driver(db, instrument_id)
     driver.connect()  # type: ignore[attr-defined]
+
+    def _sweep(relay: int) -> list[tuple[float, float]]:
+        return bench_svc.sweep(
+            driver,
+            body.f_min,
+            body.f_max,
+            body.n_points,
+            body.gain,
+            relay=relay,
+            integration=body.integration,
+            settle_s=body.settle_s,
+        )
+
     try:
-        args = (body.f_min, body.f_max, body.n_points, body.gain)
-        cold = bench_svc.sweep(driver, *args, relay=body.cold_relay)
-        warm = bench_svc.sweep(driver, *args, relay=body.warm_relay)
-        hot = bench_svc.sweep(driver, *args, relay=body.hot_relay)
+        cold = _sweep(body.cold_relay)
+        warm = _sweep(body.warm_relay)
+        hot = _sweep(body.hot_relay)
     finally:
         driver.close()  # type: ignore[attr-defined]
     freqs = [f for f, _ in cold]
@@ -316,8 +333,12 @@ def bench_noise_figure(
     warm_mv = [v for _, v in warm]
     hot_mv = [v for _, v in hot]
     slope = nf_svc.detector_slope(warm_mv, hot_mv, body.att_db)
-    nf = nf_svc.noise_figure(cold_mv, hot_mv, slope, body.enr_db)
-    bandpass = nf_svc.bandpass(cold_mv, hot_mv, slope)
+    # C4: the configured scalar gradient if given, else the per-point slope.
+    divisor: nf_svc.SlopeLike = (
+        body.gradient if body.gradient is not None else slope
+    )
+    nf = nf_svc.noise_figure(cold_mv, hot_mv, divisor, body.enr_db)
+    bandpass = nf_svc.bandpass(cold_mv, hot_mv, divisor)
     nf_stat = nf_svc.stats(nf)
     return {
         "freqs": freqs,
@@ -327,6 +348,58 @@ def bench_noise_figure(
         "nf_mean": nf_stat.mean,
         "nf_sigma": nf_stat.sigma,
     }
+
+
+class AgcSweepIn(BaseModel):
+    freq: float = 150.0
+    pwm_min: int = 0
+    pwm_max: int = 255
+    pwm_step: int = 5
+
+
+@router.post(
+    "/{instrument_id}/bench/agc_sweep", dependencies=[Depends(_operator)]
+)
+def bench_agc_sweep(
+    instrument_id: int,
+    body: AgcSweepIn,
+    db: DbSession = Depends(get_session),
+) -> dict[str, object]:
+    """AGC commissioning: detector voltage vs PWM gain (legacy AGC, C5)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        points = bench_svc.agc_sweep(
+            driver, body.freq, body.pwm_min, body.pwm_max, body.pwm_step
+        )
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    return {"points": points}
+
+
+class ScopeIn(BaseModel):
+    freq: float = 150.0
+    gain: int = 120
+    n_samples: int = 256
+    threshold_mv: float | None = None
+
+
+@router.post("/{instrument_id}/bench/scope", dependencies=[Depends(_operator)])
+def bench_scope(
+    instrument_id: int,
+    body: ScopeIn,
+    db: DbSession = Depends(get_session),
+) -> dict[str, object]:
+    """Time-domain detector capture + optional trigger (legacy scope, C6)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        samples, triggered = bench_svc.scope(
+            driver, body.freq, body.gain, body.n_samples, body.threshold_mv
+        )
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    return {"samples": samples, "triggered": triggered}
 
 
 @router.get("/{instrument_id}/status", dependencies=[Depends(_viewer)])
