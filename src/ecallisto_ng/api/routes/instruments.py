@@ -19,6 +19,7 @@ from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
 from ecallisto_ng.services import bench as bench_svc
+from ecallisto_ng.services import noise_figure as nf_svc
 from ecallisto_ng.services.calibration_build import resolve
 from ecallisto_ng.services.overview import run_overview
 from ecallisto_ng.services.recorder import (
@@ -238,6 +239,54 @@ def bench_sweep(
     finally:
         driver.close()  # type: ignore[attr-defined]
     return {"points": points}
+
+
+class NoiseFigureIn(BaseModel):
+    f_min: float = 45.0
+    f_max: float = 870.0
+    n_points: int = 100
+    gain: int = 250
+    enr_db: float = 15.0
+    att_db: float = 10.1
+    cold_relay: int = 0
+    warm_relay: int = 3
+    hot_relay: int = 1
+
+
+@router.post(
+    "/{instrument_id}/bench/noise_figure", dependencies=[Depends(_operator)]
+)
+def bench_noise_figure(
+    instrument_id: int,
+    body: NoiseFigureIn,
+    db: DbSession = Depends(get_session),
+) -> dict[str, object]:
+    """Cold/warm/hot Y-factor noise figure + slope + bandpass (legacy NF)."""
+    driver = _bench_driver(db, instrument_id)
+    driver.connect()  # type: ignore[attr-defined]
+    try:
+        args = (body.f_min, body.f_max, body.n_points, body.gain)
+        cold = bench_svc.sweep(driver, *args, relay=body.cold_relay)
+        warm = bench_svc.sweep(driver, *args, relay=body.warm_relay)
+        hot = bench_svc.sweep(driver, *args, relay=body.hot_relay)
+    finally:
+        driver.close()  # type: ignore[attr-defined]
+    freqs = [f for f, _ in cold]
+    cold_mv = [v for _, v in cold]
+    warm_mv = [v for _, v in warm]
+    hot_mv = [v for _, v in hot]
+    slope = nf_svc.detector_slope(warm_mv, hot_mv, body.att_db)
+    nf = nf_svc.noise_figure(cold_mv, hot_mv, slope, body.enr_db)
+    bandpass = nf_svc.bandpass(cold_mv, hot_mv, slope)
+    nf_stat = nf_svc.stats(nf)
+    return {
+        "freqs": freqs,
+        "noise_figure": nf,
+        "slope_mv_db": slope,
+        "bandpass_db": bandpass,
+        "nf_mean": nf_stat.mean,
+        "nf_sigma": nf_stat.sigma,
+    }
 
 
 @router.get("/{instrument_id}/status", dependencies=[Depends(_viewer)])

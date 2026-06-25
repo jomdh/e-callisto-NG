@@ -2,6 +2,20 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.4.1 -- 2026-06-25 (Milestone M12)
+
+The commissioning bench, web-native.
+
+- **Detector readout.** Tune a frequency, set the gain, and read the detector
+  voltage live -- the legacy "simple" signal-check tool, on a Tools page.
+- **Noise figure.** Run a cold/warm/hot Y-factor noise-figure measurement and see
+  the noise figure, detector slope, and overall bandpass -- the legacy
+  NoiseFigurePlotter workflow.
+
+Bench tools are available on heterodyne instruments (not while recording).
+Internal: BenchCapable contract (ADR-0005), services/bench.py + noise_figure.py,
+bench endpoints, Tools page; 135 tests; sprints S032-S033.
+
 ## v0.4.0 -- 2026-06-25 (Milestone M11)
 
 Legacy recorder parity, part 1 -- what fielded heterodyne stations rely on daily.

@@ -50,7 +50,7 @@ around it.
 | Milestone | Closes | Plan |
 | -- | -- | -- |
 | **M11 — Recorder operational parity** | v0.4.0 ✓ done | S030-S031 |
-| **M12 — Bench & diagnostic tools** | v0.4.1 | `milestones/V0.4_M12_bench_tools.md` |
+| **M12 — Bench & diagnostic tools** | v0.4.1 ✓ done | S032-S033 |
 | **M13 — Spectrum viewer & publication** | v0.4.2 | `milestones/V0.4_M13_viewer_publication.md` |
 | **M14 — Distribution & generator parity** | v0.4.3 / version close | `milestones/V0.4_M14_distribution_parity.md` |
 
