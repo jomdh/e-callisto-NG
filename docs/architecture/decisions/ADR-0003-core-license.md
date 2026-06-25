@@ -1,6 +1,6 @@
 # ADR-0003 — Core license: GPLv3 vs AGPLv3
 
-**Status:** Open (awaiting owner decision)
+**Status:** Accepted — **AGPLv3** (owner decision, 2026-06-25)
 
 ## Context
 
@@ -22,6 +22,24 @@ a copyleft core. Plugin contracts are semver-versioned.
 
 ## Decision
 
-**Pending.** Also open: whether a CLA/DCO is required for contributions.
+**AGPLv3** for the core + web app. The suite is served over the network, so AGPL
+ensures hosted forks (e.g. an institution running a modified portal) contribute
+improvements back — the SaaS loophole GPLv3 leaves open. Continuity with the
+GPLv3 legacy daemon is preserved (AGPLv3 is GPLv3-compatible for combination).
+
+**Plugin boundary (unchanged, §5b):** drivers/transports/writers run across the
+documented IPC/contract boundary (the acquisition driver is a separate process),
+so a third party may ship a **closed-source** driver (e.g. a proprietary FPGA
+SDR) without it becoming a derivative work of the AGPL core. Plugin contracts
+stay semver-versioned. This is the load-bearing reason the boundary is a process
++ versioned contract, not an in-process import.
+
+**Contributions:** a **DCO** (Developer Certificate of Origin, sign-off line) is
+required; no CLA. Lightweight, keeps copyright with contributors.
+
+**Application (M25):** add `LICENSE` (AGPLv3 text), a short SPDX header
+(`SPDX-License-Identifier: AGPL-3.0-or-later`) to source files, a `NOTICE`/README
+license section, and a plugin-governance note that the contract boundary permits
+independently-licensed drivers.
 
 Reference: DESIGN sections 5b, 19.

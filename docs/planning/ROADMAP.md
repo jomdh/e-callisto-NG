@@ -86,6 +86,31 @@ depth" not covered by parity M13 -- rides along in **M15**.
 Mapping note: old M11 (Tools & Bench) -> v0.4 **M12**; old M13 (Viewer & dB) ->
 v0.4 **M13**; old M17 (Analysis) -> **dropped** (F6 out). The rest shift to M15-M18.
 
+## v0.4 / v0.5 / v0.6 released
+
+`main` is at **v0.6.0**. v0.4 delivered legacy Windows parity (M11-M14), v0.5
+station completeness (M15-M18), v0.6 the visual redesign (**M19**: left-sidebar
+shell + M3 design system in our palette). Tags v0.4.0-v0.6.0.
+
+## v0.7 -- "Connected & releasable" (SELECTED, not started)
+
+Theme: the spec is fully built (M0-M18) and reskinned (M19); v0.7 finishes the
+deferred backlog, delivers the design's **doncel integration** end-goal, and
+makes the suite **publicly releasable** (AGPLv3). Branch `0.7-dev` from `main`.
+
+| Milestone | Closes | Plan |
+| -- | -- | -- |
+| **M20 — Operations cockpit & data depth** (F13) | v0.7.0 | `milestones/V0.7_M20_operations_data_depth.md` |
+| **M21 — Host control & lifecycle** (F12+F15+F14) | v0.7.1 | `milestones/V0.7_M21_host_control_lifecycle.md` |
+| **M22 — doncel.dev integration** (§1 end-goal) | v0.7.2 | `milestones/V0.7_M22_doncel_integration.md` |
+| **M23 — Timing precision (GPS/PPS)** (F3) | v0.7.3 | `milestones/V0.7_M23_timing_precision.md` |
+| **M24 — Planning aids** (F8+F16) | v0.7.4 | `milestones/V0.7_M24_planning_aids.md` |
+| **M25 — Release readiness (AGPLv3)** *(release gate)* | v0.7.5 / v1.0 candidate | `milestones/V0.7_M25_release_readiness.md` |
+
+Order: M20 (operator value) → M21 (host completeness) → M22 (integration) → M23
+(timing) → M24 (polish) → M25 (license + release hygiene); version close merges
+`0.7-dev` → `main`. **License resolved: AGPLv3 + DCO (ADR-0003 Accepted).**
+
 ## Completed
 
 ### M0 — Core contracts + record loop  (v0.1.0, 2026-06-25)
