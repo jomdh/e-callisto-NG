@@ -83,3 +83,29 @@ def test_device_scan_asset_served(client: TestClient) -> None:
     r = client.get("/static/js/device_scan.js")
     assert r.status_code == 200
     assert "discovery/scan" in r.text
+
+
+def test_scan_autofills_on_change(client: TestClient) -> None:
+    # the dropdown auto-fills the form on 'change' (no separate click needed)
+    js = client.get("/static/js/device_scan.js").text
+    assert 'addEventListener("change", applySelected)' in js
+    cjs = client.get("/static/js/console.js").text
+    assert 'addEventListener("change", applySelected)' in cjs
+
+
+def test_instrument_fields_have_format_hints(client: TestClient) -> None:
+    # wizard instrument step + Add Instrument form carry value/format hints
+    client.post(
+        "/wizard",
+        data={"admin_username": "boss", "admin_password": "very-strong-pw"},
+    )
+    client.post("/wizard", data={"station_name": "S", "observatory": "O"})
+    client.post(
+        "/wizard",
+        data={"latitude_deg": "47", "longitude_deg": "8", "altitude_m": "5"},
+    )
+    page = client.get("/wizard")
+    assert "usb:04b4:00f3" in page.text  # address format hint
+    assert "e-Callisto (serial)" in page.text  # class hint
+    cjs = client.get("/static/js/console.js").text
+    assert "hint:" in cjs  # Add Instrument form hints
