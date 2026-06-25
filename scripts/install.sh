@@ -11,8 +11,9 @@ echo ">> creating user and directories"
 id -u "$USER" >/dev/null 2>&1 || useradd --system --home "$APP_DIR" "$USER"
 install -d -o "$USER" -g "$USER" "$APP_DIR" "$DATA_DIR" "$CONF_DIR"
 
-echo ">> installing into a virtualenv"
-python3 -m venv "$APP_DIR/.venv"
+echo ">> installing into a virtualenv (--system-site-packages so an apt"
+echo "   SoapySDR for the RX-888 stays visible)"
+python3 -m venv --system-site-packages "$APP_DIR/.venv"
 "$APP_DIR/.venv/bin/pip" install --upgrade pip
 "$APP_DIR/.venv/bin/pip" install .
 

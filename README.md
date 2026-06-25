@@ -6,21 +6,35 @@ more instruments, fully operated from a browser.
 
 - **Design (source of truth):** [`e-Callisto-NG-DESIGN.md`](e-Callisto-NG-DESIGN.md)
 - **Working agreement:** [`CLAUDE.md`](CLAUDE.md)
-- **Decisions:** [`docs/architecture/decisions/`](docs/architecture/decisions)
-- **Roadmap:** [`docs/planning/ROADMAP.md`](docs/planning/ROADMAP.md)
+- **License & governance:** [`LICENSE`](LICENSE), [`GOVERNANCE.md`](GOVERNANCE.md)
+- **Planning, ADRs, and changelog** live under a local, gitignored `docs/`
+  folder (kept on the maintainer's machine, not part of this repo).
 - **Legacy analysis** (Windows/Linux predecessors) lives in a local, gitignored
   `legacy/` folder — reverse-engineering reference, not part of this repo.
 
-## Status
+## Run on a Raspberry Pi station
 
-Greenfield, **M0** (core contracts + record loop). The package is a monorepo
-with imports flowing inward toward `core`:
+Pull the repo onto the station and run it — reachable over the LAN/VPN:
 
+```bash
+git clone https://github.com/jomdh/e-callisto-NG.git
+cd e-callisto-NG
+./scripts/run.sh
 ```
-src/ecallisto_ng/
-  core/        domain models + plugin contracts (depends on nothing)
-  drivers/     instrument drivers (fake driver lands first; Callisto next)
-```
+
+The first run creates a virtualenv (with `--system-site-packages` so a
+system/conda **SoapySDR** stays visible for the RX-888), writes a `.env` with a
+generated secret key, and starts the server on `0.0.0.0:8000`. Open the printed
+URL and complete the setup wizard (no default credentials). To update later:
+`git pull && ./scripts/run.sh`.
+
+- **Find hardware:** `python3 scripts/scan_devices.py` lists serial ports +
+  USB SDRs; `--probe` confirms a Callisto handshake. The RX-888 line reports
+  REAL (SoapySDR `driver=rx888`) vs SYNTHETIC.
+- **Production install** (system user + systemd + `/opt`): `sudo
+  ./scripts/install.sh`.
+- **SoapySDR in conda:** if SoapySDR lives only in a conda env, activate it and
+  run `pip install -e .` there instead of using the venv.
 
 ## Develop
 
