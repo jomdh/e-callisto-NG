@@ -1,0 +1,37 @@
+{% extends "portal/base.html" %}
+{% block title %}Settings -- e-Callisto NG{% endblock %}
+{% block body %}
+{% include "portal/_nav.html" %}
+<div class="portal-main">
+  <h2>Station settings</h2>
+
+  <div class="card" id="sysinfo-card">
+    <h3 style="margin-top:0">System</h3>
+    <div id="sysinfo" class="muted">loading...</div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <h3 style="margin-top:0">Config backup / restore</h3>
+    <p class="muted">Back up the station configuration (instruments, schedules,
+      programs, calibration, targets, access). Excludes accounts and science
+      data.</p>
+    <button class="btn" id="cfg-export" type="button">Download backup</button>
+    <div style="margin-top:1rem">
+      <label for="cfg-text">Restore (paste a backup JSON)</label>
+      <textarea id="cfg-text" rows="4"></textarea>
+      <div style="margin-top:.6rem">
+        <button class="btn btn-ghost" id="cfg-import" type="button">Restore</button>
+      </div>
+      <pre id="cfg-msg" class="muted" style="white-space:pre-wrap"></pre>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <h3 style="margin-top:0">Support</h3>
+    <p class="muted">Download a support bundle (versions, system info, config,
+      audit) with secrets redacted -- send it for help.</p>
+    <a class="btn" href="/api/v1/system/support-bundle">Download support bundle</a>
+  </div>
+</div>
+<script src="/static/js/settings.js"></script>
+{% endblock %}

@@ -18,6 +18,7 @@ from ecallisto_ng import __version__
 from ecallisto_ng.api import models  # noqa: F401 -- register tables
 from ecallisto_ng.api.db import get_engine, init_db
 from ecallisto_ng.api.routes import access as access_routes
+from ecallisto_ng.api.routes import alerts as alert_routes
 from ecallisto_ng.api.routes import auth as auth_routes
 from ecallisto_ng.api.routes import calibration as calibration_routes
 from ecallisto_ng.api.routes import data as data_routes
@@ -30,18 +31,21 @@ from ecallisto_ng.api.routes import programs as program_routes
 from ecallisto_ng.api.routes import schedules as schedule_routes
 from ecallisto_ng.api.routes import system as system_routes
 from ecallisto_ng.api.routes import upload as upload_routes
+from ecallisto_ng.api.routes import users as user_routes
 from ecallisto_ng.api.routes import wizard as wizard_routes
 from ecallisto_ng.api.templating import STATIC_DIR
 
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    from ecallisto_ng.api.settings import get_settings
     from ecallisto_ng.services.scheduler_service import get_scheduler
     from ecallisto_ng.services.uploader_service import get_uploader
 
     init_db()
-    get_scheduler().start_loop()
-    get_uploader().start_loop()
+    if get_settings().run_loops_in_web:  # ADR-0007: else the acquire daemon
+        get_scheduler().start_loop()
+        get_uploader().start_loop()
     try:
         yield
     finally:
@@ -91,6 +95,8 @@ def create_app() -> FastAPI:
     app.include_router(access_routes.router)
     app.include_router(migrate_routes.router)
     app.include_router(fleet_routes.router)
+    app.include_router(user_routes.router)
+    app.include_router(alert_routes.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, object]:

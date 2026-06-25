@@ -7,6 +7,7 @@
   if (!root) return;
 
   const SELECT = {
+    role: ["viewer", "operator", "admin"],
     instrument_class: ["heterodyne", "sdr_soft", "sdr_fpga"],
     unit: ["raw", "sfu", "kelvin"],
     output_mode: ["standard", "legacy"],
@@ -101,6 +102,18 @@
       actions: [
         { label: "run", run: (r) => api("POST", `/api/v1/upload/targets/${r.id}/run`), show: true },
         { label: "test", run: (r) => api("POST", `/api/v1/upload/targets/${r.id}/test`), show: true },
+      ],
+    },
+    users: {
+      title: "Users",
+      list: "/api/v1/users",
+      create: "/api/v1/users",
+      del: (r) => `/api/v1/users/${r.id}`,
+      columns: ["id", "username", "role", "active"],
+      fields: [
+        { name: "username", required: true },
+        { name: "password", type: "password", required: true },
+        { name: "role", select: "role" },
       ],
     },
     peers: {

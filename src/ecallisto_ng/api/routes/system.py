@@ -2,21 +2,28 @@
 
 from __future__ import annotations
 
+import shutil
+
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from sqlmodel import Session as DbSession
 
+from ecallisto_ng import __version__
 from ecallisto_ng.api import auth
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import Role, User
+from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.api.templating import templates
+from ecallisto_ng.services import config_backup, support_bundle, updates
+from ecallisto_ng.services.clock import clock_synced
 from ecallisto_ng.services.health import HealthReport
 from ecallisto_ng.services.health_report import build_station_health
 
 router = APIRouter(tags=["system"])
 
 _viewer = require_role(Role.VIEWER)
+_admin = require_role(Role.ADMIN)
 
 
 def _report(db: DbSession) -> HealthReport:
@@ -26,6 +33,63 @@ def _report(db: DbSession) -> HealthReport:
 @router.get("/api/v1/system/health", dependencies=[Depends(_viewer)])
 def health(db: DbSession = Depends(get_session)) -> HealthReport:
     return _report(db)
+
+
+@router.get("/api/v1/system/info", dependencies=[Depends(_viewer)])
+def system_info() -> dict[str, object]:
+    """Version, storage, clock, and retention/archive policy."""
+    settings = get_settings()
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    usage = shutil.disk_usage(settings.data_dir)
+    return {
+        "version": __version__,
+        "disk_total": usage.total,
+        "disk_free": usage.free,
+        "disk_pct_free": round(usage.free / usage.total * 100, 1),
+        "clock_synced": clock_synced(),
+        "retention_days": settings.retention_days,
+        "archive_dir": settings.archive_dir,
+        "data_dir": str(settings.data_dir),
+    }
+
+
+@router.get("/api/v1/system/update", dependencies=[Depends(_viewer)])
+def update_status() -> dict[str, str]:
+    """Current version + the channel this station tracks (DESIGN 15)."""
+    return updates.update_info(get_settings().update_channel)
+
+
+@router.get("/api/v1/system/support-bundle", dependencies=[Depends(_admin)])
+def support_bundle_download(
+    db: DbSession = Depends(get_session),
+) -> FileResponse:
+    """Download a redacted support bundle (no secrets)."""
+    settings = get_settings()
+    out_dir = settings.data_dir / "support"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = support_bundle.build_support_bundle(
+        db,
+        out_dir / "support-bundle.zip",
+        __version__,
+        system_info(),
+    )
+    return FileResponse(
+        path, media_type="application/zip", filename="support-bundle.zip"
+    )
+
+
+@router.get("/api/v1/config/export", dependencies=[Depends(_admin)])
+def export_config(db: DbSession = Depends(get_session)) -> dict[str, object]:
+    """Download the station's config (no accounts/secrets-in-clear)."""
+    return config_backup.export_config(db)
+
+
+@router.post("/api/v1/config/import", dependencies=[Depends(_admin)])
+def import_config(
+    body: dict[str, object], db: DbSession = Depends(get_session)
+) -> dict[str, int]:
+    """Restore config from a backup, replacing existing config tables."""
+    return config_backup.import_config(db, body)
 
 
 @router.get("/portal/system", response_class=HTMLResponse)

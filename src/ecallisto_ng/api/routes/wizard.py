@@ -1,17 +1,41 @@
-"""First-run install wizard (MVP)."""
+"""First-run install wizard: multi-step, resumable (DESIGN 9).
+
+Steps (admin -> station -> coordinates -> instrument -> review) accumulate into
+a ``WizardState`` row, so a refresh or reboot resumes mid-flow. The admin
+account is created only at the final step, so ``is_configured`` stays false
+(the app keeps routing here) until setup is complete. An optional legacy
+``callisto.cfg`` paste pre-fills the station/instrument (clone/import branch).
+"""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Form, Request
+import json
+
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api import auth
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Instrument, Role, Station
+from ecallisto_ng.api.models import Instrument, Role, Station, WizardState
 from ecallisto_ng.api.setup import is_configured
 from ecallisto_ng.api.templating import templates
+from ecallisto_ng.services.legacy_import import parse_callisto_cfg
+
+_STEPS = ["admin", "station", "coordinates", "instrument", "review"]
+_FINAL = len(_STEPS) - 1
+
+
+def _state(db: DbSession) -> WizardState:
+    state = db.exec(select(WizardState)).first()
+    if state is None:
+        state = WizardState()
+        db.add(state)
+        db.commit()
+        db.refresh(state)
+    return state
+
 
 router = APIRouter(tags=["wizard"])
 
@@ -22,40 +46,88 @@ def wizard_page(
 ) -> object:
     if is_configured(db):
         return RedirectResponse("/", status_code=303)
-    return templates.TemplateResponse(request, "portal/wizard.html", {})
+    state = _state(db)
+    return templates.TemplateResponse(
+        request,
+        "portal/wizard.html",
+        {
+            "step": state.step,
+            "step_name": _STEPS[state.step],
+            "data": json.loads(state.data_json),
+            "total": len(_STEPS),
+        },
+    )
 
 
 @router.post("/wizard")
-def wizard_submit(
-    request: Request,
-    admin_username: str = Form(...),
-    admin_password: str = Form(...),
-    station_name: str = Form("station"),
-    observatory: str = Form(""),
-    latitude_deg: float = Form(0.0),
-    longitude_deg: float = Form(0.0),
-    altitude_m: float = Form(0.0),
-    instrument_name: str = Form(""),
-    channels: int = Form(200),
-    db: DbSession = Depends(get_session),
+async def wizard_submit(
+    request: Request, db: DbSession = Depends(get_session)
 ) -> object:
     if is_configured(db):
         return RedirectResponse("/", status_code=303)
+    state = _state(db)
+    form = dict(await request.form())
+    data = json.loads(state.data_json)
 
-    auth.create_user(db, admin_username, admin_password, Role.ADMIN)
+    # Legacy import branch: a pasted callisto.cfg pre-fills + jumps to review.
+    cfg_text = str(form.pop("callisto_cfg", "") or "").strip()
+    if cfg_text:
+        cfg = parse_callisto_cfg(cfg_text)
+        data.update(
+            observatory=cfg.origin,
+            station_name=cfg.origin or data.get("station_name", "station"),
+            latitude_deg=cfg.latitude_deg,
+            longitude_deg=cfg.longitude_deg,
+            altitude_m=cfg.altitude_m,
+            instrument_name=cfg.instrument,
+        )
+        state.step = _FINAL
+        state.data_json = json.dumps(data)
+        db.add(state)
+        db.commit()
+        return RedirectResponse("/wizard", status_code=303)
+
+    data.update({k: str(v) for k, v in form.items()})
+
+    if state.step < _FINAL:
+        state.step += 1
+        state.data_json = json.dumps(data)
+        db.add(state)
+        db.commit()
+        return RedirectResponse("/wizard", status_code=303)
+
+    return _finalize(db, data)
+
+
+def _finalize(db: DbSession, data: dict[str, object]) -> object:
+    username = str(data.get("admin_username", "admin"))
+    password = str(data.get("admin_password", ""))
+    auth.create_user(db, username, password, Role.ADMIN)
 
     station = db.exec(select(Station)).first() or Station()
-    station.name = station_name
-    station.observatory = observatory
-    station.latitude_deg = latitude_deg
-    station.longitude_deg = longitude_deg
-    station.altitude_m = altitude_m
+    station.name = str(data.get("station_name", "station"))
+    station.observatory = str(data.get("observatory", ""))
+    station.latitude_deg = float(str(data.get("latitude_deg", 0.0) or 0.0))
+    station.longitude_deg = float(str(data.get("longitude_deg", 0.0) or 0.0))
+    station.altitude_m = float(str(data.get("altitude_m", 0.0) or 0.0))
     db.add(station)
 
-    if instrument_name.strip():
-        db.add(Instrument(name=instrument_name.strip(), channels=channels))
+    name = str(data.get("instrument_name", "")).strip()
+    if name:
+        db.add(
+            Instrument(
+                name=name,
+                instrument_class=str(
+                    data.get("instrument_class", "heterodyne")
+                ),
+                channels=int(str(data.get("channels", 200) or 200)),
+            )
+        )
+
+    for ws in db.exec(select(WizardState)).all():
+        db.delete(ws)
     db.commit()
 
     resp = RedirectResponse("/portal", status_code=303)
-    auth.login(db, resp, admin_username, admin_password)
+    auth.login(db, resp, username, password)
     return resp

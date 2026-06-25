@@ -43,6 +43,25 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=_utcnow)
 
 
+class WizardState(SQLModel, table=True):
+    """Resumable first-run wizard state (single row, DESIGN 9)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    step: int = 0
+    data_json: str = "{}"  # accumulated answers across steps
+
+
+class AuditEvent(SQLModel, table=True):
+    """An append-only record of a security-sensitive action (ADR-0006)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=_utcnow, index=True)
+    actor: str = "system"  # username or "system"
+    action: str = Field(index=True)  # e.g. user.create, login.fail
+    target: str = ""
+    detail: str = ""
+
+
 class Session(SQLModel, table=True):
     """A server-side session; the token lives in an HttpOnly cookie."""
 
@@ -50,6 +69,18 @@ class Session(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=_utcnow)
     expires_at: datetime
+
+
+class AlertChannelConfig(SQLModel, table=True):
+    """A configured alert destination (DESIGN 14a)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    kind: str = "webhook"  # webhook / email
+    url: str = ""  # webhook URL
+    recipient: str = ""  # email recipient
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=_utcnow)
 
 
 class PeerStation(SQLModel, table=True):

@@ -2,6 +2,73 @@
 
 Operator-perspective notes: what each release lets a station do.
 
+## v0.5.3 -- 2026-06-25 (Milestone M18, v0.5 release)
+
+A guided first run that you can't lose your place in.
+
+- **Multi-step setup wizard.** Set up a fresh station step by step -- admin,
+  station, coordinates, first instrument, review -- and a refresh or reboot
+  resumes exactly where you left off.
+- **Migrate in the wizard.** Paste a legacy `callisto.cfg` and the wizard
+  pre-fills the station and instrument for you.
+
+This is the **v0.5 release** -- station completeness: user management + audit
+(M15), degrade-don't-die resilience + alerts + independent acquisition (M16),
+support bundle + updates + SD image (M17), and the full setup wizard (M18).
+
+Internal: WizardState + multi-step resumable wizard, legacy-import branch; 176
+tests; sprint S043. Merged 0.5-dev -> main.
+
+## v0.5.2 -- 2026-06-25 (Milestone M17)
+
+Ship it, keep it current, get help fast.
+
+- **Support bundle.** One click downloads a bundle of versions, system info,
+  configuration, and audit log -- with all secrets redacted -- to send for
+  support (replaces the old remote-desktop step).
+- **Update status.** See the running version and the channel the station tracks.
+- **SD-card image.** A build recipe produces a flashable Raspberry Pi OS image
+  with the suite preinstalled and both services enabled.
+
+Internal: support_bundle (redacted zip), updates version reporting,
+build-sd-image.sh (pi-gen); 174 tests; sprint S042. (Config backup/restore: M15.)
+
+## v0.5.1 -- 2026-06-25 (Milestone M16)
+
+Hard to knock over.
+
+- **Degrade, don't die.** A clear policy decides what happens on each fault: disk
+  full pauses recording, a vanished receiver auto-reconnects, an upload backlog
+  keeps recording (never lose data), and a web-app problem never stops
+  acquisition.
+- **Always alert.** Send health alerts to email or a webhook; test a channel
+  before relying on it.
+- **Independent acquisition.** Recording can run as its own supervised service,
+  so restarting the web app never interrupts it.
+- **Clock drift gate.** Optionally pause recording when the clock drifts beyond a
+  tolerance.
+
+Internal: failure_modes matrix, alerts (AlertChannel + webhook/email), ADR-0007
+acquisition daemon (`ecallisto-ng acquire` + unit) + run_loops_in_web, drift gate;
+170 tests; sprints S040-S041.
+
+## v0.5.0 -- 2026-06-25 (Milestone M15)
+
+Run the station, not just the science.
+
+- **User management + audit log.** Admins create accounts, set roles, and disable
+  users; every security-sensitive action (and each login) is recorded in an
+  append-only audit log.
+- **Config backup & restore.** Download the whole station configuration
+  (instruments, schedules, programs, calibration, targets, access) and restore it
+  -- the fast path to provisioning a second station.
+- **System & settings page.** See version, disk usage, clock sync, and retention
+  at a glance.
+
+Internal: AuditEvent + services/audit (ADR-0006), user CRUD, config_backup
+export/import, system-info endpoint, Settings/Audit pages; 161 tests; sprints
+S038-S039.
+
 ## v0.4.3 -- 2026-06-25 (Milestone M14, v0.4 release)
 
 Get your data out, and plan around interference.

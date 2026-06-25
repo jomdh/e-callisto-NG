@@ -1,0 +1,19 @@
+[Unit]
+Description=e-Callisto NG acquisition daemon (scheduler + uploader)
+After=network-online.target chrony.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=callisto
+Group=callisto
+EnvironmentFile=/etc/callisto/ecallisto.env
+# Acquisition owns the loops; the web service runs with run_loops_in_web=false.
+ExecStart=/opt/ecallisto-ng/.venv/bin/ecallisto-ng acquire
+Restart=always
+RestartSec=3
+# Never lose un-uploaded science data on restart.
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
