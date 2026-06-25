@@ -56,7 +56,9 @@ async def ws_live(websocket: WebSocket, instrument_id: int) -> None:
                     "values": list(frame.values),
                 }
             )
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, asyncio.CancelledError):
+        # normal: the browser left the live view (uvicorn cancels the task
+        # mid-sleep/-send). Clean up quietly instead of dumping a traceback.
         pass
     finally:
         hub.unsubscribe(instrument_id, queue)
