@@ -49,6 +49,12 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if get_settings().run_loops_in_web:  # ADR-0007: else the acquire daemon
         get_scheduler().start_loop()
         get_uploader().start_loop()
+    else:
+        # Acquisition runs in the separate daemon: receive its live frames over
+        # the localhost bridge so the WebSocket feed still works.
+        from ecallisto_ng.services.hub import get_hub
+
+        get_hub().start_listener(get_settings().live_bridge_port)
     try:
         yield
     finally:

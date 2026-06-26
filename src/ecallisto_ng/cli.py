@@ -84,10 +84,15 @@ def _cmd_acquire(_args: argparse.Namespace) -> int:
     import time
 
     from ecallisto_ng.api.db import init_db
+    from ecallisto_ng.api.settings import get_settings
+    from ecallisto_ng.services.hub import get_hub
     from ecallisto_ng.services.scheduler_service import get_scheduler
     from ecallisto_ng.services.uploader_service import get_uploader
 
     init_db()
+    # Forward recorded live frames to the web app's WebSocket feed (the live
+    # WS lives in the web process; acquisition runs here).
+    get_hub().enable_forward("127.0.0.1", get_settings().live_bridge_port)
     get_scheduler().start_loop()
     get_uploader().start_loop()
     logging.getLogger(__name__).info("acquisition daemon running")
