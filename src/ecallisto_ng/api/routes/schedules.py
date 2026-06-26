@@ -25,10 +25,8 @@ from ecallisto_ng.services.legacy_export import (
     ExportEntry,
     build_scheduler_cfg,
 )
-from ecallisto_ng.services.scheduler import (
-    is_recording_desired,
-    sun_window,
-)
+from ecallisto_ng.services.scheduler import is_recording_desired
+from ecallisto_ng.services.scheduler_service import schedule_window
 
 router = APIRouter(prefix="/api/v1/schedules", tags=["schedules"])
 
@@ -38,7 +36,8 @@ _operator = require_role(Role.OPERATOR)
 
 class ScheduleIn(BaseModel):
     instrument_id: int
-    kind: str = "sun"
+    kind: str = "tracked"  # tracked | fixed | manual
+    source: str = "sun"  # tracked target (astro_track.SOURCES)
     margin_minutes: int = 0
     start_utc: str = "00:00"
     stop_utc: str = "23:59"
@@ -137,15 +136,12 @@ def preview(
     if sched is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no such schedule")
     now = datetime.now(UTC)
-    station = _station(db)
-    window = sun_window(
-        station.latitude_deg,
-        station.longitude_deg,
-        now.date(),
-        sched.margin_minutes,
-    )
+    # Use the SAME window engine the scheduler runs -- honors kind (fixed/
+    # tracked/manual), the source, and horizon -- so preview == reality.
+    window = schedule_window(sched, _station(db), now.date())
     return {
         "kind": sched.kind,
+        "source": sched.source,
         "window_start": window[0].isoformat() if window else None,
         "window_stop": window[1].isoformat() if window else None,
         "recording_now": is_recording_desired(window, now),

@@ -11,7 +11,7 @@ pure-ish and testable; the loop just calls it.
 from __future__ import annotations
 
 import threading
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlmodel import Session, select
 
@@ -39,10 +39,34 @@ from ecallisto_ng.services.recorder import (
 from ecallisto_ng.services.scheduler import (
     fixed_window,
     is_recording_desired,
-    sun_window,
+    source_window,
 )
 from ecallisto_ng.services.timing import get_time_source
 from ecallisto_ng.writers.fits import get_writer
+
+
+def schedule_window(
+    sched: Schedule, station: Station, day: date
+) -> tuple[datetime, datetime] | None:
+    """The recording window for a schedule on ``day`` -- the single source of
+    truth the scheduler tick AND the preview use (so they always agree).
+
+    ``fixed`` -> HH:MM window; ``tracked`` (or legacy ``sun``) -> the target
+    source's daily observable span; ``manual`` -> no window.
+    """
+    if sched.kind == "manual":
+        return None
+    if sched.kind == "fixed":
+        return fixed_window(day, sched.start_utc, sched.stop_utc)
+    return source_window(
+        sched.source or "sun",
+        station.latitude_deg,
+        station.longitude_deg,
+        day,
+        sched.margin_minutes,
+        station.horizon_deg,
+        station.altitude_m,
+    )
 
 
 def _system_boot_id() -> str:
@@ -124,15 +148,7 @@ class SchedulerService:
     def _window(
         self, sched: Schedule, station: Station, now: datetime
     ) -> tuple[datetime, datetime] | None:
-        if sched.kind == "fixed":
-            return fixed_window(now.date(), sched.start_utc, sched.stop_utc)
-        return sun_window(
-            station.latitude_deg,
-            station.longitude_deg,
-            now.date(),
-            sched.margin_minutes,
-            station.horizon_deg,
-        )
+        return schedule_window(sched, station, now.date())
 
     def _start(
         self,

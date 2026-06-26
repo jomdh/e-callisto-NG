@@ -11,7 +11,9 @@
     instrument_class: ["heterodyne", "sdr_soft", "sdr_fpga"],
     unit: ["raw", "sfu", "kelvin"],
     output_mode: ["standard", "legacy"],
-    kind: ["sun", "fixed", "manual"],
+    kind: ["tracked", "fixed", "manual"],
+    source: ["sun", "mercury", "venus", "mars", "jupiter", "saturn", "moon",
+             "cas_a", "cyg_a", "tau_a", "vir_a", "sgr_a", "orion"],
     protocol: ["local", "ftp", "sftp"],
     dispatch: ["manual", "immediate", "scheduled"],
   };
@@ -48,18 +50,19 @@
       list: "/api/v1/schedules",
       create: "/api/v1/schedules",
       del: (r) => `/api/v1/schedules/${r.id}`,
-      columns: ["id", "instrument_id", "kind", "margin_minutes", "start_utc", "stop_utc", "program_id", "overview_at", "enabled"],
+      columns: ["id", "instrument_id", "kind", "source", "margin_minutes", "start_utc", "stop_utc", "program_id", "overview_at", "enabled"],
       fields: [
         { name: "instrument_id", type: "number", required: true },
-        { name: "kind", select: "kind" },
-        { name: "margin_minutes", type: "number", value: 0 },
-        { name: "start_utc", value: "00:00" },
-        { name: "stop_utc", value: "23:59" },
+        { name: "kind", select: "kind", hint: "tracked = follow a source's daily ephemeris (e.g. Sun = sunrise→sunset, all year) · fixed = set times · manual = operator drives it." },
+        { name: "source", select: "source", hint: "Tracked target: the window is when this source is above the horizon (Sun uses true sunrise/sunset)." },
+        { name: "margin_minutes", type: "number", value: 0, hint: "Trim both ends of a tracked window by this many minutes." },
+        { name: "start_utc", value: "00:00", hint: "Fixed mode start (HH:MM UTC)." },
+        { name: "stop_utc", value: "23:59", hint: "Fixed mode stop (HH:MM UTC)." },
         { name: "program_id", type: "number", placeholder: "program to record (blank=ramp)" },
         { name: "overview_at", placeholder: "HH:MM scheduled overview (blank=none)" },
       ],
       actions: [
-        { label: "preview", run: (r) => api("GET", `/api/v1/schedules/${r.id}/preview`), show: true },
+        { label: "preview", run: (r) => api("GET", `/api/v1/schedules/${r.id}/preview`), draw: drawSchedulePlan },
       ],
     },
     programs: {
@@ -167,6 +170,51 @@
     out.textContent = typeof msg === "string" ? msg : JSON.stringify(msg, null, 2);
   }
 
+  // Fold the planning plot into the schedule editor: show the tracked source's
+  // elevation arc with the recording window shaded + the station horizon, so
+  // you see exactly when (and why) recording happens. Fixed = window band only.
+  async function drawSchedulePlan(res) {
+    out.className = "muted";
+    out.replaceChildren();
+    const win = (res.window_start && res.window_stop)
+      ? `${res.window_start.slice(11, 16)}–${res.window_stop.slice(11, 16)} UTC`
+      : "no window today";
+    const label = res.kind + (res.source ? ` · ${res.source}` : "") +
+      ` · ${win}` + (res.recording_now ? " · recording now" : "");
+    if (res.kind === "manual") { out.textContent = label + " (operator-driven)"; return; }
+    const W = 520, H = 200, pad = 30;
+    const cv = el("canvas", { width: String(W), height: String(H), style: "max-width:100%" });
+    out.append(cv, el("div", { class: "muted", style: "margin-top:.3em" }, label));
+    let track = null, horizon = 0;
+    if (res.kind === "tracked") {
+      try {
+        const t = await api("GET", `/api/v1/planning/track?source=${res.source || "sun"}`);
+        track = t.track; horizon = t.horizon_deg || 0;
+      } catch (e) { /* window only */ }
+    }
+    const ctx = cv.getContext("2d");
+    const x = (h) => pad + (h / 24) * (W - 2 * pad);
+    const yEl = (e) => pad + (1 - (e + 90) / 180) * (H - 2 * pad);
+    const hourOf = (iso) => { const d = new Date(iso); return d.getUTCHours() + d.getUTCMinutes() / 60; };
+    ctx.clearRect(0, 0, W, H);
+    if (res.window_start && res.window_stop) {
+      const x0 = x(hourOf(res.window_start)), x1 = x(hourOf(res.window_stop));
+      ctx.fillStyle = "rgba(90,160,255,0.18)";
+      ctx.fillRect(x0, pad, Math.max(1, x1 - x0), H - 2 * pad);
+    }
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath(); ctx.moveTo(x(0), yEl(0)); ctx.lineTo(x(24), yEl(0)); ctx.stroke();
+    if (horizon) {
+      ctx.strokeStyle = "rgba(255,200,90,0.45)";
+      ctx.beginPath(); ctx.moveTo(x(0), yEl(horizon)); ctx.lineTo(x(24), yEl(horizon)); ctx.stroke();
+    }
+    if (track && track.length) {
+      ctx.strokeStyle = "#5aa0ff"; ctx.lineWidth = 1.5; ctx.beginPath();
+      track.forEach((p, i) => { const X = x(p[0]), Y = yEl(p[2]); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
+      ctx.stroke();
+    }
+  }
+
   async function refresh() {
     let rows;
     try { rows = await api("GET", cfg.list); } catch (e) { return note(e.message, "error"); }
@@ -185,8 +233,12 @@
         } else {
           const b = el("button", { class: "btn-text", style: "margin-right:.4em;padding:.2em .6em" }, a.label);
           b.addEventListener("click", async () => {
-            try { const res = await a.run(r); note(a.show ? res : `${a.label}: ok`, "ok"); refresh(); }
-            catch (e) { note(e.message, "error"); }
+            try {
+              const res = await a.run(r);
+              if (a.draw) { await a.draw(res, r); return; }
+              note(a.show ? res : `${a.label}: ok`, "ok");
+              refresh();
+            } catch (e) { note(e.message, "error"); }
           });
           td.append(b);
         }

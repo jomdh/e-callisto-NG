@@ -174,13 +174,17 @@ class UploadJob(SQLModel, table=True):
 class Schedule(SQLModel, table=True):
     """A recording schedule for one instrument.
 
-    ``kind`` = ``sun`` (sunrise->sunset, station coordinates) or ``fixed``
-    (``start_utc``/``stop_utc`` HH:MM). ``margin_minutes`` trims a sun window.
+    ``kind`` = ``tracked`` (the window IS a target ``source``'s daily ephemeris
+    -- e.g. the Sun from sunrise to sunset, season-following), ``fixed``
+    (``start_utc``/``stop_utc`` HH:MM), or ``manual`` (operator-driven). Legacy
+    ``sun`` is treated as ``tracked`` with ``source="sun"``. ``margin_minutes``
+    trims a tracked window.
     """
 
     id: int | None = Field(default=None, primary_key=True)
     instrument_id: int = Field(foreign_key="instrument.id", index=True)
-    kind: str = "sun"
+    kind: str = "tracked"
+    source: str = "sun"  # tracked target (astro_track.SOURCES)
     margin_minutes: int = 0
     start_utc: str = "00:00"  # fixed mode
     stop_utc: str = "23:59"  # fixed mode
