@@ -73,15 +73,9 @@ NMEOF
     fi
     systemctl reload NetworkManager 2>/dev/null || true
 fi
-# apply now without dropping the link (iw was installed above)
-for wif in /sys/class/net/wl*; do
-    [ -e "$wif" ] || continue
-    iw dev "$(basename "$wif")" set power_save off 2>/dev/null || true
-done
-# USB autosuspend off now for already-plugged devices the rules cover
-for ctrl in /sys/bus/usb/devices/*/power/control; do
-    echo on > "$ctrl" 2>/dev/null || true
-done
+# apply right now (the boot-time enforcer service is installed in step 6 -- it
+# survives reboot, which the udev/NM settings alone did not on Ubuntu 24.04).
+sh "$APP_DIR/scripts/no-powersave.sh" 2>/dev/null || true
 
 # --- 4. virtualenv + suite (system-site-packages for SoapySDR) -----------
 if [ ! -x "$VENV/bin/python" ]; then
@@ -121,7 +115,10 @@ render packaging/systemd/ecallisto-web.service.in \
     > /etc/systemd/system/ecallisto-web.service
 render packaging/systemd/ecallisto-acquire.service.in \
     > /etc/systemd/system/ecallisto-acquire.service
+render packaging/systemd/ecallisto-power.service.in \
+    > /etc/systemd/system/ecallisto-power.service
 systemctl daemon-reload
+systemctl enable --now ecallisto-power 2>/dev/null || true
 systemctl enable ecallisto-web ecallisto-acquire
 # restart (not just enable --now) so re-running install.sh actually picks up
 # new code/settings -- enable --now is a no-op on an already-running service.
