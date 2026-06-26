@@ -122,29 +122,35 @@ def record_continuous(
         while True:
             collected: list[SpectrumFrame] = []
             stopped = False
-            for frame in itertools.islice(stream, frames_per_file):
-                if watchdog is not None and watchdog.check(frame.values):
-                    if on_data_loss is not None:
-                        on_data_loss(watchdog.alert_sequence())
-                    stopped = True
-                    break
-                if on_frame is not None:
-                    on_frame(frame)
-                collected.append(frame)
-            if collected:
-                path = _write_product(
-                    writer,
-                    channels,
-                    meta,
-                    out_dir,
-                    collected,
-                    sweeps_per_second,
-                    unit,
-                    calibration,
-                )
-                paths.append(path)
-                if on_file is not None:
-                    on_file(path)
+            try:
+                for frame in itertools.islice(stream, frames_per_file):
+                    if watchdog is not None and watchdog.check(frame.values):
+                        if on_data_loss is not None:
+                            on_data_loss(watchdog.alert_sequence())
+                        stopped = True
+                        break
+                    if on_frame is not None:
+                        on_frame(frame)
+                    collected.append(frame)
+            finally:
+                # Always flush what we collected -- normal end, Stop, OR a
+                # mid-batch exception (e.g. FatalInstrumentError after the
+                # reset budget) -- so acquired sweeps are never lost (degrade,
+                # don't die, DESIGN 14a).
+                if collected:
+                    path = _write_product(
+                        writer,
+                        channels,
+                        meta,
+                        out_dir,
+                        collected,
+                        sweeps_per_second,
+                        unit,
+                        calibration,
+                    )
+                    paths.append(path)
+                    if on_file is not None:
+                        on_file(path)
             # A short or empty batch means the stream ended (Stop / data loss).
             if stopped or len(collected) < frames_per_file:
                 break

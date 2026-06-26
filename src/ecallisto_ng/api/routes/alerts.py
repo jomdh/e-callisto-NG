@@ -9,6 +9,7 @@ from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
+from ecallisto_ng.api.crud import commit_or_conflict
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import AlertChannelConfig, Role
 from ecallisto_ng.services import alerts
@@ -39,7 +40,7 @@ def add_channel(
 ) -> AlertChannelConfig:
     obj = AlertChannelConfig(**body.model_dump())
     db.add(obj)
-    db.commit()
+    commit_or_conflict(db, "an alert channel with that name already exists")
     db.refresh(obj)
     return obj
 

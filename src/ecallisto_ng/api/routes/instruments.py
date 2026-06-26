@@ -8,11 +8,12 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
+from ecallisto_ng.api.crud import commit_or_conflict
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import CalibrationSet, Instrument, Role, User
 from ecallisto_ng.api.settings import get_settings
@@ -46,9 +47,11 @@ class InstrumentIn(BaseModel):
     address: str = ""
     focus_code: int = 1
     gain: int = 120
-    channels: int = 200
-    sweep_rate_hz: float = 4.0
-    file_seconds: int = 900
+    # Guarded so a 0/negative value can't make per-file frames clamp to 1 and
+    # spew one FITS per sweep (disk/inode exhaustion on a low-power station).
+    channels: int = Field(default=200, ge=1)
+    sweep_rate_hz: float = Field(default=4.0, gt=0)
+    file_seconds: int = Field(default=900, ge=1)
     unit: str = "raw"
     output_mode: str = "standard"
     program_id: int | None = None  # frequency plan (range/channels), M32
@@ -104,7 +107,7 @@ def create_instrument(
 ) -> Instrument:
     obj = Instrument(**body.model_dump())
     db.add(obj)
-    db.commit()
+    commit_or_conflict(db, "unknown program_id or calibration_set_id")
     db.refresh(obj)
     return obj
 
@@ -126,7 +129,7 @@ def update_instrument(
     for key, value in body.model_dump().items():
         setattr(obj, key, value)
     db.add(obj)
-    db.commit()
+    commit_or_conflict(db, "unknown program_id or calibration_set_id")
     db.refresh(obj)
     return obj
 

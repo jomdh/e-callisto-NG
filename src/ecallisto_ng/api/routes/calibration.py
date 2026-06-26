@@ -11,6 +11,7 @@ from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
+from ecallisto_ng.api.crud import commit_or_conflict
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import CalibrationSet, Role
 
@@ -52,7 +53,7 @@ def create_set(
         name=body.name, coefficients_json=json.dumps(body.coefficients)
     )
     db.add(obj)
-    db.commit()
+    commit_or_conflict(db, "a calibration set with that name already exists")
     db.refresh(obj)
     return _out(obj)
 
