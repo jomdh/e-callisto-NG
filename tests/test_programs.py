@@ -78,6 +78,22 @@ def test_program_crud_and_generate(client: TestClient) -> None:
     assert len(client.get("/api/v1/programs").json()) == 2
 
 
+def test_duplicate_program_name_is_409_not_500(client: TestClient) -> None:
+    _login(client, Role.OPERATOR)
+    first = client.post("/api/v1/programs", json={"name": "dup"})
+    assert first.status_code == 201
+    # a second program with the same name -> clean 409, not a 500
+    again = client.post("/api/v1/programs", json={"name": "dup"})
+    assert again.status_code == 409
+    assert "already exists" in again.json()["detail"]
+    # and generate hits the same guard
+    gen = client.post(
+        "/api/v1/programs/generate",
+        json={"name": "dup", "overview": [], "n_channels": 2},
+    )
+    assert gen.status_code == 409
+
+
 def test_program_rbac(client: TestClient) -> None:
     _login(client, Role.VIEWER)
     assert (
