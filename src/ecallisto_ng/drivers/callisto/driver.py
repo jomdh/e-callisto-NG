@@ -9,12 +9,18 @@ helpers and the stream parser. It owns the legacy lifecycle: reset -> identify
 
 from __future__ import annotations
 
+import logging
 import time
+from collections import deque
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from ecallisto_ng.core.connection import Connection
+from ecallisto_ng.core.errors import (
+    FatalInstrumentError,
+    RecoverableInstrumentError,
+)
 from ecallisto_ng.core.spectra import (
     Capabilities,
     Channel,
@@ -36,6 +42,16 @@ from ecallisto_ng.drivers.callisto.parser import (
 
 _READ_CHUNK = 4096
 _MAX_EMPTY_READS = 200  # guards line/ack reads against a dead port
+
+# Self-heal (ADR-0010 / M34): a stalled or corrupt stream triggers an in-driver
+# reset->init->start; too many resets in a window escalates to Fatal.
+_RESET_WINDOW_S = 60.0
+_RESET_BUDGET = 3
+# Stall = no data for max(_MIN_NO_DATA_S, _STALL_SWEEPS / sweep_rate).
+_MIN_NO_DATA_S = 3.0
+_STALL_SWEEPS = 5.0
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -66,6 +82,9 @@ class CallistoDriver:
         self._sweeps_per_second = 1.0
         self._running = False
         self._rx = bytearray()
+        # Stall timeout knobs (overridable in tests for speed).
+        self._min_no_data_s = _MIN_NO_DATA_S
+        self._stall_sweeps = _STALL_SWEEPS
 
     @property
     def capabilities(self) -> Capabilities:
@@ -144,21 +163,91 @@ class CallistoDriver:
         self._running = True
 
     def stop(self) -> None:
-        self._conn.write(p.STOP)
         self._running = False
+        try:
+            self._conn.write(p.STOP)
+        except OSError:
+            pass  # best-effort: the device may already be gone
 
     def stream(self) -> Iterator[SpectrumFrame]:
+        """Yield sweeps, self-healing transient stalls/corruption.
+
+        Bounded liveness (ADR-0010): never blocks indefinitely. A no-data
+        stall, a serial error, or a corrupt sweep triggers an in-driver
+        reset->init->start; exceeding the reset budget raises
+        ``FatalInstrumentError`` for the engine to rebuild + re-arm.
+        """
         parser = StreamParser(self._nchannels, self._firmware.data10bit)
+        last_data = time.monotonic()
+        resets: deque[float] = deque()
         while self._running:
-            chunk = self._read_chunk()
-            if not chunk:
+            try:
+                chunk = self._read_chunk()
+            except OSError as exc:
+                parser = self._recover(resets, f"serial error: {exc}")
+                last_data = time.monotonic()
                 continue
-            for item in parser.feed(chunk):
+            if not chunk:
+                if time.monotonic() - last_data > self._no_data_timeout():
+                    parser = self._recover(resets, "no data (stall)")
+                    last_data = time.monotonic()
+                continue
+            last_data = time.monotonic()
+            try:
+                items = list(parser.feed(chunk))
+            except RecoverableInstrumentError as exc:
+                parser = self._recover(resets, str(exc))
+                last_data = time.monotonic()
+                continue
+            for item in items:
                 if isinstance(item, ParsedSweep):
                     yield self._frame(item.values)
                 elif isinstance(item, ParsedMessage):
                     if "Stopped" in item.text:
                         self._running = False
+
+    def _no_data_timeout(self) -> float:
+        rate = max(self._sweeps_per_second, 0.1)
+        return max(self._min_no_data_s, self._stall_sweeps / rate)
+
+    def _recover(self, resets: deque[float], reason: str) -> StreamParser:
+        """Soft reset->init->start, or escalate to Fatal past the budget."""
+        now = time.monotonic()
+        while resets and now - resets[0] > _RESET_WINDOW_S:
+            resets.popleft()
+        if len(resets) >= _RESET_BUDGET:
+            self._running = False
+            raise FatalInstrumentError(
+                f"unrecoverable after {len(resets)} resets in "
+                f"{int(_RESET_WINDOW_S)}s ({reason})"
+            )
+        resets.append(now)
+        _log.warning("callisto self-heal: soft reset (%s)", reason)
+        try:
+            self._soft_reset()
+        except OSError:
+            pass  # the reset itself failed; the next read re-enters recovery
+        return StreamParser(self._nchannels, self._firmware.data10bit)
+
+    def _soft_reset(self) -> None:
+        """Re-arm acquisition without re-writing the EEPROM channel table.
+
+        Legacy reset->init->start: channels persist in EEPROM, so only the
+        clock/gain init and the start sequence are resent.
+        """
+        self._conn.write(p.RESET)
+        self._drain()
+        pixels = max(int(round(self._sweeps_per_second * self._nchannels)), 1)
+        for cmd in p.init_commands(
+            self._cfg.clocksource,
+            pixels,
+            self._cfg.agclevel,
+            self._cfg.chargepump,
+        ):
+            self._conn.write(cmd)
+        self._conn.write(
+            p.start_commands(self._cfg.focuscode, self._nchannels)
+        )
 
     def overview(self) -> Iterator[SpectrumFrame]:
         self._conn.write(p.OVERVIEW)
@@ -182,7 +271,10 @@ class CallistoDriver:
 
     def close(self) -> None:
         self._running = False
-        self._conn.write(p.HALT)
+        try:
+            self._conn.write(p.HALT)
+        except OSError:
+            pass  # best-effort: the device may already be gone
         self._conn.close()
 
     # -- BenchCapable (ADR-0005) ------------------------------------------

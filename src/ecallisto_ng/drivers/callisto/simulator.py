@@ -36,6 +36,28 @@ class SimulatedCallisto:
         self._running = False
         self._nchannels = 0
         self._sweep = 0
+        # Fault injection for self-heal tests (M34 / ADR-0010).
+        self._dead = False  # ignores start commands (unrecoverable stall)
+        self._read_errors = 0  # raise OSError on the next N reads
+        self._corrupt_next = False  # emit one out-of-range sample next sweep
+
+    # -- fault injection (tests) ------------------------------------------
+
+    def stall(self) -> None:
+        """Go silent without a clean stop -- a recoverable stall (a soft reset
+        restarts the stream)."""
+        self._running = False
+
+    def make_dead(self) -> None:
+        """Stop responding to start commands -- an unrecoverable stall."""
+        self._dead = True
+        self._running = False
+
+    def inject_read_error(self, times: int = 1) -> None:
+        self._read_errors = times
+
+    def inject_corruption(self) -> None:
+        self._corrupt_next = True
 
     # -- Connection interface ---------------------------------------------
 
@@ -48,6 +70,9 @@ class SimulatedCallisto:
             self._handle(token)
 
     def read(self, size: int = 1, timeout: float | None = None) -> bytes:
+        if self._read_errors > 0:
+            self._read_errors -= 1
+            raise OSError("simulated serial error")
         if self._running and not self._out and self._nchannels > 0:
             self._emit_sweep()
         chunk = bytes(self._out[:size])
@@ -76,9 +101,10 @@ class SimulatedCallisto:
         elif text == "S1":
             self._out += b"$CRX:Started\r"
         elif text == "GE":
-            self._running = True
-            self._sweep = 0
-            self._out += p.DATA_START  # STX
+            if not self._dead:
+                self._running = True
+                self._sweep = 0
+                self._out += p.DATA_START  # STX
         elif text == "P2":
             self._emit_overview()
         # D0, GS/GA, T/O/C, FS, M2, %5, F... -> acknowledged silently
@@ -100,7 +126,10 @@ class SimulatedCallisto:
             peak = self._max_value * pow(2.718281828, -0.5 * dist * dist)
             noise = self._rng.uniform(0, self._max_value * 0.08)
             value = int(min(self._max_value, peak + noise))
+            if self._corrupt_next and ch == 0:
+                value = 0x3FFF  # high bits set -> fails the bit-depth check
             self._out += f"{value:04X}".encode("ascii")
+        self._corrupt_next = False
         self._sweep += 1
 
     def _emit_overview(self) -> None:

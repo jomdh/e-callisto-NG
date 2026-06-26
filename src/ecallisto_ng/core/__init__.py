@@ -16,6 +16,11 @@ from ecallisto_ng.core.contracts import (
     TimeSource,
     UploadTransport,
 )
+from ecallisto_ng.core.errors import (
+    FatalInstrumentError,
+    InstrumentError,
+    RecoverableInstrumentError,
+)
 from ecallisto_ng.core.recording import Recording, RecordingMeta
 from ecallisto_ng.core.spectra import (
     Capabilities,
@@ -36,6 +41,9 @@ __all__ = [
     "BenchCapable",
     "TimeSource",
     "InstrumentDriver",
+    "InstrumentError",
+    "RecoverableInstrumentError",
+    "FatalInstrumentError",
     "OutputWriter",
     "UploadTransport",
     "Calibration",

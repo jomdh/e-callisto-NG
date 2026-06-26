@@ -110,3 +110,58 @@ def test_boot_reconciles_stale_recording_state(client: TestClient) -> None:
     with Session(db.get_engine()) as s:
         SchedulerService().seed_desired_from_boot(s)
         assert recorder_state.read(s)[iid].state == RecorderState.IDLE
+
+
+def test_status_reconciles_dead_recording_thread(client: TestClient) -> None:
+    import threading
+
+    from ecallisto_ng.services.recorder import (
+        RecorderService,
+        RecorderStatus,
+        _Job,
+    )
+
+    svc = RecorderService()
+    dead = threading.Thread(target=lambda: None)
+    dead.start()
+    dead.join()  # thread is now finished
+    svc._jobs[99] = _Job(
+        driver=None,  # type: ignore[arg-type]
+        thread=dead,
+        status=RecorderStatus(state=RecorderState.RECORDING),
+    )
+    # wedged: claims RECORDING but the thread is gone -> reconciled to ERROR
+    assert svc.status(99).state is RecorderState.ERROR
+
+
+def test_drift_does_not_stop_a_running_recording(
+    client: TestClient, monkeypatch: object
+) -> None:
+    import ecallisto_ng.services.clock as clock
+    from ecallisto_ng.services import recorder_state
+
+    with Session(db.get_engine()) as s:
+        inst = Instrument(
+            name="DRIFT", channels=8, sweep_rate_hz=4.0, file_seconds=1
+        )
+        s.add(inst)
+        s.commit()
+        s.refresh(inst)
+        assert inst.id is not None
+        iid = inst.id
+    svc = SchedulerService()
+    any_time = datetime(2026, 3, 20, 3, tzinfo=UTC)
+    recorder_state.set_desired(iid, True)
+    with Session(db.get_engine()) as s:
+        svc.tick(s, any_time)
+    assert get_recorder().status(iid).state is RecorderState.RECORDING
+
+    # clock drifts out of range mid-recording: must NOT tear it down (D7)
+    monkeypatch.setattr(  # type: ignore[attr-defined]
+        clock, "within_drift", lambda *a, **k: False
+    )
+    with Session(db.get_engine()) as s:
+        svc.tick(s, any_time)
+    assert get_recorder().status(iid).state is RecorderState.RECORDING
+    get_recorder().stop(iid)
+    get_recorder().join(iid, timeout=5.0)

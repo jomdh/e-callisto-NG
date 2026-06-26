@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass
 
+from ecallisto_ng.core.errors import RecoverableInstrumentError
 from ecallisto_ng.drivers.callisto.protocol import (
     DATA_END,
     DATA_START,
@@ -100,6 +101,14 @@ class StreamParser:
         self._hexbuf = bytearray()
         if value == END_MARKER:
             return
+        # Data-loss / framing check on the RAW value, before to_8bit clamps it
+        # (legacy high-bit test): a valid sample fits the bit depth; high bits
+        # set mean a dropped/shifted RS-232 byte -> the driver soft-resets.
+        mask = 0x3FF if self._data10bit else 0xFF
+        if value & ~mask:
+            raise RecoverableInstrumentError(
+                f"corrupt sample 0x{value:04X} (lost RS-232 framing)"
+            )
         self._sweep.append(to_8bit(value, self._data10bit))
         if len(self._sweep) == self._nchannels:
             yield ParsedSweep(self._sweep)

@@ -30,8 +30,10 @@ from ecallisto_ng.core.spectra import (
     SpectrumFrame,
 )
 
-# 0.4.0: add the optional TimeSource protocol -- ADR-0009 (additive).
-CONTRACT_VERSION = "0.4.0"
+# 0.5.0: InstrumentDriver stability contract -- ADR-0010. Tightens implementer
+# obligations (typed faults + bounded liveness: never hang, never leak a
+# transport exception, self-heal in the driver); every driver is re-verified.
+CONTRACT_VERSION = "0.5.0"
 
 
 @runtime_checkable
