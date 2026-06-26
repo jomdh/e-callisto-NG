@@ -42,12 +42,36 @@ echo "==> adding $RUN_USER to dialout + plugdev"
 getent group plugdev >/dev/null || groupadd plugdev
 usermod -aG dialout,plugdev "$RUN_USER"
 
-# --- 3. udev rules: ModemManager carve-out + SDR access ------------------
+# --- 3. udev rules: ModemManager carve-out + SDR access + no autosuspend --
 echo "==> installing udev rules"
 install -m 0644 packaging/udev/99-ecallisto.rules \
     /etc/udev/rules.d/99-ecallisto.rules
 udevadm control --reload 2>/dev/null || true
 udevadm trigger 2>/dev/null || true
+
+# --- 3b. kill idle power-saving (a station must stay operational) ---------
+# WiFi power-save and USB autosuspend make the link sleep when idle, stalling
+# acquisition ("only records when someone's poking it"). Disable both,
+# persistently, and apply now.
+echo "==> disabling idle power-saving (WiFi power-save, USB autosuspend)"
+# WiFi power-save off (NetworkManager, the Raspberry Pi OS default):
+if [ -d /etc/NetworkManager ]; then
+    install -d /etc/NetworkManager/conf.d
+    cat > /etc/NetworkManager/conf.d/99-ecallisto-no-powersave.conf <<'NMEOF'
+[connection]
+wifi.powersave = 2
+NMEOF
+    systemctl reload NetworkManager 2>/dev/null || true
+fi
+# apply now to any wireless interface (best-effort; udev handles USB on plug)
+for wif in /sys/class/net/wl*; do
+    [ -e "$wif" ] || continue
+    iw dev "$(basename "$wif")" set power_save off 2>/dev/null || true
+done
+# USB autosuspend off now for already-plugged devices the rules cover
+for ctrl in /sys/bus/usb/devices/*/power/control; do
+    echo on > "$ctrl" 2>/dev/null || true
+done
 
 # --- 4. virtualenv + suite (system-site-packages for SoapySDR) -----------
 if [ ! -x "$VENV/bin/python" ]; then

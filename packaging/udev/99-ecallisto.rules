@@ -15,3 +15,15 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", MODE="0660", GROUP="plugdev"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", MODE="0660", GROUP="plugdev"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="1d50", MODE="0660", GROUP="plugdev"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="1df7", MODE="0660", GROUP="plugdev"
+
+# --- No USB autosuspend for the station's instruments ---
+# A 24/7 station must not let the serial/SDR link sleep when idle (it stalls
+# acquisition and "only records when someone's poking it"). power/control=on
+# keeps the device awake. Covers the USB-serial bridges + the SDRs above.
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="067b", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="10c4", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="04b4", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1d50", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1df7", ATTR{power/control}="on"
