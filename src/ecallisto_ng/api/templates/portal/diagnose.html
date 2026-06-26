@@ -1,0 +1,20 @@
+{% extends "portal/base.html" %}
+{% block title %}Diagnostics -- e-Callisto NG{% endblock %}
+{% block body %}
+<div class="portal-main">
+  <h2>Diagnostics &amp; troubleshooting</h2>
+  <p class="muted">A station self-check: parasitic processes, port contention,
+    wedged recordings, services, clock and disk. Download a report to send to
+    the dev team.</p>
+  <div class="card">
+    <div class="data-toolbar">
+      <button id="dg-run" class="btn-filled" type="button">Re-run check</button>
+      <a id="dg-report" class="btn-text" href="/api/v1/diagnostics/report">
+        Download report</a>
+      <span id="dg-overall" class="muted"></span>
+    </div>
+    <div id="dg-checks"></div>
+  </div>
+</div>
+<script src="/static/js/diagnose.js"></script>
+{% endblock %}

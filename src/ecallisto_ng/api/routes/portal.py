@@ -220,3 +220,10 @@ def hardware_page(
     request: Request, user: User | None = Depends(auth.optional_user)
 ) -> object:
     return _page(request, "hardware", user)
+
+
+@router.get("/portal/diagnose", response_class=HTMLResponse)
+def diagnose_page(
+    request: Request, user: User | None = Depends(auth.optional_user)
+) -> object:
+    return _page(request, "diagnose", user)
