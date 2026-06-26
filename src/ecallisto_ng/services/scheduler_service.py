@@ -210,12 +210,20 @@ class SchedulerService:
     # -- background loop ---------------------------------------------------
 
     def seed_desired_from_boot(self, db: Session) -> None:
-        """Seed each free-run instrument's desired flag from start_on_boot.
+        """Reconcile persisted state + seed desired at daemon startup.
 
-        Run once at daemon startup: a ``start_on_boot`` instrument resumes
-        recording after a reboot; a manual run (start_on_boot False) does not.
-        Scheduled (fixed/sun) instruments are window-driven and untouched.
+        A fresh process owns no recordings, so any persisted ``recording``
+        state is stale (left by a killed predecessor) -- reset it to idle.
+        Then seed each free-run instrument's desired flag from start_on_boot:
+        a ``start_on_boot`` instrument resumes recording after a reboot, a
+        manual run (start_on_boot False) does not. Scheduled (fixed/sun)
+        instruments are window-driven and untouched.
         """
+        for rt in recorder_state.read(db).values():
+            if rt.state == RecorderState.RECORDING:
+                recorder_state.write(
+                    rt.instrument_id, RecorderState.IDLE, None
+                )
         for inst in db.exec(select(Instrument)).all():
             if inst.id is None:
                 continue

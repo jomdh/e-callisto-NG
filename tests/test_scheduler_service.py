@@ -93,3 +93,20 @@ def test_seed_desired_from_boot(client: TestClient) -> None:
         SchedulerService().seed_desired_from_boot(s)
         assert recorder_state.get_desired(s, on.id) is True
         assert recorder_state.get_desired(s, off.id) is False
+
+
+def test_boot_reconciles_stale_recording_state(client: TestClient) -> None:
+    from ecallisto_ng.services import recorder_state
+
+    with Session(db.get_engine()) as s:
+        inst = Instrument(name="STALE")
+        s.add(inst)
+        s.commit()
+        s.refresh(inst)
+        assert inst.id is not None
+        iid = inst.id
+    # a killed predecessor left "recording" in the DB
+    recorder_state.write(iid, RecorderState.RECORDING, None)
+    with Session(db.get_engine()) as s:
+        SchedulerService().seed_desired_from_boot(s)
+        assert recorder_state.read(s)[iid].state == RecorderState.IDLE

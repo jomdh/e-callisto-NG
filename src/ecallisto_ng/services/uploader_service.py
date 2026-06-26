@@ -77,6 +77,27 @@ def archive_file(src: Path, archive_root: Path, when: datetime) -> Path:
     return dest
 
 
+def _observation_time(path: Path) -> datetime:
+    """The file's UT observation time from its ``..._YYYYMMDD_HHMMSS_..`` name.
+
+    Archive by the *observation* date, not mtime -- a file recorded just before
+    UT midnight and archived after it must still land in the right day's bucket
+    (legacy segregates by UT date via the filename). Falls back to mtime.
+    """
+    parts = path.stem.split("_")
+    for i, token in enumerate(parts):
+        if len(token) == 8 and token.isdigit():
+            tail = parts[i + 1] if i + 1 < len(parts) else ""
+            hms = tail if len(tail) == 6 and tail.isdigit() else "000000"
+            try:
+                return datetime.strptime(
+                    token + hms, "%Y%m%d%H%M%S"
+                ).replace(tzinfo=UTC)
+            except ValueError:
+                break
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+
+
 def archive_done(db: Session, data_dir: Path, archive_root: Path) -> int:
     """Move files uploaded to all enabled targets into the dated archive."""
     data = Path(data_dir)
@@ -97,8 +118,7 @@ def archive_done(db: Session, data_dir: Path, archive_root: Path) -> int:
         }
         if not target_ids.issubset(done):
             continue
-        when = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
-        archive_file(path, archive_root, when)
+        archive_file(path, archive_root, _observation_time(path))
         moved += 1
     return moved
 
