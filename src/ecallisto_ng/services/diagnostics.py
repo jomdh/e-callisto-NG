@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
@@ -129,14 +130,30 @@ def _check_serial_ports(db: Session) -> list[Check]:
     return checks
 
 
-def _as_utc(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+def _newest_data_age_s(name: str) -> float | None:
+    """Seconds since the newest ``{name}_*.fit`` was written, or None.
+
+    The ground truth for 'is it actually producing data' -- unlike
+    RecorderRuntime.updated_at, a wedged-but-cycling recording can't touch the
+    filesystem, so a stale newest-file reliably reveals a wedge.
+    """
+    data = get_settings().data_dir
+    newest = 0.0
+    try:
+        for p in data.glob(f"{name}_*.fit"):
+            try:
+                m = p.stat().st_mtime
+            except OSError:
+                continue
+            newest = max(newest, m)
+    except OSError:
+        return None
+    return (time.time() - newest) if newest else None
 
 
 def _check_recorder_liveness(db: Session) -> list[Check]:
-    """A 'recording' that hasn't rolled a file in too long is likely wedged."""
+    """A 'recording' whose newest data file is too old is likely wedged."""
     checks: list[Check] = []
-    now = datetime.now(UTC)
     for rt in recorder_state.read(db).values():
         if rt.state == "error":
             checks.append(
@@ -151,14 +168,22 @@ def _check_recorder_liveness(db: Session) -> list[Check]:
             continue
         inst = db.get(Instrument, rt.instrument_id)
         period = inst.file_seconds if inst else 900
-        age = (now - _as_utc(rt.updated_at)).total_seconds()
-        if age > period * 1.5 + 120:
+        age = _newest_data_age_s(inst.name) if inst else None
+        if age is None:
             checks.append(
                 Check(
                     f"recorder:{rt.instrument_id}",
                     WARN,
-                    f"recording but no file in {int(age // 60)} min "
-                    f"(possible wedge)",
+                    "recording but no data file on disk (wedged?)",
+                )
+            )
+        elif age > period * 1.5 + 120:
+            checks.append(
+                Check(
+                    f"recorder:{rt.instrument_id}",
+                    WARN,
+                    f"recording but newest file is {int(age // 60)} min old "
+                    f"(wedged -- power-cycle the receiver?)",
                 )
             )
         else:
@@ -166,7 +191,7 @@ def _check_recorder_liveness(db: Session) -> list[Check]:
                 Check(
                     f"recorder:{rt.instrument_id}",
                     OK,
-                    f"recording, last file {int(age // 60)} min ago",
+                    f"recording, newest file {int(age // 60)} min ago",
                 )
             )
     return checks
