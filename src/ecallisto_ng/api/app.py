@@ -23,6 +23,7 @@ from ecallisto_ng.api.routes import alerts as alert_routes
 from ecallisto_ng.api.routes import auth as auth_routes
 from ecallisto_ng.api.routes import calibration as calibration_routes
 from ecallisto_ng.api.routes import data as data_routes
+from ecallisto_ng.api.routes import diagnostics as diagnostics_routes
 from ecallisto_ng.api.routes import discovery as discovery_routes
 from ecallisto_ng.api.routes import fleet as fleet_routes
 from ecallisto_ng.api.routes import instruments as instrument_routes
@@ -100,6 +101,7 @@ def create_app() -> FastAPI:
     app.include_router(schedule_routes.router)
     app.include_router(upload_routes.router)
     app.include_router(system_routes.router)
+    app.include_router(diagnostics_routes.router)
     app.include_router(calibration_routes.router)
     app.include_router(access_routes.router)
     app.include_router(migrate_routes.router)
