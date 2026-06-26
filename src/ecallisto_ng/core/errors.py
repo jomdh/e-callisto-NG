@@ -23,4 +23,4 @@ class RecoverableInstrumentError(InstrumentError):
 
 
 class FatalInstrumentError(InstrumentError):
-    """The driver cannot self-heal; the caller must tear it down and rebuild."""
+    """The driver cannot self-heal; the caller tears it down and rebuilds."""
