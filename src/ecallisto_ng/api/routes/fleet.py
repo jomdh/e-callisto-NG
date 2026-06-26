@@ -9,6 +9,7 @@ from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import optional_user, require_role
+from ecallisto_ng.api.crud import commit_or_conflict
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import PeerStation, Role, User
 from ecallisto_ng.api.settings import get_settings
@@ -51,7 +52,7 @@ def add_peer(
 ) -> PeerStation:
     obj = PeerStation(**body.model_dump())
     db.add(obj)
-    db.commit()
+    commit_or_conflict(db, "a peer station with that name already exists")
     db.refresh(obj)
     return obj
 

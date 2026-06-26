@@ -21,11 +21,11 @@ _admin = auth.require_role(Role.ADMIN)
 class UserIn(BaseModel):
     username: str
     password: str
-    role: str = "viewer"
+    role: Role = Role.VIEWER  # validated by FastAPI -> 422, not a 500
 
 
 class UserPatch(BaseModel):
-    role: str | None = None
+    role: Role | None = None
     active: bool | None = None
 
 

@@ -9,26 +9,49 @@ recording loops.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from ecallisto_ng.api.db import get_engine
 from ecallisto_ng.api.models import RecorderRuntime
 
 
+def _upsert(
+    instrument_id: int, apply: Callable[[RecorderRuntime], None]
+) -> None:
+    """Get-or-create the row, apply a mutation, commit -- retrying once if a
+    concurrent process inserted the row first (web + acquire both write)."""
+    for attempt in (1, 2):
+        with Session(get_engine()) as db:
+            row = db.get(RecorderRuntime, instrument_id)
+            created = row is None
+            if row is None:
+                row = RecorderRuntime(instrument_id=instrument_id)
+            apply(row)
+            row.updated_at = datetime.now(UTC)
+            db.add(row)
+            try:
+                db.commit()
+                return
+            except IntegrityError:
+                db.rollback()
+                if created and attempt == 1:
+                    continue  # another process won the insert -- retry update
+                return  # best-effort; the other write is authoritative
+
+
 def write(instrument_id: int, state: str, last_file: str | None) -> None:
     """Upsert the run-state for an instrument (best-effort)."""
-    with Session(get_engine()) as db:
-        row = db.get(RecorderRuntime, instrument_id)
-        if row is None:
-            row = RecorderRuntime(instrument_id=instrument_id)
+
+    def apply(row: RecorderRuntime) -> None:
         row.state = str(state)
         if last_file is not None:
             row.last_file = last_file
-        row.updated_at = datetime.now(UTC)
-        db.add(row)
-        db.commit()
+
+    _upsert(instrument_id, apply)
 
 
 def read(db: Session) -> dict[int, RecorderRuntime]:
@@ -42,14 +65,11 @@ def set_desired(instrument_id: int, desired: bool) -> None:
     The scheduler keeps a free-run (manual / no-schedule) instrument recording
     while this is True. Record sets it True, Stop sets it False.
     """
-    with Session(get_engine()) as db:
-        row = db.get(RecorderRuntime, instrument_id)
-        if row is None:
-            row = RecorderRuntime(instrument_id=instrument_id)
+
+    def apply(row: RecorderRuntime) -> None:
         row.desired = desired
-        row.updated_at = datetime.now(UTC)
-        db.add(row)
-        db.commit()
+
+    _upsert(instrument_id, apply)
 
 
 def get_desired(db: Session, instrument_id: int) -> bool:

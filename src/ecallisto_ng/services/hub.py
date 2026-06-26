@@ -26,6 +26,7 @@ from ecallisto_ng.core.spectra import SpectrumFrame
 from ecallisto_ng.core.units import UnitLevel
 
 _QUEUE_MAX = 256
+_MAX_DATAGRAM = 60000  # safe UDP payload (< 65507) for the live bridge
 _log = logging.getLogger(__name__)
 
 
@@ -38,6 +39,7 @@ class FrameHub:
         self._forward: tuple[str, int] | None = None
         self._send_sock: socket.socket | None = None
         self._listening = False
+        self._warned_oversize = False
 
     def subscribe(self, instrument_id: int) -> Queue[SpectrumFrame]:
         q: Queue[SpectrumFrame] = Queue(maxsize=_QUEUE_MAX)
@@ -96,6 +98,18 @@ class FrameHub:
                     "fc": frame.focus_code,
                 }
             ).encode("utf-8")
+            if len(payload) > _MAX_DATAGRAM:
+                if not self._warned_oversize:
+                    self._warned_oversize = True
+                    _log.warning(
+                        "live frame too large for the UDP bridge (%d bytes, "
+                        "%d channels) -- live view unavailable for instrument "
+                        "%s over the two-process bridge",
+                        len(payload),
+                        len(frame.values),
+                        instrument_id,
+                    )
+                return
             self._send_sock.sendto(payload, self._forward)
         except OSError:
             pass  # best-effort; live frames are ephemeral
@@ -130,6 +144,7 @@ class FrameHub:
     def _ingest(self, data: bytes) -> None:
         try:
             msg = json.loads(data.decode("utf-8"))
+            iid = int(msg["iid"])
             frame = SpectrumFrame(
                 timestamp_utc=datetime.fromisoformat(msg["t"]),
                 monotonic_ns=int(msg.get("mono", 0)),
@@ -138,8 +153,8 @@ class FrameHub:
                 focus_code=int(msg.get("fc", 0)),
             )
         except (ValueError, KeyError, TypeError):
-            return  # ignore a malformed datagram
-        self._publish_local(int(msg["iid"]), frame)
+            return  # ignore a malformed datagram -- keep the listener alive
+        self._publish_local(iid, frame)
 
 
 # re-export for callers that drain queues

@@ -13,6 +13,7 @@ dependency-free.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
@@ -46,6 +47,23 @@ def _calibrate(values: Sequence[int], recording: Recording) -> list[int]:
     return raw
 
 
+def _unique_path(path: Path) -> Path:
+    """A non-colliding path: append ``_NN`` if the name already exists.
+
+    Files are normally >= file_seconds apart (distinct UT-second names), but a
+    same-second rollover (tiny file_seconds, a self-heal short batch, a rapid
+    Stop->Record) would otherwise overwrite the earlier file -- silent data
+    loss. Only the rare collision case gets a suffix; normal names are legacy.
+    """
+    if not path.exists():
+        return path
+    for i in range(1, 1000):
+        candidate = path.with_name(f"{path.stem}_{i:02d}{path.suffix}")
+        if not candidate.exists():
+            return candidate
+    return path  # pragma: no cover - 1000 same-second files is impossible
+
+
 class StandardFitsWriter:
     """Implements :class:`ecallisto_ng.core.OutputWriter` for standard FITS."""
 
@@ -74,7 +92,7 @@ class StandardFitsWriter:
         )
         image = samples.T[::-1, :]
 
-        path = out_dir / self.filename(recording)
+        path = _unique_path(out_dir / self.filename(recording))
         hdu = fits.PrimaryHDU(data=image)
         self._fill_header(hdu.header, recording, rows, cols, dt, image)
 
@@ -83,7 +101,12 @@ class StandardFitsWriter:
             [c.frequency_mhz for c in recording.channels], dtype=np.float64
         )[::-1]
         table = self._build_table(rows, cols, time_axis, freq_axis)
-        fits.HDUList([hdu, table]).writeto(path, overwrite=True)
+        # Write to a temp name then atomically rename: consumers glob "*.fit"
+        # and so never see a half-written file (no truncated upload), and a
+        # same-second rollover never overwrites an earlier file (no data loss).
+        tmp = path.with_name(path.name + ".tmp")
+        fits.HDUList([hdu, table]).writeto(tmp, overwrite=True)
+        os.replace(tmp, path)
         return path
 
     def _bunit(self, unit: UnitLevel) -> str:

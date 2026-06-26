@@ -12,6 +12,7 @@ from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
+from ecallisto_ng.api.crud import commit_or_conflict
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import (
     FrequencyProgram,
@@ -61,7 +62,7 @@ def create_schedule(
 ) -> Schedule:
     obj = Schedule(**body.model_dump())
     db.add(obj)
-    db.commit()
+    commit_or_conflict(db, "unknown instrument_id or program_id")
     db.refresh(obj)
     return obj
 

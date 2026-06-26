@@ -9,6 +9,7 @@ from sqlmodel import Session as DbSession
 from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
+from ecallisto_ng.api.crud import commit_or_conflict
 from ecallisto_ng.api.crypto import encrypt
 from ecallisto_ng.api.db import get_session
 from ecallisto_ng.api.models import Role, UploadJob, UploadTarget
@@ -82,7 +83,7 @@ def create_target(
     data["password"] = encrypt(data["password"])  # B2: encrypt at rest
     obj = UploadTarget(**data)
     db.add(obj)
-    db.commit()
+    commit_or_conflict(db, "an upload target with that name already exists")
     db.refresh(obj)
     return _out(obj)
 

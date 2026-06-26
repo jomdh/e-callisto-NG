@@ -13,6 +13,7 @@ from collections.abc import Iterator
 
 from sqlalchemy import event, inspect, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import OperationalError
 from sqlmodel import Session, SQLModel, create_engine
 
 from ecallisto_ng.api.settings import get_settings
@@ -66,12 +67,33 @@ def _add_missing_columns(engine: Engine) -> None:
             ddl = f'ALTER TABLE "{name}" ADD COLUMN "{col.name}" {coltype}'
             default = getattr(col.default, "arg", None)
             if not col.nullable:
+                up = coltype.upper()
                 if default is None or callable(default):
-                    default = "" if "CHAR" in coltype.upper() else 0
-                value = repr(default) if isinstance(default, str) else default
-                ddl += f" DEFAULT {value}"
-            with engine.begin() as conn:
-                conn.execute(text(ddl))
+                    # A callable/None default needs a type-correct constant.
+                    # A datetime column must NOT get DEFAULT 0 (it reads back
+                    # as int 0 and breaks fromisoformat on every row); SQLite
+                    # also forbids a non-constant default (CURRENT_TIMESTAMP)
+                    # in ALTER -- so add it nullable (existing rows NULL).
+                    if "CHAR" in up or "TEXT" in up:
+                        ddl += " DEFAULT ''"
+                    elif "DATE" in up or "TIME" in up:
+                        pass  # nullable, no default
+                    else:
+                        ddl += " DEFAULT 0"
+                else:
+                    value = (
+                        repr(default) if isinstance(default, str) else default
+                    )
+                    ddl += f" DEFAULT {value}"
+            try:
+                with engine.begin() as conn:
+                    conn.execute(text(ddl))
+            except OperationalError as exc:
+                # Two processes (web + acquire) can migrate at once on a shared
+                # boot; a lost race is harmless if the column now exists.
+                if "duplicate column" in str(exc).lower():
+                    continue
+                raise
             logger.info("migrated: added %s.%s", name, col.name)
 
 
