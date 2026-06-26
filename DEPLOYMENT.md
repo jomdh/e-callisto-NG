@@ -131,6 +131,19 @@ sudo systemctl restart ecallisto-web
 After a reboot both come back automatically. Open `http://<station-ip>:8000`
 and complete the setup wizard (no default credentials).
 
+## 7b. Staying operational (power-saving + diagnostics)
+
+A 24/7 station must not let the link sleep, so the installer **disables idle
+power-saving**: WiFi power-save (NetworkManager) and USB autosuspend (udev,
+`power/control=on` for the serial + SDR devices). WiFi power-save takes effect
+on the next reboot/reconnect; USB autosuspend immediately. (Otherwise the symptom
+is "only records when someone is poking the device".)
+
+The portal's **Tools → Diagnostics** page (and `GET /api/v1/diagnostics`) runs a
+one-click self-check -- parasitic/duplicate processes, serial-port contention, a
+wedged recording (recording but not producing files), service/restart state,
+clock and disk -- and offers a downloadable report to send to the maintainers.
+
 ## 8. Updating
 
 ```bash
@@ -150,3 +163,5 @@ update never needs a DB wipe.
 | RX-888 stays `SYNTHETIC` | FX3 firmware not loaded / SoapyRX888 missing (§5). |
 | recording flagged/paused | clock not NTP-synced — `chronyc tracking` (§1). |
 | service won't start | `journalctl -u ecallisto-web -n50`; check `.env` + venv. |
+| "recording" but no files / empty live | run **Tools → Diagnostics** (§7b). If a recording is wedged, restart acquire: `sudo systemctl restart ecallisto-acquire` (restart units individually — a wedged unit can stall a combined restart). A hardware-stuck receiver may need a USB power-cycle. |
+| only records when someone's active | idle power-saving — re-run `sudo ./scripts/install.sh` or reboot (§7b). |
