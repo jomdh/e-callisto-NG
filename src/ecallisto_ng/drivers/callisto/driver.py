@@ -178,33 +178,40 @@ class CallistoDriver:
         ``FatalInstrumentError`` for the engine to rebuild + re-arm.
         """
         parser = StreamParser(self._nchannels, self._firmware.data10bit)
-        last_data = time.monotonic()
+        # Timeout on FRAMES produced, not bytes read: a device that streams
+        # unparseable junk (mid-frame desync after an abrupt kill) keeps the
+        # read non-empty forever, so a bytes-based stall never fires and the
+        # recording wedges with zero frames. Tracking last-frame catches both
+        # silence AND data-without-sweeps.
+        last_frame = time.monotonic()
         resets: deque[float] = deque()
         while self._running:
             try:
                 chunk = self._read_chunk()
             except OSError as exc:
                 parser = self._recover(resets, f"serial error: {exc}")
-                last_data = time.monotonic()
+                last_frame = time.monotonic()
                 continue
-            if not chunk:
-                if time.monotonic() - last_data > self._no_data_timeout():
-                    parser = self._recover(resets, "no data (stall)")
-                    last_data = time.monotonic()
-                continue
-            last_data = time.monotonic()
-            try:
-                items = list(parser.feed(chunk))
-            except RecoverableInstrumentError as exc:
-                parser = self._recover(resets, str(exc))
-                last_data = time.monotonic()
-                continue
-            for item in items:
-                if isinstance(item, ParsedSweep):
-                    yield self._frame(item.values)
-                elif isinstance(item, ParsedMessage):
-                    if "Stopped" in item.text:
-                        self._running = False
+            if chunk:
+                try:
+                    items = list(parser.feed(chunk))
+                except RecoverableInstrumentError as exc:
+                    parser = self._recover(resets, str(exc))
+                    last_frame = time.monotonic()
+                    continue
+                for item in items:
+                    if isinstance(item, ParsedSweep):
+                        last_frame = time.monotonic()
+                        yield self._frame(item.values)
+                    elif isinstance(item, ParsedMessage):
+                        if "Stopped" in item.text:
+                            self._running = False
+            if (
+                self._running
+                and time.monotonic() - last_frame > self._no_data_timeout()
+            ):
+                parser = self._recover(resets, "no frames (stall)")
+                last_frame = time.monotonic()
 
     def _no_data_timeout(self) -> float:
         rate = max(self._sweeps_per_second, 0.1)

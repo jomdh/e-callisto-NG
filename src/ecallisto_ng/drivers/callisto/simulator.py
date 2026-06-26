@@ -40,6 +40,7 @@ class SimulatedCallisto:
         self._dead = False  # ignores start commands (unrecoverable stall)
         self._read_errors = 0  # raise OSError on the next N reads
         self._corrupt_next = False  # emit one out-of-range sample next sweep
+        self._noise = False  # stream unparseable junk (data, but no sweeps)
 
     # -- fault injection (tests) ------------------------------------------
 
@@ -59,6 +60,11 @@ class SimulatedCallisto:
     def inject_corruption(self) -> None:
         self._corrupt_next = True
 
+    def emit_noise(self) -> None:
+        """Stream bytes that never form a sweep -- data arrives but no frames
+        are produced (a recoverable mid-frame desync). Cleared by a restart."""
+        self._noise = True
+
     # -- Connection interface ---------------------------------------------
 
     def write(self, data: bytes) -> None:
@@ -74,7 +80,10 @@ class SimulatedCallisto:
             self._read_errors -= 1
             raise OSError("simulated serial error")
         if self._running and not self._out and self._nchannels > 0:
-            self._emit_sweep()
+            if self._noise:
+                self._out += b"...."  # non-framing bytes -> parser ignores
+            else:
+                self._emit_sweep()
         chunk = bytes(self._out[:size])
         del self._out[:size]
         return chunk
@@ -103,6 +112,7 @@ class SimulatedCallisto:
         elif text == "GE":
             if not self._dead:
                 self._running = True
+                self._noise = False  # a restart clears a desync
                 self._sweep = 0
                 self._out += p.DATA_START  # STX
         elif text == "P2":
