@@ -1,0 +1,12 @@
+[Unit]
+Description=e-Callisto NG: disable idle power-saving (WiFi + USB)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=@APP_DIR@/scripts/no-powersave.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
