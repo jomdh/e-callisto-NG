@@ -165,3 +165,43 @@ def test_drift_does_not_stop_a_running_recording(
     assert get_recorder().status(iid).state is RecorderState.RECORDING
     get_recorder().stop(iid)
     get_recorder().join(iid, timeout=5.0)
+
+
+def test_manual_recording_survives_service_restart(client: TestClient) -> None:
+    from ecallisto_ng.services import recorder_state
+
+    with Session(db.get_engine()) as s:
+        inst = Instrument(name="FREE2", start_on_boot=False)
+        s.add(inst)
+        s.commit()
+        s.refresh(inst)
+        assert inst.id is not None
+        iid = inst.id
+    svc = SchedulerService()
+    with Session(db.get_engine()) as s:
+        svc.seed_desired_from_boot(s, boot_id="boot-1")  # the (re)boot
+    recorder_state.set_desired(iid, True)  # operator presses Record
+    # a service restart (crash auto-restart / deploy) -- SAME boot id
+    with Session(db.get_engine()) as s:
+        svc.seed_desired_from_boot(s, boot_id="boot-1")
+        assert recorder_state.get_desired(s, iid) is True  # resumes the plan
+
+
+def test_reboot_resets_a_manual_recording(client: TestClient) -> None:
+    from ecallisto_ng.services import recorder_state
+
+    with Session(db.get_engine()) as s:
+        inst = Instrument(name="FREE3", start_on_boot=False)
+        s.add(inst)
+        s.commit()
+        s.refresh(inst)
+        assert inst.id is not None
+        iid = inst.id
+    svc = SchedulerService()
+    with Session(db.get_engine()) as s:
+        svc.seed_desired_from_boot(s, boot_id="boot-1")
+    recorder_state.set_desired(iid, True)  # operator Record
+    # an actual machine reboot -- NEW boot id -> manual intent resets
+    with Session(db.get_engine()) as s:
+        svc.seed_desired_from_boot(s, boot_id="boot-2")
+        assert recorder_state.get_desired(s, iid) is False
