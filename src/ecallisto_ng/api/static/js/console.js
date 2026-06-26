@@ -50,6 +50,13 @@
       list: "/api/v1/schedules",
       create: "/api/v1/schedules",
       del: (r) => `/api/v1/schedules/${r.id}`,
+      // Blank the columns that don't apply to the row's kind so they don't
+      // mislead: start/stop are fixed-mode only; source is tracked-mode only.
+      cell: (c, r) => {
+        if ((c === "start_utc" || c === "stop_utc") && r.kind !== "fixed") return "—";
+        if (c === "source" && r.kind !== "tracked") return "—";
+        return r[c] === undefined || r[c] === null ? "" : String(r[c]);
+      },
       columns: ["id", "instrument_id", "kind", "source", "margin_minutes", "start_utc", "stop_utc", "program_id", "overview_at", "enabled"],
       fields: [
         { name: "instrument_id", type: "number", required: true },
@@ -225,7 +232,8 @@
     table.append(thead);
     rows.forEach((r) => {
       const tr = el("tr");
-      cfg.columns.forEach((c) => tr.append(el("td", {}, fmt(r[c]))));
+      cfg.columns.forEach((c) =>
+        tr.append(el("td", {}, cfg.cell ? cfg.cell(c, r) : fmt(r[c]))));
       const td = el("td", {});
       (cfg.actions || []).forEach((a) => {
         if (a.href) {
