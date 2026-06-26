@@ -8,6 +8,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session as DbSession
 from sqlmodel import select
 
@@ -62,6 +63,21 @@ class GenerateIn(BaseModel):
     local_oscillator: float = 0.0  # converter LO (MHz)
 
 
+def _save(db: DbSession, prog: FrequencyProgram) -> ProgramOut:
+    """Persist a program, turning a duplicate name into a clean 409."""
+    db.add(prog)
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"a program named {prog.name!r} already exists; pick another",
+        ) from exc
+    db.refresh(prog)
+    return _out(prog)
+
+
 def _out(p: FrequencyProgram) -> ProgramOut:
     return ProgramOut(
         id=p.id or 0,
@@ -90,10 +106,7 @@ def create_program(
         stop_mhz=body.stop_mhz,
         source="manual",
     )
-    db.add(prog)
-    db.commit()
-    db.refresh(prog)
-    return _out(prog)
+    return _save(db, prog)
 
 
 @router.post("/generate", status_code=201, dependencies=[Depends(_operator)])
@@ -126,10 +139,7 @@ def generate_program(
         stop_mhz=body.stop_mhz,
         source="generated",
     )
-    db.add(prog)
-    db.commit()
-    db.refresh(prog)
-    return _out(prog)
+    return _save(db, prog)
 
 
 @router.post("/import/frq", status_code=201, dependencies=[Depends(_operator)])
@@ -151,10 +161,7 @@ def import_frq(
         stop_mhz=max(cfg.frequencies),
         source="imported",
     )
-    db.add(prog)
-    db.commit()
-    db.refresh(prog)
-    return _out(prog)
+    return _save(db, prog)
 
 
 @router.get(
