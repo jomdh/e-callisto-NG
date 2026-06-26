@@ -90,9 +90,9 @@ def _observation_time(path: Path) -> datetime:
             tail = parts[i + 1] if i + 1 < len(parts) else ""
             hms = tail if len(tail) == 6 and tail.isdigit() else "000000"
             try:
-                return datetime.strptime(
-                    token + hms, "%Y%m%d%H%M%S"
-                ).replace(tzinfo=UTC)
+                return datetime.strptime(token + hms, "%Y%m%d%H%M%S").replace(
+                    tzinfo=UTC
+                )
             except ValueError:
                 break
     return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
