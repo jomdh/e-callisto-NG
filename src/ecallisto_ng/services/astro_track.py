@@ -8,6 +8,7 @@ legacy planner offered. Pure (no I/O); used by the planning panel (F8).
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from datetime import date as date_type
 
 import astropy.units as u
@@ -35,6 +36,44 @@ _PLANETS = {"mercury", "venus", "mars", "jupiter", "saturn", "moon"}
 SOURCES = ["sun", *sorted(_PLANETS), *sorted(_FIXED)]
 
 
+def _source_coord(
+    source: str, times: Time, location: EarthLocation
+) -> SkyCoord:
+    if source == "sun":
+        return get_sun(times)
+    if source in _PLANETS:
+        return get_body(source, times, location)
+    return _FIXED[source]
+
+
+def source_altitudes(
+    lat_deg: float,
+    lon_deg: float,
+    alt_m: float,
+    day: date_type,
+    source: str,
+    step_minutes: int = 10,
+) -> list[tuple[datetime, float]]:
+    """``(utc_datetime, el_deg)`` across the UTC day for a source.
+
+    The shared ephemeris the scheduler's window engine and the planning plot
+    both build on -- so 'where is the source today' has one implementation.
+    """
+    if source not in SOURCES:
+        raise ValueError(f"unknown source: {source}")
+    location = EarthLocation(
+        lat=lat_deg * u.deg, lon=lon_deg * u.deg, height=alt_m * u.m
+    )
+    n = int(24 * 60 / step_minutes) + 1
+    start_dt = datetime(day.year, day.month, day.day, tzinfo=UTC)
+    dts = [start_dt + timedelta(minutes=step_minutes * i) for i in range(n)]
+    times = Time(dts)
+    frame = AltAz(obstime=times, location=location)
+    coord = _source_coord(source, times, location)
+    el = np.atleast_1d(coord.transform_to(frame).alt.deg)
+    return [(d, float(e)) for d, e in zip(dts, el, strict=False)]
+
+
 def source_track(
     lat_deg: float,
     lon_deg: float,
@@ -53,15 +92,7 @@ def source_track(
     start = Time(f"{day.isoformat()}T00:00:00")
     times = start + np.arange(n) * (step_minutes * u.min)
     frame = AltAz(obstime=times, location=location)
-
-    if source == "sun":
-        coord = get_sun(times)
-    elif source in _PLANETS:
-        coord = get_body(source, times, location)
-    else:
-        coord = _FIXED[source]
-
-    altaz = coord.transform_to(frame)
+    altaz = _source_coord(source, times, location).transform_to(frame)
     az = np.atleast_1d(altaz.az.deg)
     el = np.atleast_1d(altaz.alt.deg)
     hours = (np.arange(n) * step_minutes) / 60.0

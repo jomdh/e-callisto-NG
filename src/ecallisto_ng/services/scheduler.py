@@ -84,6 +84,52 @@ def sun_window(
     return start, stop
 
 
+def source_window(
+    source: str,
+    latitude_deg: float,
+    longitude_deg: float,
+    day: date_type,
+    margin_minutes: int = 0,
+    horizon_deg: float = 0.0,
+    altitude_m: float = 0.0,
+) -> tuple[datetime, datetime] | None:
+    """Daily observable window (start, stop) for a tracked source, or None.
+
+    The window IS the source's ephemeris for the station -- recomputed each
+    day, so it follows the seasons with no reconfiguration. The **Sun** uses
+    true sunrise/sunset (-0.8333 deg) + the legacy horizon trim; **every other
+    source** is observable while its elevation exceeds the station horizon.
+    ``margin_minutes`` trims both ends. None = the source is never up that day.
+    """
+    if source == "sun":
+        return sun_window(
+            latitude_deg, longitude_deg, day, margin_minutes, horizon_deg
+        )
+    from ecallisto_ng.services.astro_track import source_altitudes
+
+    samples = source_altitudes(
+        latitude_deg, longitude_deg, altitude_m, day, source
+    )
+    rise: datetime | None = None
+    sets: datetime | None = None
+    for i in range(1, len(samples)):
+        prev_el, el = samples[i - 1][1], samples[i][1]
+        if rise is None and prev_el < horizon_deg <= el:
+            rise = samples[i][0]
+        if prev_el >= horizon_deg > el:
+            sets = samples[i][0]
+    margin = timedelta(minutes=margin_minutes)
+    if rise is not None and sets is not None and sets > rise:
+        start, stop = rise + margin, sets - margin
+    elif max(e for _, e in samples) > horizon_deg:
+        # circumpolar / up across midnight -> record the whole UT day
+        midnight = samples[0][0]
+        start, stop = midnight + margin, midnight + timedelta(days=1) - margin
+    else:
+        return None  # never above the horizon today
+    return (start, stop) if stop > start else None
+
+
 def fixed_window(
     day: date_type, start_hhmm: str, stop_hhmm: str
 ) -> tuple[datetime, datetime] | None:
