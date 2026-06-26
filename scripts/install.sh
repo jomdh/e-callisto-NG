@@ -32,9 +32,9 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq || true
 apt-get install -y --no-install-recommends \
     "python${PYV}-venv" python3-pip python3-dev build-essential \
-    git chrony usbutils 2>/dev/null || \
+    git chrony usbutils iw 2>/dev/null || \
     apt-get install -y --no-install-recommends \
-        python3-venv python3-pip git chrony usbutils || true
+        python3-venv python3-pip git chrony usbutils iw || true
 systemctl enable --now chrony 2>/dev/null || true
 
 # --- 2. groups: serial (dialout) + USB SDR (plugdev) ---------------------
@@ -54,16 +54,26 @@ udevadm trigger 2>/dev/null || true
 # acquisition ("only records when someone's poking it"). Disable both,
 # persistently, and apply now.
 echo "==> disabling idle power-saving (WiFi power-save, USB autosuspend)"
-# WiFi power-save off (NetworkManager, the Raspberry Pi OS default):
+# WiFi power-save off (NetworkManager, the Raspberry Pi OS default). The
+# conf.d sets the default; nmcli also writes each existing wifi profile so an
+# already-configured connection is covered (applies on reconnect/reboot).
 if [ -d /etc/NetworkManager ]; then
     install -d /etc/NetworkManager/conf.d
     cat > /etc/NetworkManager/conf.d/99-ecallisto-no-powersave.conf <<'NMEOF'
 [connection]
 wifi.powersave = 2
 NMEOF
+    if command -v nmcli >/dev/null 2>&1; then
+        nmcli -t -f NAME,TYPE connection show 2>/dev/null \
+            | awk -F: '$2 ~ /wireless/ {print $1}' \
+            | while IFS= read -r con; do
+                nmcli connection modify "$con" \
+                    802-11-wireless.powersave 2 2>/dev/null || true
+            done
+    fi
     systemctl reload NetworkManager 2>/dev/null || true
 fi
-# apply now to any wireless interface (best-effort; udev handles USB on plug)
+# apply now without dropping the link (iw was installed above)
 for wif in /sys/class/net/wl*; do
     [ -e "$wif" ] || continue
     iw dev "$(basename "$wif")" set power_save off 2>/dev/null || true
@@ -112,7 +122,13 @@ render packaging/systemd/ecallisto-web.service.in \
 render packaging/systemd/ecallisto-acquire.service.in \
     > /etc/systemd/system/ecallisto-acquire.service
 systemctl daemon-reload
-systemctl enable --now ecallisto-web ecallisto-acquire
+systemctl enable ecallisto-web ecallisto-acquire
+# restart (not just enable --now) so re-running install.sh actually picks up
+# new code/settings -- enable --now is a no-op on an already-running service.
+# Restart acquire first; a wedged old daemon could otherwise stall a combined
+# restart and leave the web service un-updated.
+systemctl restart ecallisto-acquire || true
+systemctl restart ecallisto-web || true
 
 echo
 echo "==> done. Station services:"
