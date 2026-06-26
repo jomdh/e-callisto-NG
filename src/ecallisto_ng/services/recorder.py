@@ -18,6 +18,7 @@ from pathlib import Path
 
 from ecallisto_ng.core.calibration import Calibration
 from ecallisto_ng.core.contracts import InstrumentDriver, OutputWriter
+from ecallisto_ng.core.errors import FatalInstrumentError
 from ecallisto_ng.core.recording import RecordingMeta
 from ecallisto_ng.core.spectra import Channel
 from ecallisto_ng.core.units import UnitLevel
@@ -94,7 +95,18 @@ class RecorderService:
     def status(self, instrument_id: int) -> RecorderStatus:
         with self._lock:
             job = self._jobs.get(instrument_id)
-            return job.status if job else RecorderStatus()
+            if job is None:
+                return RecorderStatus()
+            # Liveness reconciliation (M34/D5): a job that claims RECORDING but
+            # whose thread has died is wedged -- surface it as ERROR so the
+            # scheduler re-arms instead of believing it is still recording.
+            if (
+                job.status.state is RecorderState.RECORDING
+                and not job.thread.is_alive()
+            ):
+                job.status.state = RecorderState.ERROR
+                job.status.error = job.status.error or "recorder thread died"
+            return job.status
 
     def start(
         self,
@@ -200,6 +212,12 @@ class RecorderService:
                 self._finish(
                     instrument_id, None, "instrument busy (port in use)"
                 )
+                if on_state is not None:
+                    on_state(RecorderState.ERROR, None)
+            except FatalInstrumentError as exc:
+                # The driver gave up self-healing -- finish ERROR; the
+                # scheduler rebuilds a fresh driver + re-arms next tick (D6).
+                self._finish(instrument_id, None, f"instrument fault: {exc}")
                 if on_state is not None:
                     on_state(RecorderState.ERROR, None)
             except Exception as exc:  # noqa: BLE001 - report any failure

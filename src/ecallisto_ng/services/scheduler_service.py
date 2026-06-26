@@ -81,9 +81,11 @@ class SchedulerService:
             state = recorder.status(inst.id).state
             if desired and gate_ok and state is not RecorderState.RECORDING:
                 self._start(db, inst, station, sched)
-            elif (
-                not desired or not gate_ok
-            ) and state is RecorderState.RECORDING:
+            elif not desired and state is RecorderState.RECORDING:
+                # Clock drift does NOT tear down a running recording (M34/D7,
+                # ADR-0010): we trust the boot-synced clock and the file's
+                # clock metadata flags the affected sweeps. Only loss of intent
+                # (window close / operator Stop) stops it.
                 recorder.stop(inst.id)
             else:
                 self._maybe_overview(db, inst, sched, now)
