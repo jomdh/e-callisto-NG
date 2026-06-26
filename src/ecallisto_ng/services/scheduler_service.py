@@ -45,6 +45,22 @@ from ecallisto_ng.services.timing import get_time_source
 from ecallisto_ng.writers.fits import get_writer
 
 
+def _system_boot_id() -> str:
+    """A token that changes on every machine reboot (Linux ``/proc/stat``).
+
+    Empty on non-Linux/dev hosts -- there a service restart and a reboot look
+    alike, so intent persists (the safer, data-preserving default).
+    """
+    try:
+        with open("/proc/stat", encoding="ascii") as fh:
+            for line in fh:
+                if line.startswith("btime"):
+                    return line.split()[1]
+    except OSError:  # pragma: no cover - non-Linux
+        pass
+    return ""
+
+
 class SchedulerService:
     """Drives recordings from schedules. One per process."""
 
@@ -211,21 +227,35 @@ class SchedulerService:
 
     # -- background loop ---------------------------------------------------
 
-    def seed_desired_from_boot(self, db: Session) -> None:
-        """Reconcile persisted state + seed desired at daemon startup.
+    def seed_desired_from_boot(
+        self, db: Session, boot_id: str | None = None
+    ) -> None:
+        """Reconcile persisted state at startup; re-seed only on a real reboot.
 
         A fresh process owns no recordings, so any persisted ``recording``
-        state is stale (left by a killed predecessor) -- reset it to idle.
-        Then seed each free-run instrument's desired flag from start_on_boot:
-        a ``start_on_boot`` instrument resumes recording after a reboot, a
-        manual run (start_on_boot False) does not. Scheduled (fixed/sun)
-        instruments are window-driven and untouched.
+        state is stale (left by the killed predecessor) -- always reset it to
+        idle (the next tick resumes anything still desired).
+
+        The operator's intent (``desired``) is only re-seeded from
+        ``start_on_boot`` on an **actual machine reboot**, detected by a change
+        in the system boot id. A mere service restart (crash auto-restart, a
+        deploy) keeps the existing intent, so a manual or scheduled recording
+        resumes -- maximize captured data, get back to plan. A manual run thus
+        survives a hiccup but not a reboot; a human Stop is always respected.
         """
         for rt in recorder_state.read(db).values():
             if rt.state == RecorderState.RECORDING:
                 recorder_state.write(
                     rt.instrument_id, RecorderState.IDLE, None
                 )
+        if boot_id is None:
+            boot_id = _system_boot_id()
+        marker = get_settings().data_dir / ".boot_epoch"
+        last = marker.read_text().strip() if marker.exists() else None
+        if last == boot_id:
+            return  # service restart, not a reboot -- keep intent, resume
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(boot_id)
         for inst in db.exec(select(Instrument)).all():
             if inst.id is None:
                 continue
