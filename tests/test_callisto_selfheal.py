@@ -65,3 +65,15 @@ def test_dead_device_escalates_to_fatal() -> None:
     with pytest.raises(FatalInstrumentError):
         # drains the reset budget, then escalates -- never hangs
         list(itertools.islice(stream, 100))
+
+
+def test_garbage_stream_recovers() -> None:
+    # data arrives but never forms a sweep -> the no-FRAME timeout must fire
+    # (a bytes-based stall never would), soft reset, and resume.
+    sim = SimulatedCallisto("1.8")
+    d = _driver(sim)
+    stream = d.stream()
+    assert len(next(stream).values) == 8
+    sim.emit_noise()  # device streams junk, no sweeps
+    assert len(next(stream).values) == 8  # recovered
+    d.stop()
