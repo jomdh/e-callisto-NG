@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # keep it short enough to feel responsive.
     scheduler_tick_seconds: int = 5
     uploader_tick_seconds: int = 60
+    # Localhost UDP port bridging live frames from the acquire daemon to the
+    # web app's WebSocket feed (two-process mode); same-host only.
+    live_bridge_port: int = 8799
     # Days to keep uploaded local files; <0 disables pruning.
     retention_days: int = -1
     # If set, uploaded files are moved into this dated YYYY/MM/DD archive
