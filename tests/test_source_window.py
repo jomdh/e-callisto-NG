@@ -47,9 +47,7 @@ def _seed(client: TestClient, kind: str, **kw: object) -> int:
         s.commit()
         s.refresh(inst)
         assert inst.id is not None
-        sched = Schedule(
-            instrument_id=inst.id, kind=kind, **kw  # type: ignore[arg-type]
-        )
+        sched = Schedule(instrument_id=inst.id, kind=kind, **kw)
         s.add(sched)
         s.commit()
         s.refresh(sched)
