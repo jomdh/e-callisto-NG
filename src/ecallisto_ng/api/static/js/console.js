@@ -243,6 +243,7 @@
   // applies to instead of showing a bare number (and badge the instruments' own
   // id as #id).
   let instMap = {};
+  let countEl = null;
   function instLabel(id) {
     return instMap[id] ? "#" + id + " " + instMap[id] : "#" + id;
   }
@@ -302,6 +303,9 @@
     });
     body.replaceChildren(table);
     if (!rows.length) body.append(el("p", { class: "muted" }, "None yet."));
+    if (countEl) {
+      countEl.textContent = rows.length + " " + cfg.title.toLowerCase();
+    }
   }
 
   function fmt(v) {
@@ -403,8 +407,13 @@
         if (v !== "") payload[f.name] = Number(v); // blank -> server default
       } else payload[f.name] = v;
     });
-    try { await api("POST", cfg.create, payload); form.reset(); note("created", "ok"); refresh(); }
-    catch (e) { note(e.message, "error"); }
+    try {
+      await api("POST", cfg.create, payload);
+      form.reset();
+      note("created", "ok");
+      refresh();
+      setForm(false); // collapse back -- the new entry now shows in the list
+    } catch (e) { note(e.message, "error"); }
   });
 
   // Programs: build a frequency list within a range (generate) or upload a frq.
@@ -459,11 +468,33 @@
     return wrap;
   }
 
-  const card = el("div", { class: "card", style: "margin-bottom:1rem" });
-  if (cfg.scan) card.append(scanPanel());
-  if (cfg.build) card.append(buildPanel());
-  card.append(form);
-  root.replaceChildren(card, body, out);
+  // Layout (UX): the current setups list goes on top; the create form sits
+  // below, collapsed until "New" is pressed -- a section is usually opened to
+  // see and manage what exists, not to add. Card + M3 button styling to match.
+  countEl = el("span", { class: "console-count muted" }, "");
+  const addBtn = el("button", { class: "btn-filled", type: "button" }, "+ New");
+  const listCard = el("div", { class: "card console-list" });
+  listCard.append(body);
+  const formCard = el("div", { class: "card console-form" });
+  formCard.hidden = true;
+  formCard.append(el("h3", { class: "console-form-title" }, "New entry"));
+  if (cfg.scan) formCard.append(scanPanel());
+  if (cfg.build) formCard.append(buildPanel());
+  formCard.append(form);
+
+  function setForm(open) {
+    formCard.hidden = !open;
+    addBtn.textContent = open ? "Close" : "+ New";
+    if (open) {
+      const first = formCard.querySelector("input, select, textarea");
+      if (first) first.focus();
+    }
+  }
+  addBtn.addEventListener("click", () => setForm(formCard.hidden));
+
+  const toolbar = el("div", { class: "console-toolbar" });
+  toolbar.append(countEl, addBtn);
+  root.replaceChildren(toolbar, listCard, out, formCard);
   refresh();
   }
 })();

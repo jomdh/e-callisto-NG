@@ -214,6 +214,44 @@ body {
 .ws-form input:not([type]),
 .ws-form select { width: 100%; max-width: 22rem; }
 .ws-form label > input[type="checkbox"] { width: auto; margin-right: 0.4rem; }
+
+/* Management console: current setups on top, the create form collapsed below. */
+.console-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.console-count { font-size: 0.85rem; }
+.console-list table { width: 100%; border-collapse: collapse; }
+.console-list th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  padding: 0.4em 0.9em 0.4em 0;
+  border-bottom: 1px solid var(--border);
+}
+.console-list td {
+  padding: 0.5em 0.9em 0.5em 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+.console-list tr:last-child td { border-bottom: none; }
+.console-form-title { margin-top: 0; }
+.console-form label {
+  display: block;
+  margin: 0.6em 0 0.15em;
+  font-size: 0.82rem;
+  color: var(--fg-muted);
+}
+.console-form > form > input:not([type="checkbox"]),
+.console-form > form > select,
+.console-form > form > textarea { width: 100%; max-width: 26rem; }
 .portal-main .card { margin-bottom: 1rem; }
 /* compact row-action buttons in console tables */
 .portal-main table .btn-text {

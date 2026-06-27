@@ -203,6 +203,17 @@ def test_console_resolves_instrument_id(client: TestClient) -> None:
     assert "instSelect" in js
 
 
+def test_console_setups_above_collapsible_form(client: TestClient) -> None:
+    # current setups list on top; create form collapsed below behind "+ New"
+    js = client.get("/static/js/console.js").text
+    assert "console-toolbar" in js
+    assert "console-list" in js
+    assert "console-form" in js
+    assert "setForm" in js  # the collapse toggle
+    css = client.get("/static/css/portal.css").text
+    assert ".console-list table" in css  # styled, M3-consistent table
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text
