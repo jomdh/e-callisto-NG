@@ -3,66 +3,110 @@
 {% block body %}
 <div class="portal-main" data-instrument="{{ inst.id }}">
   <p class="muted"><a href="/portal/manage/instruments">&larr; instruments</a></p>
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <h2 style="border:none;margin:0">{{ inst.name }}</h2>
+  <div class="ws-head">
+    <h2>{{ inst.name }}</h2>
     <span class="chip" id="d-state">&hellip;</span>
   </div>
   <p class="muted">{{ inst.instrument_class }} &middot; {{ inst.channels }}
     channels &middot; gain {{ inst.gain }}
     {% if inst.address %}&middot; {{ inst.address }}{% endif %}</p>
 
-  <div class="card">
-    <h3 style="margin-top:0">Operate</h3>
-    <div class="data-toolbar">
-      <button class="btn-text" data-act="record">record</button>
-      <button class="btn-text" data-act="stop">stop</button>
-      <button class="btn-text" data-act="overview">overview</button>
-      <button class="btn-text" data-act="diagnose">diagnose</button>
-      {% if inst.instrument_class == "heterodyne" %}
-      <button class="btn-text" data-act="reconnect">reconnect</button>
-      {% endif %}
-      <a class="btn-text" href="/portal/live/{{ inst.id }}">live</a>
+  <nav class="ws-tabs" id="ws-tabs">
+    <a class="ws-tab" data-tab="overview" href="#overview">Overview</a>
+    {% if bench %}<a class="ws-tab" data-tab="bench" href="#bench">Bench</a>{% endif %}
+    <a class="ws-tab" data-tab="config" href="#config">Config</a>
+  </nav>
+
+  <section class="ws-panel" data-panel="overview">
+    <div class="card">
+      <h3 style="margin-top:0">Operate</h3>
+      <div class="data-toolbar">
+        <button class="btn-text" data-act="record">record</button>
+        <button class="btn-text" data-act="stop">stop</button>
+        <button class="btn-text" data-act="overview">overview</button>
+        <button class="btn-text" data-act="diagnose">diagnose</button>
+        {% if inst.instrument_class == "heterodyne" %}
+        <button class="btn-text" data-act="reconnect">reconnect</button>
+        {% endif %}
+        <a class="btn-text" href="/portal/live/{{ inst.id }}">live</a>
+      </div>
+      <pre id="d-out" class="muted" style="white-space:pre-wrap"></pre>
     </div>
-    <pre id="d-out" class="muted" style="white-space:pre-wrap"></pre>
-  </div>
+  </section>
 
   {% if bench %}
-  <div class="card" style="margin-top:1rem">
-    <h3 style="margin-top:0">Detector (bench)</h3>
-    <div class="data-toolbar">
-      <label for="d-freq">Freq [MHz]</label>
-      <input id="d-freq" type="number" value="150" style="width:6em">
-      <label for="d-gain">Gain</label>
-      <input id="d-gain" type="number" value="200" style="width:5em">
-      <button class="btn-filled" id="d-read" type="button">read</button>
-      <span id="d-mv" class="muted">-- mV</span>
+  <section class="ws-panel" data-panel="bench" hidden>
+    <div class="card">
+      <h3 style="margin-top:0">Detector (bench)</h3>
+      <div class="data-toolbar">
+        <label for="d-freq">Freq [MHz]</label>
+        <input id="d-freq" type="number" value="150" style="width:6em">
+        <label for="d-gain">Gain</label>
+        <input id="d-gain" type="number" value="200" style="width:5em">
+        <button class="btn-filled" id="d-read" type="button">read</button>
+        <span id="d-mv" class="muted">-- mV</span>
+      </div>
     </div>
-  </div>
 
-  <div class="card" style="margin-top:1rem">
-    <h3 style="margin-top:0">Noise figure (Y-factor)</h3>
-    <div class="data-toolbar">
-      <label for="d-n">Points</label>
-      <input id="d-n" type="number" value="40" style="width:5em">
-      <label for="d-enr">ENR</label>
-      <input id="d-enr" type="number" value="15" style="width:5em">
-      <button class="btn-filled" id="d-nf" type="button">run NF</button>
-      <span id="d-nfout" class="muted"></span>
+    <div class="card">
+      <h3 style="margin-top:0">Noise figure (Y-factor)</h3>
+      <div class="data-toolbar">
+        <label for="d-n">Points</label>
+        <input id="d-n" type="number" value="40" style="width:5em">
+        <label for="d-enr">ENR</label>
+        <input id="d-enr" type="number" value="15" style="width:5em">
+        <button class="btn-filled" id="d-nf" type="button">run NF</button>
+        <span id="d-nfout" class="muted"></span>
+      </div>
     </div>
-  </div>
+  </section>
   {% else %}
-  <p class="muted" style="margin-top:1rem">Bench tools are available on
+  <p class="muted">Bench tools are available on
     heterodyne (e-Callisto) instruments only.</p>
   {% endif %}
 
-  <div class="card" style="margin-top:1rem">
-    <h3 style="margin-top:0">Configure</h3>
-    <p class="muted">
-      <a href="/portal/manage/schedules">schedules</a> &middot;
-      <a href="/portal/manage/programs">frequency programs</a> &middot;
-      <a href="/portal/manage/calibration">calibration</a>
-    </p>
-  </div>
+  <section class="ws-panel" data-panel="config" hidden>
+    <div class="card">
+      <h3 style="margin-top:0">Configure</h3>
+      <p class="muted">
+        <a href="/portal/manage/schedules">schedules</a> &middot;
+        <a href="/portal/manage/programs">frequency programs</a> &middot;
+        <a href="/portal/manage/calibration">calibration</a>
+      </p>
+    </div>
+  </section>
 </div>
+<script nonce="{{ request.state.csp_nonce }}">
+  (function () {
+    "use strict";
+    var tabsEl = document.getElementById("ws-tabs");
+    if (!tabsEl) return;
+    var panels = Array.prototype.slice.call(
+      document.querySelectorAll(".ws-panel"));
+    var links = Array.prototype.slice.call(
+      tabsEl.querySelectorAll(".ws-tab"));
+    function activate(name) {
+      var matched = false;
+      panels.forEach(function (pn) {
+        var on = pn.getAttribute("data-panel") === name;
+        pn.hidden = !on;
+        if (on) matched = true;
+      });
+      links.forEach(function (a) {
+        a.classList.toggle("active", a.getAttribute("data-tab") === name);
+      });
+      if (!matched && panels.length) {
+        panels[0].hidden = false;
+        if (links[0]) links[0].classList.add("active");
+      }
+    }
+    function fromHash() {
+      var h = (location.hash || "").replace("#", "");
+      activate(h || (links[0] && links[0].getAttribute("data-tab")));
+    }
+    window.addEventListener("hashchange", fromHash);
+    fromHash();
+  })();
+</script>
 <script src="/static/js/instrument.js"></script>
 {% endblock %}

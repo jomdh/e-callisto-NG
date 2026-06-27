@@ -167,6 +167,34 @@ body {
   font-weight: 600;
   margin: 0 0 0.6rem;
 }
+/* Per-instrument workspace: header + tabbed panels (ADR-0011) */
+.ws-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ws-head h2 { border: none; margin: 0; padding: 0; }
+.ws-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.4rem 0 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.ws-tab {
+  padding: 0.5em 0.9em;
+  font-size: 0.9rem;
+  color: var(--on-surface-variant, inherit);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.ws-tab:hover { color: inherit; }
+.ws-tab.active {
+  color: inherit;
+  font-weight: 600;
+  border-bottom-color: var(--primary, currentColor);
+}
+.ws-panel[hidden] { display: none; }
 .portal-main .card { margin-bottom: 1rem; }
 /* compact row-action buttons in console tables */
 .portal-main table .btn-text {
