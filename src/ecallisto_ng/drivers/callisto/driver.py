@@ -42,6 +42,15 @@ from ecallisto_ng.drivers.callisto.parser import (
 
 _READ_CHUNK = 4096
 _MAX_EMPTY_READS = 200  # guards line/ack reads against a dead port
+# Bounded liveness for the connect->identify->configure->start handshake
+# (ADR-0010, extended to the full lifecycle). Each handshake step is a
+# request/response against a device that, if alive, answers within ~1s -- the
+# legacy daemon aborted the EEPROM upload on the first 1s of silence
+# (serial.c VTIME=10; eeprom.c "Timeout while uploading channels"). We allow a
+# few seconds for USB-serial latency, then raise rather than parking in
+# do_select for ~200s per channel (a 200-channel program -> hours) on a device
+# that came up mute.
+_HANDSHAKE_TIMEOUT_S = 5.0
 
 # Self-heal (ADR-0010 / M34): a stalled or corrupt stream triggers an in-driver
 # reset->init->start; too many resets in a window escalates to Fatal.
@@ -85,6 +94,7 @@ class CallistoDriver:
         # Stall timeout knobs (overridable in tests for speed).
         self._min_no_data_s = _MIN_NO_DATA_S
         self._stall_sweeps = _STALL_SWEEPS
+        self._handshake_timeout_s = _HANDSHAKE_TIMEOUT_S
 
     @property
     def capabilities(self) -> Capabilities:
@@ -362,27 +372,36 @@ class CallistoDriver:
             self._rx = bytearray()
 
     def _read_line(self) -> str:
-        empties = 0
-        while empties < _MAX_EMPTY_READS:
+        """Read one CR-terminated line within the handshake timeout.
+
+        Bounded by wall clock, not an empty-read count: a device spewing
+        non-marker garbage can't loop us forever either. A timeout means the
+        device is not answering the handshake (mute) -- a recoverable fault the
+        engine rebuilds from, not an indefinite block (ADR-0010)."""
+        deadline = time.monotonic() + self._handshake_timeout_s
+        while time.monotonic() < deadline:
             idx = self._rx.find(b"\r")
             if idx >= 0:
                 line = self._rx[:idx]
                 del self._rx[: idx + 1]
                 return line.decode("ascii", "replace")
-            if self._fill() == 0:
-                empties += 1
-        raise TimeoutError("no line received from device")
+            self._fill()
+        raise RecoverableInstrumentError(
+            "no response from device during handshake (mute?)"
+        )
 
     def _wait_for(self, marker: bytes) -> None:
-        empties = 0
-        while empties < _MAX_EMPTY_READS:
+        """Consume input up to ``marker`` within the handshake timeout."""
+        deadline = time.monotonic() + self._handshake_timeout_s
+        while time.monotonic() < deadline:
             idx = self._rx.find(marker)
             if idx >= 0:
                 del self._rx[: idx + 1]
                 return
-            if self._fill() == 0:
-                empties += 1
-        raise TimeoutError(f"marker {marker!r} not received")
+            self._fill()
+        raise RecoverableInstrumentError(
+            f"device did not ack {marker!r} during handshake (mute?)"
+        )
 
 
 def _parse_overview_line(text: str) -> tuple[float, int | None, bool]:

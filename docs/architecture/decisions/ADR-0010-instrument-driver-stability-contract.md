@@ -2,6 +2,20 @@
 
 **Status:** Accepted  **Date:** 2026-06-25  **Milestone:** M34
 
+> **Amendment (2026-06-27, M38):** the bounded-liveness guarantee covers the
+> **entire driver lifecycle**, not only `stream()`. `connect`/`identify`/
+> `configure`/`start` were found to block indefinitely on a device that comes up
+> mute: the Callisto handshake parked in a serial read waiting for an EEPROM ack
+> that never arrives (~200s per channel; a 200-channel program = hours), so the
+> recorder sat in `state=recording` producing zero frames and never rebuilt. The
+> handshake now has a wall-clock timeout (grounded in the legacy daemon, which
+> aborted the EEPROM upload on the first ~1s of silence -- `serial.c` `VTIME=10`,
+> `eeprom.c` "Timeout while uploading channels") and raises
+> `RecoverableInstrumentError` so the engine rebuilds, exactly as a `stream()`
+> stall does. Conformance: **no driver call may block indefinitely** -- lifecycle
+> or stream. (Mute-at-startup is still only *recovered* by re-enumeration/power;
+> bounded liveness converts an infinite hang into a clean retry, see ADR-0012.)
+
 ## Context
 
 The load-bearing principle is that instrument instability stays **inside the

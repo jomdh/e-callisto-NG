@@ -231,10 +231,22 @@ class RecorderService:
             except FatalInstrumentError as exc:
                 # The driver gave up self-healing -- finish ERROR; the
                 # scheduler rebuilds a fresh driver + re-arms next tick (D6).
+                _log.warning(
+                    "instrument %s: fatal fault, will rebuild: %s",
+                    instrument_id,
+                    exc,
+                )
                 self._finish(instrument_id, None, f"instrument fault: {exc}")
                 if on_state is not None:
                     on_state(RecorderState.ERROR, None)
             except Exception as exc:  # noqa: BLE001 - report any failure
+                # Includes a bounded-out handshake (mute at startup) -- log it
+                # so a failing-to-start recording is never silent (ADR-0012).
+                _log.warning(
+                    "instrument %s: recording failed, will rebuild: %s",
+                    instrument_id,
+                    exc,
+                )
                 self._finish(instrument_id, None, str(exc))
                 if on_state is not None:
                     on_state(RecorderState.ERROR, None)
