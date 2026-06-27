@@ -7,8 +7,10 @@
 
   <div style="display:flex;justify-content:space-between;align-items:center">
     <h2 style="border:none;margin:0">Instruments</h2>
-    <a class="btn-filled" href="/portal/manage/instruments">Manage instruments</a>
+    <a class="btn-filled" href="/portal/manage/instruments">+ Add instrument</a>
   </div>
+  <p class="muted">Operate from a card, or <strong>open</strong> an instrument
+    for its full workspace (schedule, programs, calibration, data, config).</p>
 
   {% if cockpit %}
   <div class="cockpit-grid">
@@ -31,7 +33,9 @@
         <button class="btn-text" data-act="stop" data-id="{{ i.id }}">stop</button>
         <button class="btn-text" data-act="overview" data-id="{{ i.id }}">overview</button>
         <a class="btn-text" href="/portal/instruments/{{ i.id }}#live">live</a>
+        <a class="btn-text" href="/portal/instruments/{{ i.id }}">open &rsaquo;</a>
       </div>
+      <div class="cockpit-msg muted" data-field="msg"></div>
     </div>
     {% endfor %}
   </div>

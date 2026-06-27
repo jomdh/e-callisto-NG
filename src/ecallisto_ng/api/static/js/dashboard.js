@@ -36,23 +36,40 @@
     };
   });
 
-  // quick actions
+  // quick actions -- same semantics as the instrument workspace: record is
+  // continuous (until Stop), and every click reports its result on the card.
   async function act(method, url) {
-    const r = await fetch(url, { method });
-    return r.ok;
+    let detail = "";
+    try {
+      const r = await fetch(url, { method });
+      if (!r.ok) {
+        try { detail = (await r.json()).detail || r.status; }
+        catch (e) { detail = String(r.status); }
+      }
+      return { ok: r.ok, detail };
+    } catch (e) {
+      return { ok: false, detail: "network error" };
+    }
   }
   document.querySelectorAll(".cockpit-actions button[data-act]").forEach((b) => {
     b.addEventListener("click", async () => {
       const id = b.dataset.id, a = b.dataset.act;
       const map = {
-        record: ["POST", `/api/v1/instruments/${id}/record?frames=200`],
+        record: ["POST", `/api/v1/instruments/${id}/record`], // continuous
         stop: ["POST", `/api/v1/instruments/${id}/stop`],
         overview: ["POST", `/api/v1/instruments/${id}/overview`],
       };
       if (!map[a]) return;
+      const card = b.closest(".cockpit-card");
+      const msg = card && card.querySelector('[data-field="msg"]');
       b.disabled = true;
-      await act(map[a][0], map[a][1]);
+      if (msg) { msg.textContent = a + "…"; msg.className = "cockpit-msg muted"; }
+      const res = await act(map[a][0], map[a][1]);
       b.disabled = false;
+      if (msg) {
+        msg.textContent = res.ok ? a + " — ok" : "error: " + res.detail;
+        msg.className = res.ok ? "cockpit-msg muted" : "cockpit-msg error";
+      }
       refresh();
     });
   });

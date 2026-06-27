@@ -256,6 +256,23 @@ def test_calibration_list_shows_used_by(client: TestClient) -> None:
     assert cset["used_by"] == [iid]
 
 
+def test_dashboard_controls_continuous_and_responsive(
+    client: TestClient,
+) -> None:
+    # the cockpit record button does a continuous record (not a frames=200
+    # in-web capture that 409s against the acquire daemon), reports a result,
+    # and each card can drill into the workspace.
+    js = client.get("/static/js/dashboard.js").text
+    assert "frames=200" not in js  # no bounded in-web capture
+    assert "/record`" in js  # continuous record (no frames param)
+    assert 'data-field="msg"' in js  # writes feedback to the card
+    _login(client)
+    iid = _make(client, "DASHOP", "heterodyne")
+    page = client.get("/portal").text
+    assert f'href="/portal/instruments/{iid}">open' in page  # drill-in
+    assert 'data-field="msg"' in page  # per-card feedback element
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text
