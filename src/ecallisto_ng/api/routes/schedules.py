@@ -51,8 +51,16 @@ def _station(db: DbSession) -> Station:
 
 
 @router.get("", dependencies=[Depends(_viewer)])
-def list_schedules(db: DbSession = Depends(get_session)) -> list[Schedule]:
-    return list(db.exec(select(Schedule)).all())
+def list_schedules(
+    instrument_id: int | None = None,
+    db: DbSession = Depends(get_session),
+) -> list[Schedule]:
+    # Optional instrument scoping for the workspace Schedule tab (ADR-0011);
+    # absent -> the station-wide list, unchanged.
+    stmt = select(Schedule)
+    if instrument_id is not None:
+        stmt = stmt.where(Schedule.instrument_id == instrument_id)
+    return list(db.exec(stmt).all())
 
 
 @router.post("", status_code=201, dependencies=[Depends(_operator)])

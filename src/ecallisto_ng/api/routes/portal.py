@@ -177,7 +177,12 @@ def fleet_page(
 def tools_page(
     request: Request, user: User | None = Depends(auth.optional_user)
 ) -> object:
-    return _page(request, "tools", user)
+    # Bench is per-instrument now (ADR-0011): it lives in each instrument's
+    # workspace Bench tab. Keep this path working by sending operators to the
+    # instrument list to pick one.
+    if user is None:
+        return RedirectResponse("/", status_code=303)
+    return RedirectResponse("/portal/manage/instruments", status_code=303)
 
 
 @router.get("/portal/viewer", response_class=HTMLResponse)

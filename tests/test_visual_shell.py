@@ -33,8 +33,8 @@ def test_sidebar_present_when_authed(client: TestClient) -> None:
 
 def test_active_highlight(client: TestClient) -> None:
     _login(client)
-    tools = client.get("/portal/tools")
-    assert 'class="nav-link active" href="/portal/tools"' in tools.text
+    diag = client.get("/portal/diagnose")
+    assert 'class="nav-link active" href="/portal/diagnose"' in diag.text
 
 
 def test_no_sidebar_pre_auth(client: TestClient) -> None:
@@ -48,7 +48,7 @@ def test_pages_render_in_shell(client: TestClient) -> None:
         "/portal/manage/schedules",
         "/portal/data",
         "/portal/system",
-        "/portal/tools",
+        "/portal/diagnose",
         "/portal/viewer",
         "/portal/settings",
     ):

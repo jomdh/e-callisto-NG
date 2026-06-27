@@ -1,11 +1,15 @@
 // Generic management console: a config-driven CRUD island over the API.
 // CSP-safe (external file, same-origin fetch with the session cookie, no inline
-// handlers). The page sets data-resource on #console.
+// handlers). Every [data-resource] element on the page becomes an independent
+// console; add data-instrument to scope it to one instrument (ADR-0011).
 (function () {
   "use strict";
-  const root = document.getElementById("console");
-  if (!root) return;
+  const mounts = Array.prototype.slice.call(
+    document.querySelectorAll("[data-resource]"));
+  if (!mounts.length) return;
+  mounts.forEach(mountConsole);
 
+  function mountConsole(root) {
   const SELECT = {
     role: ["viewer", "operator", "admin"],
     instrument_class: ["heterodyne", "sdr_soft", "sdr_fpga"],
@@ -50,6 +54,7 @@
       list: "/api/v1/schedules",
       create: "/api/v1/schedules",
       del: (r) => `/api/v1/schedules/${r.id}`,
+      scope: "instrument_id",
       // Blank the columns that don't apply to the row's kind so they don't
       // mislead: start/stop are fixed-mode only; source is tracked-mode only.
       cell: (c, r) => {
@@ -149,6 +154,18 @@
     return;
   }
 
+  // Optional per-instrument scoping (ADR-0011): when the console is mounted in
+  // an instrument workspace (data-instrument set) and the resource declares a
+  // `scope` query param, the list is filtered and the create form pre-fills +
+  // hides that field. Absent data-instrument = today's station-wide behaviour.
+  const scopeId = root.dataset.instrument || null;
+  const scoped = scopeId && cfg.scope ? cfg.scope : null;
+  function listUrl() {
+    if (!scoped) return cfg.list;
+    const sep = cfg.list.includes("?") ? "&" : "?";
+    return cfg.list + sep + scoped + "=" + encodeURIComponent(scopeId);
+  }
+
   async function api(method, url, body) {
     const opts = { method, headers: {} };
     if (body !== undefined) {
@@ -224,7 +241,7 @@
 
   async function refresh() {
     let rows;
-    try { rows = await api("GET", cfg.list); } catch (e) { return note(e.message, "error"); }
+    try { rows = await api("GET", listUrl()); } catch (e) { return note(e.message, "error"); }
     const table = el("table");
     const thead = el("tr");
     cfg.columns.forEach((c) => thead.append(el("th", {}, c)));
@@ -274,6 +291,13 @@
   const body = el("div", {});
   const form = el("form", {});
   cfg.fields.forEach((f) => {
+    // Scoped mount: the instrument is fixed, so hide its field and pin the value.
+    if (scoped && f.name === scoped) {
+      const hidden = el("input", { id: f.name, name: f.name, type: "hidden" });
+      hidden.value = scopeId;
+      form.append(hidden);
+      return;
+    }
     form.append(el("label", { for: f.name }, f.name));
     let input;
     if (f.select) {
@@ -410,4 +434,5 @@
   card.append(form);
   root.replaceChildren(card, body, out);
   refresh();
+  }
 })();

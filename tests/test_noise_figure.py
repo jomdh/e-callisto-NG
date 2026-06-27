@@ -63,10 +63,10 @@ def test_noise_figure_endpoint(client: TestClient) -> None:
     assert "nf_mean" in body and "bandpass_db" in body
 
 
-def test_tools_page_renders(client: TestClient) -> None:
+def test_tools_redirects_to_instruments(client: TestClient) -> None:
+    # Bench moved into the per-instrument workspace (ADR-0011); the old
+    # standalone /portal/tools redirects operators to pick an instrument.
     _login(client)
-    page = client.get("/portal/tools")
-    assert page.status_code == 200
-    assert "bench-read" in page.text
-    assert "/static/js/tools.js" in page.text
-    assert "/portal/tools" in page.text  # nav link
+    r = client.get("/portal/tools", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/portal/manage/instruments"

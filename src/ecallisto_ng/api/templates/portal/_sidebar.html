@@ -6,54 +6,46 @@
   </div>
 
   <ul class="sidebar-nav">
-    <span class="nav-section-label">Operations</span>
+    <span class="nav-section-label">Operations Room</span>
     <li><a class="nav-link {{ 'active' if p == '/portal' }}" href="/portal">
       <span class="material-icons">dashboard</span><span>Dashboard</span></a></li>
-    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/instruments') }}"
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/instruments') or p.startswith('/portal/instruments') }}"
       href="/portal/manage/instruments">
       <span class="material-icons">settings_input_antenna</span><span>Instruments</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/hardware') }}" href="/portal/hardware">
       <span class="material-icons">usb</span><span>Hardware</span></a></li>
-    <li><a class="nav-link {{ 'active' if p.startswith('/portal/data') }}" href="/portal/data">
-      <span class="material-icons">folder</span><span>Data</span></a></li>
-    <li><a class="nav-link {{ 'active' if p.startswith('/portal/system') }}" href="/portal/system">
-      <span class="material-icons">monitor_heart</span><span>System</span></a></li>
-    <li><a class="nav-link {{ 'active' if p.startswith('/portal/time') }}" href="/portal/time">
-      <span class="material-icons">schedule</span><span>Time</span></a></li>
 
     <div class="nav-divider"></div>
-    <span class="nav-section-label">Configure</span>
+    <span class="nav-section-label">Station</span>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/data') }}" href="/portal/data">
+      <span class="material-icons">folder</span><span>Data</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/viewer') }}" href="/portal/viewer">
+      <span class="material-icons">show_chart</span><span>Viewer</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/uploads') }}"
+      href="/portal/manage/uploads">
+      <span class="material-icons">cloud_upload</span><span>Distribution</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/system') }}" href="/portal/system">
+      <span class="material-icons">monitor_heart</span><span>Health</span></a></li>
+    <li><a class="nav-link {{ 'active' if p.startswith('/portal/time') }}" href="/portal/time">
+      <span class="material-icons">schedule</span><span>Time</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/schedules') }}"
       href="/portal/manage/schedules">
-      <span class="material-icons">schedule</span><span>Schedules</span></a></li>
+      <span class="material-icons">event</span><span>Schedules</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/programs') }}"
       href="/portal/manage/programs">
       <span class="material-icons">graphic_eq</span><span>Programs</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/calibration') }}"
       href="/portal/manage/calibration">
       <span class="material-icons">tune</span><span>Calibration</span></a></li>
-
-    <div class="nav-divider"></div>
-    <span class="nav-section-label">Tools</span>
-    <li><a class="nav-link {{ 'active' if p.startswith('/portal/tools') }}" href="/portal/tools">
-      <span class="material-icons">build</span><span>Bench</span></a></li>
-    <li><a class="nav-link {{ 'active' if p.startswith('/portal/viewer') }}" href="/portal/viewer">
-      <span class="material-icons">show_chart</span><span>Viewer</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/planning') }}" href="/portal/planning">
-      <span class="material-icons">explore</span><span>Planning</span></a></li>
+      <span class="material-icons">explore</span><span>Ephemeris</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/diagnose') }}" href="/portal/diagnose">
       <span class="material-icons">healing</span><span>Diagnostics</span></a></li>
-
-    <div class="nav-divider"></div>
-    <span class="nav-section-label">Distribution</span>
-    <li><a class="nav-link {{ 'active' if p.startswith('/portal/manage/uploads') }}"
-      href="/portal/manage/uploads">
-      <span class="material-icons">cloud_upload</span><span>Uploads</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/fleet') }}" href="/portal/fleet">
       <span class="material-icons">public</span><span>Fleet</span></a></li>
 
     <div class="nav-divider"></div>
-    <span class="nav-section-label">Administration</span>
+    <span class="nav-section-label">Admin</span>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/access') }}" href="/portal/access">
       <span class="material-icons">vpn_key</span><span>Access</span></a></li>
     <li><a class="nav-link {{ 'active' if p.startswith('/portal/import') }}" href="/portal/import">

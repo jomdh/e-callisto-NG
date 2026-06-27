@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session as DbSession
@@ -89,8 +91,17 @@ def create_target(
 
 
 @router.get("/queue", dependencies=[Depends(_viewer)])
-def queue(db: DbSession = Depends(get_session)) -> list[UploadJob]:
-    return list(db.exec(select(UploadJob)).all())
+def queue(
+    instrument: str | None = None,
+    db: DbSession = Depends(get_session),
+) -> list[UploadJob]:
+    # Optional scoping for the workspace Data tab (ADR-0011): recordings are
+    # named "{instrument}_*", so the job's filename carries the instrument.
+    jobs = list(db.exec(select(UploadJob)).all())
+    if instrument is not None:
+        prefix = f"{instrument}_"
+        jobs = [j for j in jobs if Path(j.filename).name.startswith(prefix)]
+    return jobs
 
 
 @router.post("/targets/{target_id}/run", dependencies=[Depends(_operator)])
