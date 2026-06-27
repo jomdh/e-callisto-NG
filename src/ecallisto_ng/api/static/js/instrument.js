@@ -111,6 +111,7 @@
             {
               n_points: Number($("d-n").value),
               enr_db: Number($("d-enr").value),
+              att_db: $("d-att") ? Number($("d-att").value) : 10.1,
             }
           );
           $("d-nfout").textContent = `NF ${r.nf_mean} dB (1s ${r.nf_sigma})`;

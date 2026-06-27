@@ -123,6 +123,24 @@ def test_console_supports_multiple_mounts(client: TestClient) -> None:
     assert "mountConsole" in js
 
 
+def test_workspace_has_calibration_tab(client: TestClient) -> None:
+    _login(client)
+    het = _make(client, "WSCAL", "heterodyne")
+    page = client.get(f"/portal/instruments/{het}").text
+    assert 'data-tab="calibration"' in page
+    assert 'data-resource="calibration"' in page
+
+
+def test_workspace_bench_has_att_parity(client: TestClient) -> None:
+    # the per-instrument Bench tab keeps the standalone bench's NF Att field
+    _login(client)
+    het = _make(client, "WSATT", "heterodyne")
+    page = client.get(f"/portal/instruments/{het}").text
+    assert 'id="d-att"' in page
+    js = client.get("/static/js/instrument.js").text
+    assert "att_db" in js
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text

@@ -16,6 +16,7 @@
     <a class="ws-tab" data-tab="live" href="#live">Live</a>
     <a class="ws-tab" data-tab="schedule" href="#schedule">Schedule</a>
     <a class="ws-tab" data-tab="programs" href="#programs">Programs</a>
+    <a class="ws-tab" data-tab="calibration" href="#calibration">Calibration</a>
     {% if bench %}<a class="ws-tab" data-tab="bench" href="#bench">Bench</a>{% endif %}
     <a class="ws-tab" data-tab="config" href="#config">Config</a>
   </nav>
@@ -78,6 +79,15 @@
     <div data-resource="programs"></div>
   </section>
 
+  <section class="ws-panel" data-panel="calibration" hidden>
+    <p class="muted">Calibration sets are a shared station library.
+      {% if inst.calibration_set_id is not none %}This instrument uses set
+      #{{ inst.calibration_set_id }} (output unit {{ inst.unit }}).{% else %}No
+      set assigned -- output is raw ADC (DESIGN 6b).{% endif %} Assign one in
+      Config.</p>
+    <div data-resource="calibration"></div>
+  </section>
+
   {% if bench %}
   <section class="ws-panel" data-panel="bench" hidden>
     <div class="card">
@@ -99,6 +109,8 @@
         <input id="d-n" type="number" value="40" style="width:5em">
         <label for="d-enr">ENR</label>
         <input id="d-enr" type="number" value="15" style="width:5em">
+        <label for="d-att">Att [dB]</label>
+        <input id="d-att" type="number" value="10.1" step="0.1" style="width:5em">
         <button class="btn-filled" id="d-nf" type="button">run NF</button>
         <span id="d-nfout" class="muted"></span>
       </div>
