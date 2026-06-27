@@ -220,15 +220,22 @@ def reconnect_instrument(
     db: DbSession = Depends(get_session),
     actor: User = Depends(_operator),
 ) -> dict[str, object]:
-    """Reconnect the receiver via the host hook (ADR-0008)."""
+    """Recover the receiver via the host hook: USB re-enumerate + power-cycle
+    (ADR-0008/ADR-0012). Passes the instrument's device path so the hook
+    power-cycles exactly that port."""
     from ecallisto_ng.services import audit, host
 
-    _get(db, instrument_id)
-    ok, message = host.run_hook("reconnect", str(instrument_id))
+    inst = _get(db, instrument_id)
+    # inst.address is the serial path (e.g. /dev/ttyUSB0); empty -> the hook
+    # falls back to discovering the Callisto by VID:PID.
+    args = [str(instrument_id)]
+    if inst.address:
+        args.append(inst.address)
+    ok, message = host.run_hook("recover", *args)
     audit.record(
         db,
         actor.username,
-        "host.reconnect",
+        "host.recover",
         target=str(instrument_id),
         detail="ok" if ok else message,
     )

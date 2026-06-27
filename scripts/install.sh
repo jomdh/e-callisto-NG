@@ -27,14 +27,14 @@ echo "==> Station install: user=$RUN_USER  dir=$APP_DIR"
 
 # --- 1. system packages --------------------------------------------------
 PYV="$(python3 -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-echo "==> apt packages (python$PYV-venv, pip, chrony, usbutils, build tools)"
+echo "==> apt packages (python$PYV-venv, pip, chrony, usbutils, uhubctl, build tools)"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq || true
 apt-get install -y --no-install-recommends \
     "python${PYV}-venv" python3-pip python3-dev build-essential \
-    git chrony usbutils iw 2>/dev/null || \
+    git chrony usbutils iw uhubctl 2>/dev/null || \
     apt-get install -y --no-install-recommends \
-        python3-venv python3-pip git chrony usbutils iw || true
+        python3-venv python3-pip git chrony usbutils iw uhubctl || true
 systemctl enable --now chrony 2>/dev/null || true
 
 # --- 2. groups: serial (dialout) + USB SDR (plugdev) ---------------------
@@ -100,6 +100,31 @@ grep -q '^ECALLISTO_RUN_LOOPS_IN_WEB=' "$ENV_FILE" \
     && as_user sed -i 's|^ECALLISTO_RUN_LOOPS_IN_WEB=.*|ECALLISTO_RUN_LOOPS_IN_WEB=false|' "$ENV_FILE" \
     || as_user bash -c "echo 'ECALLISTO_RUN_LOOPS_IN_WEB=false' >> '$ENV_FILE'"
 as_user mkdir -p "$APP_DIR/data"
+
+# --- 5b. host-action recovery hook + narrow sudoers (ADR-0008/ADR-0012) ---
+# Privilege lives only in this root-owned script; the unprivileged station user
+# may run exactly it (and nothing else) via one NOPASSWD sudoers line. This
+# enables the manual "Recover device" lever (USB re-enumerate + uhubctl
+# power-cycle). Automated recovery stays OFF until the operator sets
+# ECALLISTO_AUTO_RECOVER=true.
+echo "==> installing host-action hook + sudoers (remote USB recovery)"
+HOOK=/usr/local/sbin/ecallisto-hook
+install -m 0755 -o root -g root packaging/hook/ecallisto-hook "$HOOK"
+# Validate the sudoers fragment before installing it (a bad sudoers file can
+# lock out sudo). Write to a temp, visudo -c, then move into place.
+SUDOERS=/etc/sudoers.d/ecallisto-hook
+TMP_SUDOERS="$(mktemp)"
+printf '%s ALL=(root) NOPASSWD: %s\n' "$RUN_USER" "$HOOK" > "$TMP_SUDOERS"
+if visudo -cf "$TMP_SUDOERS" >/dev/null 2>&1; then
+    install -m 0440 -o root -g root "$TMP_SUDOERS" "$SUDOERS"
+else
+    echo "!! sudoers validation failed; skipping (recover lever disabled)" >&2
+fi
+rm -f "$TMP_SUDOERS"
+# Point host_hook at the sudo-wrapped hook, only if the operator hasn't set one.
+# -n: never prompt (fail fast if not permitted) -- the web process has no tty.
+grep -q '^ECALLISTO_HOST_HOOK=' "$ENV_FILE" \
+    || as_user bash -c "echo 'ECALLISTO_HOST_HOOK=sudo -n $HOOK' >> '$ENV_FILE'"
 
 BIND="$(grep -E '^ECALLISTO_BIND=' "$ENV_FILE" | cut -d= -f2)"; BIND="${BIND:-0.0.0.0}"
 PORT="$(grep -E '^ECALLISTO_PORT=' "$ENV_FILE" | cut -d= -f2)"; PORT="${PORT:-8000}"

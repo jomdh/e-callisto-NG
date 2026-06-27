@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# ecallisto-hook -- the least-privilege host-action hook (ADR-0008, ADR-0012).
+#
+# The unprivileged web/acquire process invokes exactly:
+#     <host_hook> <verb> [args...]
+# where host_hook is "sudo /usr/local/sbin/ecallisto-hook" and a single narrow
+# NOPASSWD sudoers line (installed by scripts/install.sh) lets the station user
+# run THIS script as root and nothing else. The closed verb set is enforced
+# both here and in services/host.py.
+#
+# Verbs:
+#   recover|reconnect <id> [device]  -- USB recovery ladder for an instrument:
+#       re-enumerate (sysfs authorized toggle) -> uhubctl per-port VBUS cycle.
+#       Resolves [device] (e.g. /dev/ttyUSB0) to its hub+port; if absent, finds
+#       the first Callisto PL2303 (067b:2303). Exit 0 if the device
+#       re-enumerates, non-zero if it could not (caller may escalate to reboot).
+#   reboot | shutdown                -- systemctl, immediate.
+#   update | rollback                -- placeholders (return "not implemented").
+#   resolve <device>                 -- (test/diagnostic) print "loc port".
+#
+# Testability: SYSFS_ROOT (default /sys) and DEV_ROOT (default /dev) can be
+# overridden so the resolver runs against a fixture tree with no hardware.
+
+set -u
+
+SYSFS_ROOT="${SYSFS_ROOT:-/sys}"
+DEV_ROOT="${DEV_ROOT:-/dev}"
+CALLISTO_VIDPID="067b:2303"   # Prolific PL2303 -- the Callisto's USB-serial
+REENUM_SETTLE_S="${REENUM_SETTLE_S:-3}"
+
+log() { printf '%s\n' "$*"; }
+
+# Resolve a tty device node (or a bare USB devname) to its uhubctl location +
+# port by walking sysfs. Prints "<loc> <port>" on success, nothing on failure.
+#   /dev/ttyUSB0  -> e.g. "2-1 1"   (PL2303 on port 1 of hub 2-1)
+#   a device on a root-hub port (name "2-1") -> "2 1"
+resolve_location() {
+    local dev="$1" usbname=""
+    local base="${dev##*/}"
+    # tty path: /sys/class/tty/ttyUSB0/device -> .../<usbname>:<intf>/
+    if [ -e "$SYSFS_ROOT/class/tty/$base/device" ]; then
+        local link
+        link="$(readlink -f "$SYSFS_ROOT/class/tty/$base/device" 2>/dev/null)"
+        # climb until a dir whose basename looks like a USB devname (has idVendor)
+        while [ -n "$link" ] && [ "$link" != "/" ]; do
+            if [ -e "$link/idVendor" ]; then
+                usbname="${link##*/}"; break
+            fi
+            link="${link%/*}"
+        done
+    elif [ -e "$SYSFS_ROOT/bus/usb/devices/$base/idVendor" ]; then
+        usbname="$base"
+    fi
+    [ -n "$usbname" ] || return 1
+    # usbname like "2-1.1" -> loc "2-1" port "1"; "2-1" -> loc "2" port "1"
+    local port loc
+    port="${usbname##*[-.]}"
+    loc="${usbname%[-.]*}"
+    printf '%s %s\n' "$loc" "$port"
+}
+
+# First tty whose USB parent is the Callisto PL2303, as a fallback when the
+# caller passes no device.
+find_callisto_dev() {
+    local vid="${CALLISTO_VIDPID%:*}" pid="${CALLISTO_VIDPID#*:}" t base v p
+    for t in "$SYSFS_ROOT"/class/tty/ttyUSB*; do
+        [ -e "$t/device" ] || continue
+        local link; link="$(readlink -f "$t/device" 2>/dev/null)"
+        while [ -n "$link" ] && [ "$link" != "/" ]; do
+            if [ -e "$link/idVendor" ]; then
+                v="$(cat "$link/idVendor" 2>/dev/null)"
+                p="$(cat "$link/idProduct" 2>/dev/null)"
+                if [ "$v" = "$vid" ] && [ "$p" = "$pid" ]; then
+                    base="${t##*/}"; printf '%s/%s\n' "$DEV_ROOT" "$base"; return 0
+                fi
+                break
+            fi
+            link="${link%/*}"
+        done
+    done
+    return 1
+}
+
+callisto_present() {
+    command -v lsusb >/dev/null 2>&1 || return 0   # can't check -> assume ok
+    lsusb 2>/dev/null | grep -qi "${CALLISTO_VIDPID}"
+}
+
+# Soft re-enumeration: deauthorize/reauthorize the USB device via sysfs (no
+# VBUS cut, no extra binary). Cheapest rung.
+reenumerate() {
+    local usbdir="$1"
+    [ -w "$usbdir/authorized" ] || return 1
+    echo 0 > "$usbdir/authorized" 2>/dev/null || return 1
+    sleep 1
+    echo 1 > "$usbdir/authorized" 2>/dev/null || return 1
+    return 0
+}
+
+# Hard recovery: cut and restore VBUS to just this port with uhubctl.
+power_cycle() {
+    local loc="$1" port="$2"
+    command -v uhubctl >/dev/null 2>&1 || { log "uhubctl not installed"; return 2; }
+    uhubctl -l "$loc" -p "$port" -a cycle -d "$REENUM_SETTLE_S" 2>&1
+}
+
+do_recover() {
+    local iid="${1:-?}" dev="${2:-}"
+    [ -n "$dev" ] && [ -e "$dev" ] || dev="$(find_callisto_dev || true)"
+    if [ -z "$dev" ]; then
+        log "recover #$iid: no Callisto device found"; return 1
+    fi
+    local locport loc port usbdir
+    locport="$(resolve_location "$dev" || true)"
+    if [ -z "$locport" ]; then
+        log "recover #$iid: could not resolve USB topology for $dev"; return 1
+    fi
+    loc="${locport% *}"; port="${locport#* }"
+    log "recover #$iid: device=$dev hub=$loc port=$port"
+
+    # rung 1: soft re-enumerate
+    usbdir="$SYSFS_ROOT/bus/usb/devices/${loc}.${port}"
+    [ -e "$usbdir/idVendor" ] || usbdir="$SYSFS_ROOT/bus/usb/devices/${loc}-${port}"
+    if reenumerate "$usbdir"; then
+        log "recover #$iid: re-enumerated via sysfs"
+    fi
+
+    # rung 2: VBUS power-cycle (the decisive step for a mute-but-enumerated dev)
+    local out rc
+    out="$(power_cycle "$loc" "$port")"; rc=$?
+    [ -n "$out" ] && log "$out"
+    sleep "$REENUM_SETTLE_S"
+
+    if callisto_present; then
+        log "recover #$iid: Callisto re-enumerated -- ok"
+        return 0
+    fi
+    log "recover #$iid: device did not re-enumerate (uhubctl rc=$rc); reboot may be required"
+    return 1
+}
+
+verb="${1:-}"; shift || true
+case "$verb" in
+    recover|reconnect) do_recover "$@" ;;
+    reboot)            log "rebooting"; exec systemctl reboot ;;
+    shutdown)          log "powering off"; exec systemctl poweroff ;;
+    update|rollback)   log "$verb: not implemented"; exit 0 ;;
+    resolve)           resolve_location "${1:-}" ;;
+    *)                 log "unknown verb: $verb"; exit 64 ;;
+esac

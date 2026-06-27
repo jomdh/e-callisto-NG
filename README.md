@@ -5,6 +5,8 @@ Debian/Raspbian computer, often a low-power Raspberry Pi) and controls one or
 more instruments, fully operated from a browser.
 
 - **Design (source of truth):** [`e-Callisto-NG-DESIGN.md`](e-Callisto-NG-DESIGN.md)
+- **Install a station:** [`DEPLOYMENT.md`](DEPLOYMENT.md) ·
+  **Operate one (incl. remote recovery):** [`OPERATIONS.md`](OPERATIONS.md)
 - **Working agreement:** [`CLAUDE.md`](CLAUDE.md)
 - **License & governance:** [`LICENSE`](LICENSE), [`GOVERNANCE.md`](GOVERNANCE.md)
 - **Planning, ADRs, and changelog** live under a local, gitignored `docs/`
