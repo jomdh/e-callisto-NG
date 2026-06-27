@@ -18,6 +18,7 @@
     <a class="ws-tab" data-tab="programs" href="#programs">Programs</a>
     <a class="ws-tab" data-tab="calibration" href="#calibration">Calibration</a>
     {% if bench %}<a class="ws-tab" data-tab="bench" href="#bench">Bench</a>{% endif %}
+    <a class="ws-tab" data-tab="data" href="#data">Data</a>
     <a class="ws-tab" data-tab="config" href="#config">Config</a>
   </nav>
 
@@ -121,6 +122,23 @@
     heterodyne (e-Callisto) instruments only.</p>
   {% endif %}
 
+  <section class="ws-panel" data-panel="data" hidden
+           data-iname="{{ inst.name }}">
+    <div class="card">
+      <h3 style="margin-top:0">Recent recordings</h3>
+      <div id="ws-data-files" class="muted">loading&hellip;</div>
+      <p class="muted" style="margin-top:.5rem">
+        Full archive across all instruments:
+        <a href="/portal/data">Data</a>.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Upload status</h3>
+      <div id="ws-data-uploads" class="muted">loading&hellip;</div>
+      <p class="muted" style="margin-top:.5rem">
+        Queue + targets: <a href="/portal/manage/uploads">Distribution</a>.</p>
+    </div>
+  </section>
+
   <section class="ws-panel" data-panel="config" hidden>
     <div class="card">
       <h3 style="margin-top:0">Configuration</h3>
@@ -205,6 +223,55 @@
 <script nonce="{{ request.state.csp_nonce }}">
   (function () {
     "use strict";
+
+    // Data tab: lazily load this instrument's recent files + upload jobs
+    // (name-scoped) the first time the tab is opened.
+    var dataLoaded = false;
+    function loadWorkspaceData() {
+      if (dataLoaded) return;
+      dataLoaded = true;
+      var panel = document.querySelector('.ws-panel[data-panel="data"]');
+      if (!panel) return;
+      var q = encodeURIComponent(panel.getAttribute("data-iname") || "");
+      var filesBox = document.getElementById("ws-data-files");
+      var upBox = document.getElementById("ws-data-uploads");
+      fetch("/api/v1/files?instrument=" + q)
+        .then(function (r) { return r.json(); })
+        .then(function (files) {
+          if (!files.length) {
+            filesBox.textContent = "No recordings yet.";
+            return;
+          }
+          filesBox.replaceChildren();
+          files.slice(0, 25).forEach(function (f) {
+            var a = document.createElement("a");
+            a.href =
+              "/api/v1/files/" + encodeURIComponent(f.name) + "/download";
+            a.textContent =
+              f.name + "  (" + f.date_obs + ", " + f.size_bytes + " B)";
+            a.style.display = "block";
+            filesBox.append(a);
+          });
+        })
+        .catch(function (e) { filesBox.textContent = String(e); });
+      fetch("/api/v1/upload/queue?instrument=" + q)
+        .then(function (r) { return r.json(); })
+        .then(function (jobs) {
+          if (!jobs.length) {
+            upBox.textContent = "No upload jobs.";
+            return;
+          }
+          upBox.replaceChildren();
+          jobs.slice(0, 25).forEach(function (j) {
+            var d = document.createElement("div");
+            d.textContent =
+              j.filename + " -- " + j.state + (j.error ? " (" + j.error + ")" : "");
+            upBox.append(d);
+          });
+        })
+        .catch(function (e) { upBox.textContent = String(e); });
+    }
+
     var tabsEl = document.getElementById("ws-tabs");
     if (tabsEl) {
       var panels = Array.prototype.slice.call(
@@ -228,6 +295,7 @@
         }
         // The live WS is opened lazily, only when its tab is first shown.
         if (name === "live" && window.startWaterfall) window.startWaterfall();
+        if (name === "data") loadWorkspaceData();
       };
       var fromHash = function () {
         var h = (location.hash || "").replace("#", "");

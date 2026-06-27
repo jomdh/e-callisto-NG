@@ -24,8 +24,13 @@ _operator = auth.require_role(Role.OPERATOR)
 
 
 @router.get("/api/v1/files", dependencies=[Depends(_viewer)])
-def list_files() -> list[catalog.FileInfo]:
-    return catalog.list_recordings(get_settings().data_dir)
+def list_files(instrument: str | None = None) -> list[catalog.FileInfo]:
+    # Optional scoping for the workspace Data tab (ADR-0011): match the FITS
+    # INSTRUME header; absent -> the whole station archive, unchanged.
+    files = catalog.list_recordings(get_settings().data_dir)
+    if instrument is not None:
+        files = [f for f in files if f.instrument == instrument]
+    return files
 
 
 @router.get("/api/v1/files/calendar", dependencies=[Depends(_viewer)])

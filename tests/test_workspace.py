@@ -141,6 +141,43 @@ def test_workspace_bench_has_att_parity(client: TestClient) -> None:
     assert "att_db" in js
 
 
+def test_workspace_has_data_tab(client: TestClient) -> None:
+    _login(client)
+    het = _make(client, "WSDATA", "heterodyne")
+    page = client.get(f"/portal/instruments/{het}").text
+    assert 'data-tab="data"' in page
+    assert 'id="ws-data-files"' in page
+    assert "loadWorkspaceData" in page  # lazy-loaded on tab open
+    assert 'data-iname="WSDATA"' in page  # name-scoped fetch
+
+
+def test_files_endpoint_accepts_instrument_filter(client: TestClient) -> None:
+    _login(client)
+    r = client.get("/api/v1/files?instrument=NOPE")
+    assert r.status_code == 200
+    assert r.json() == []  # no recordings for that instrument
+
+
+def test_upload_queue_filters_by_instrument(client: TestClient) -> None:
+    _login(client)
+    # a target to satisfy the FK, then two jobs for two instruments
+    from ecallisto_ng.api.models import UploadJob, UploadTarget
+
+    with Session(db.get_engine()) as s:
+        t = UploadTarget(name="T", protocol="local", host="/tmp")
+        s.add(t)
+        s.commit()
+        s.refresh(t)
+        s.add(UploadJob(target_id=t.id, filename="CALA_20260627.fit.gz"))
+        s.add(UploadJob(target_id=t.id, filename="CALB_20260627.fit.gz"))
+        s.commit()
+
+    assert len(client.get("/api/v1/upload/queue").json()) == 2
+    only_a = client.get("/api/v1/upload/queue?instrument=CALA").json()
+    assert len(only_a) == 1
+    assert only_a[0]["filename"].startswith("CALA_")
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text
