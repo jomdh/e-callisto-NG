@@ -113,6 +113,16 @@
     };
     ws.onmessage = function (ev) {
       const msg = JSON.parse(ev.data);
+      if (msg.type === "status") {
+        // Liveness from the server (ADR-0012): the instrument stopped
+        // producing frames even though a recording is claimed.
+        if (status) {
+          status.textContent =
+            msg.state === "stalled" ? "not responding" : "live";
+          status.classList.toggle("stalled", msg.state === "stalled");
+        }
+        return;
+      }
       if (msg.values) {
         drawColumn(msg.values);
         updatePanels(msg.values);

@@ -59,6 +59,10 @@ class RecorderRuntime(SQLModel, table=True):
     # scheduler keeps the device recording while this is True. Record/Stop set
     # it; at daemon boot it is seeded from Instrument.start_on_boot.
     desired: bool = False
+    # Frame heartbeat (ADR-0012): stamped each time the recorder produces a
+    # frame, so RECORDING can be checked empirically. None until the first
+    # frame; a recording instrument whose heartbeat is stale is STALLED.
+    last_frame_at: datetime | None = None
     updated_at: datetime = Field(default_factory=_utcnow)
 
 

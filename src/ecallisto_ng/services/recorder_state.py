@@ -54,6 +54,19 @@ def write(instrument_id: int, state: str, last_file: str | None) -> None:
     _upsert(instrument_id, apply)
 
 
+def touch_frame(instrument_id: int) -> None:
+    """Stamp ``last_frame_at`` = now: the recorder produced a frame (ADR-0012).
+
+    The empirical liveness heartbeat. Called throttled (not every frame), and
+    best-effort -- a missed heartbeat write is corrected by the next one.
+    """
+
+    def apply(row: RecorderRuntime) -> None:
+        row.last_frame_at = datetime.now(UTC)
+
+    _upsert(instrument_id, apply)
+
+
 def read(db: Session) -> dict[int, RecorderRuntime]:
     """All persisted recorder run-states, keyed by instrument id."""
     return {r.instrument_id: r for r in db.exec(select(RecorderRuntime)).all()}

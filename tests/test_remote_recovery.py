@@ -101,6 +101,7 @@ def _fixture_sysfs(tmp_path: Path, usbname: str, vid: str = "067b") -> Path:
     devdir.mkdir(parents=True)
     (devdir / "idVendor").write_text(vid + "\n")
     (devdir / "idProduct").write_text("2303\n")
+    (devdir / "authorized").write_text("1\n")  # writable -> re-enumerate works
     tty = sysfs / "class" / "tty" / "ttyUSB0"
     tty.mkdir(parents=True)
     rel = os.path.relpath(devdir, tty)
@@ -135,6 +136,29 @@ def test_hook_recover_reports_when_no_device(tmp_path: Path) -> None:
     out = _run_hook(["recover", "7"], empty, tmp_path / "dev")
     assert out.returncode != 0
     assert "no Callisto device found" in out.stdout
+
+
+def test_hook_recover_is_honest_when_vbus_unavailable(tmp_path: Path) -> None:
+    # On a hub without per-port power switching (uhubctl absent here stands in
+    # for that), the hook must NOT claim a power-cycle/"ok" -- it re-enumerates
+    # and says VBUS cut was unavailable. The caller judges real recovery via
+    # the heartbeat, not this exit code.
+    sysfs = _fixture_sysfs(tmp_path, "2-1.1")
+    out = subprocess.run(
+        [str(_HOOK), "recover", "3", "/dev/ttyUSB0"],
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "SYSFS_ROOT": str(sysfs),
+            "DEV_ROOT": str(tmp_path / "dev"),
+            "REENUM_SETTLE_S": "0",
+            "UHUBCTL": "/nonexistent/uhubctl",  # stand in for a no-PPPS hub
+        },
+    )
+    assert "VBUS cut unavailable" in out.stdout
+    assert "power-cycled" not in out.stdout  # no false success
+    assert "re-enumerated via sysfs" in out.stdout
 
 
 def test_hook_rejects_unknown_verb(tmp_path: Path) -> None:

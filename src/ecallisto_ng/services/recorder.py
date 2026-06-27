@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -29,6 +30,9 @@ from ecallisto_ng.services.watchdog import Watchdog
 from ecallisto_ng.writers.fits import StandardFitsWriter
 
 _log = logging.getLogger(__name__)
+
+# Minimum seconds between liveness heartbeat writes (ADR-0012).
+_HEARTBEAT_S = 5.0
 
 
 class RecorderState(StrEnum):
@@ -122,6 +126,7 @@ class RecorderService:
         calibration: Calibration | None = None,
         writer: OutputWriter | None = None,
         on_state: Callable[[str, str | None], None] | None = None,
+        on_heartbeat: Callable[[], None] | None = None,
         continuous: bool = False,
     ) -> None:
         """Start a recording.
@@ -142,8 +147,17 @@ class RecorderService:
         hub = get_hub()
         out_writer = writer or StandardFitsWriter()
 
+        # Throttle the liveness heartbeat: stamp at most every _HEARTBEAT_S,
+        # not on every frame, so a 4 Hz sweep doesn't hammer the SQLite row.
+        last_hb = [0.0]
+
         def _publish(frame: SpectrumFrame) -> None:
             hub.publish(instrument_id, frame)
+            if on_heartbeat is not None:
+                now = time.monotonic()
+                if now - last_hb[0] >= _HEARTBEAT_S:
+                    last_hb[0] = now
+                    on_heartbeat()
 
         def _on_data_loss(lines: list[str]) -> None:
             for line in lines:

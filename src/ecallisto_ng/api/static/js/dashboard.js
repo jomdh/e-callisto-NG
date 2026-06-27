@@ -23,6 +23,17 @@
     ws.onmessage = (ev) => {
       let msg;
       try { msg = JSON.parse(ev.data); } catch (e) { return; }
+      if (msg.type === "status") {
+        // Instant liveness (ADR-0012): reflect a stall on the state badge
+        // without waiting for the 10s /operations refresh.
+        const card = canvas.closest(".cockpit-card");
+        const badge = card && card.querySelector(".cockpit-state");
+        if (badge && msg.state === "stalled") {
+          badge.textContent = "stalled";
+          badge.dataset.state = "stalled";
+        }
+        return;
+      }
       if (!msg.values) return;
       const img = ctx.getImageData(1, 0, W - 1, H);
       ctx.putImageData(img, 0, 0);

@@ -98,10 +98,19 @@ only) **· Data · Config**.
 
 ## 4. Monitoring health remotely
 
+- **STALLED is surfaced for you.** A recording instrument stamps a **frame
+  heartbeat**; if frames stop, the dashboard tile flips from `recording` to a
+  **`stalled`** badge and the workspace Live panel shows **"not responding"**
+  instead of a frozen canvas. This is the *empirical* liveness — the heartbeat,
+  not the aspirational "recording" label, and not file age. **Do not trust file
+  age for liveness:** the recorder buffers a whole ~15-min file in RAM and only
+  writes it at rollover, so a healthy station can show a 15-minute-old newest
+  file, and a just-flushed file can hide a now-mute device.
 - **Diagnostics page** — **Station → Diagnostics** (or `GET
-  /api/v1/diagnostics`): one-click self-check for parasitic/duplicate processes,
-  serial-port contention, a **wedged recording** (state `recording` but no files),
-  service/restart state, clock sync, and disk. Offers a downloadable report.
+  /api/v1/diagnostics`): one-click self-check that now reads the heartbeat first
+  (a `STALLED` warning when frames have stopped), plus parasitic/duplicate
+  processes, serial-port contention, service/restart state, clock sync, and disk.
+  Offers a downloadable report.
 - **From a shell** (through your remote-access method, §6):
   ```bash
   systemctl status ecallisto-web ecallisto-acquire    # both active?
@@ -109,9 +118,9 @@ only) **· Data · Config**.
   chronyc tracking                                     # clock disciplined?
   fuser /dev/ttyUSB0                                   # who holds the serial port
   ```
-  The single most diagnostic question is **"how old is the newest FITS file?"**
-  If it is older than one rollover while state says `recording`, acquisition has
-  stalled — go to §5.
+  The authoritative liveness signal is the **`stalled` badge / diagnostics
+  heartbeat** above, not file age (which the in-RAM buffer makes unreliable). If
+  an instrument reads `stalled`, go to §5.
 
 ---
 
@@ -130,9 +139,9 @@ contract (ADR-0010) and the host-action boundary (ADR-0008).
 ### How to tell which level you're at
 | Signal | Reading |
 | -- | -- |
-| Web UI loads, but live/dashboard is blank | could be L0 (web) **or** the instrument is mute (L1+). Check file age. |
-| State `recording`, **newest FITS older than a rollover**, no live frames | acquisition stalled — L1. |
-| L1 restart of `ecallisto-acquire` did **not** revive it (still 0 files/frames) | device is **hard-wedged at USB** — L2. |
+| Web UI loads, dashboard tiles all healthy, just the live panel is blank | L0 (web/UI) — recording is fine. |
+| Dashboard tile shows **`stalled`** / Live panel says **"not responding"** | acquisition stalled — the driver self-heals first; if it persists, L1. |
+| `stalled` persists after the driver self-heal and an `ecallisto-acquire` restart | device is **hard-wedged at USB** — L2. |
 | `lsusb` no longer lists the receiver, or it is stuck in DFU/bootloader | enumeration lost — L2/L3. |
 
 ### L0 — Web/UI glitch (data is fine)
@@ -154,14 +163,29 @@ drop the partial file.
 > Why restart *individually*, not `restart ecallisto-web ecallisto-acquire`
 > together: a wedged unit can stall a combined restart. Bounce the stalled one.
 
+> **The driver self-heals first.** As of the M38 stability work the Callisto
+> driver, on a stall, escalates from a soft reset to **closing and reopening the
+> OS serial port itself** (what a process restart does) before giving up. Most
+> "mute" episodes — including the kind that once needed a manual restart — now
+> clear on their own within a stall bound. L1/L2 are for when even that fails.
+
 ### L2 — Device mute / hard USB wedge (the headless-site case)
-**If L1 did not help, the receiver is mute at the USB level.** The PL2303 still
-enumerates and the port still opens, but the device returns no data. **No
-software action fixes this** — not port reopen, not re-init, not even a reboot,
-because none of those cut **VBUS**. The receiver needs the electrical equivalent
-of unplug/replug: a **per-port USB power-cycle** with
-[`uhubctl`](https://github.com/mvp/uhubctl). On a Pi 5 (and most powered hubs
-with per-port switching) this works remotely.
+**If L1 and the driver's automatic port-reopen both failed to revive it,** the
+receiver is mute at the USB level: the PL2303 still enumerates and the port still
+opens, but the device returns no data, and reopening the file handle no longer
+helps. The remaining cure is the electrical equivalent of unplug/replug — a
+**per-port USB power-cycle** (a true **VBUS** cut) with
+[`uhubctl`](https://github.com/mvp/uhubctl), **if the hub supports it**.
+
+> **Reality check — not every hub can do this.** Per-port power switching (PPPS)
+> is a hub feature, not a given. On the reference Pi 5 the Callisto sits behind a
+> hub (`2-1`, a Genesys bridge) that has **no** PPPS — `uhubctl` reports *"No
+> compatible devices detected at location 2-1"* and the VBUS cut is simply
+> **unavailable** there. If your unit is the same, a hard mute has **no remote
+> power-cut remedy**: rely on the driver self-heal + reboot, and for a guaranteed
+> cure **fit a powered USB hub that supports per-port switching** (uhubctl lists
+> the known-good models) between the Pi and the receiver. That one hardware
+> change is what makes a remote VBUS power-cycle possible.
 
 **Find the right hub/port (discover, don't assume — topology varies per unit):**
 ```bash
@@ -201,8 +225,10 @@ nothing else. A USB power-cycle (`uhubctl`, `usbreset`, driver unbind/rebind) an
   re-enumerate then a `uhubctl` per-port VBUS power-cycle — through a tightly
   scoped privileged hook (`/usr/local/sbin/ecallisto-hook`, ADR-0008/ADR-0012)
   backed by a **single narrow NOPASSWD sudoers line** for that one script. No
-  shell, no sudo password: click it from anywhere the portal is reachable. Every
-  recovery is audited.
+  shell, no sudo password: click it from anywhere the portal is reachable. It
+  **reports honestly** — if the hub can't power-cycle (no PPPS), it says
+  *"VBUS cut unavailable"* rather than implying a fix; confirm real recovery via
+  the `stalled`-clears / heartbeat, not the click. Every recovery is audited.
 - **From a shell:** an operator with `sudo` can still run the raw §L2 commands
   over the remote channel (§6) — useful to validate `uhubctl` controls a new
   unit's port the first time.
