@@ -167,6 +167,19 @@ body {
   font-weight: 600;
   margin: 0 0 0.6rem;
 }
+/* Station instrument identity badge (#id), shown consistently everywhere an
+   instrument or an instrument-scoped config appears. */
+.inst-id {
+  display: inline-block;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary, #7bd);
+  background: var(--surface-variant, rgba(120, 180, 255, 0.14));
+  border-radius: 4px;
+  padding: 0 0.4em;
+  margin-right: 0.35em;
+}
+
 /* Per-instrument workspace: header + tabbed panels (ADR-0011) */
 .ws-head {
   display: flex;

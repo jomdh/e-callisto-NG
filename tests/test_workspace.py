@@ -178,6 +178,31 @@ def test_upload_queue_filters_by_instrument(client: TestClient) -> None:
     assert only_a[0]["filename"].startswith("CALA_")
 
 
+def test_workspace_shows_instrument_id(client: TestClient) -> None:
+    # every workspace makes the station instrument id (#N) unmistakable
+    _login(client)
+    het = _make(client, "IDCALL", "heterodyne")
+    page = client.get(f"/portal/instruments/{het}").text
+    assert 'class="inst-id">#' + str(het) in page
+    # and each config tab names the instrument it applies to
+    assert f"#{het} IDCALL" in page
+
+
+def test_dashboard_tiles_show_instrument_id(client: TestClient) -> None:
+    _login(client)
+    iid = _make(client, "DASHID", "heterodyne")
+    page = client.get("/portal").text
+    assert 'class="inst-id">#' + str(iid) in page
+
+
+def test_console_resolves_instrument_id(client: TestClient) -> None:
+    # tables render instrument_id as "#id name"; schedules pick an instrument
+    js = client.get("/static/js/console.js").text
+    assert "instLabel" in js
+    assert "renderCell" in js
+    assert "instSelect" in js
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text
