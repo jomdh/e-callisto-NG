@@ -13,7 +13,7 @@ from sqlmodel import select
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.crud import commit_or_conflict
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import CalibrationSet, Role
+from ecallisto_ng.api.models import CalibrationSet, Instrument, Role
 
 router = APIRouter(prefix="/api/v1/calibration", tags=["calibration"])
 
@@ -30,19 +30,36 @@ class CalibrationOut(BaseModel):
     id: int
     name: str
     coefficients: list[list[float]]
+    used_by: list[int] = []  # ids of instruments referencing this set
 
 
-def _out(c: CalibrationSet) -> CalibrationOut:
+def _out(
+    c: CalibrationSet, used_by: list[int] | None = None
+) -> CalibrationOut:
     return CalibrationOut(
         id=c.id or 0,
         name=c.name,
         coefficients=json.loads(c.coefficients_json),
+        used_by=used_by or [],
     )
+
+
+def _users_by_set(db: DbSession) -> dict[int, list[int]]:
+    """Map calibration-set id -> ids of instruments referencing it."""
+    out: dict[int, list[int]] = {}
+    for inst in db.exec(select(Instrument)).all():
+        if inst.calibration_set_id is not None and inst.id is not None:
+            out.setdefault(inst.calibration_set_id, []).append(inst.id)
+    return out
 
 
 @router.get("", dependencies=[Depends(_viewer)])
 def list_sets(db: DbSession = Depends(get_session)) -> list[CalibrationOut]:
-    return [_out(c) for c in db.exec(select(CalibrationSet)).all()]
+    users = _users_by_set(db)
+    return [
+        _out(c, users.get(c.id or 0, []))
+        for c in db.exec(select(CalibrationSet)).all()
+    ]
 
 
 @router.post("", status_code=201, dependencies=[Depends(_operator)])

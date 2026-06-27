@@ -214,6 +214,48 @@ def test_console_setups_above_collapsible_form(client: TestClient) -> None:
     assert ".console-list table" in css  # styled, M3-consistent table
 
 
+def test_programs_list_shows_used_by(client: TestClient) -> None:
+    # the shared Programs library shows which instruments use each program
+    _login(client)
+    pid = client.post(
+        "/api/v1/programs",
+        json={"name": "P45", "frequencies": [45.0, 46.0]},
+    ).json()["id"]
+    iid = client.post(
+        "/api/v1/instruments",
+        json={"name": "PUSER", "program_id": pid},
+    ).json()["id"]
+    progs = client.get("/api/v1/programs").json()
+    prog = next(x for x in progs if x["id"] == pid)
+    assert prog["used_by"] == [iid]
+    # an unreferenced program reads as empty
+    pid2 = client.post(
+        "/api/v1/programs",
+        json={"name": "PLONE", "frequencies": [50.0]},
+    ).json()["id"]
+    lone = next(
+        x for x in client.get("/api/v1/programs").json() if x["id"] == pid2
+    )
+    assert lone["used_by"] == []
+    js = client.get("/static/js/console.js").text
+    assert "used_by" in js  # rendered as #id name / "unused"
+
+
+def test_calibration_list_shows_used_by(client: TestClient) -> None:
+    _login(client)
+    cid = client.post(
+        "/api/v1/calibration",
+        json={"name": "C1", "coefficients": [[10, 40, 1, 2.7]]},
+    ).json()["id"]
+    iid = client.post(
+        "/api/v1/instruments",
+        json={"name": "CUSER", "calibration_set_id": cid},
+    ).json()["id"]
+    sets = client.get("/api/v1/calibration").json()
+    cset = next(x for x in sets if x["id"] == cid)
+    assert cset["used_by"] == [iid]
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text
