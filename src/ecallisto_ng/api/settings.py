@@ -62,6 +62,17 @@ class Settings(BaseSettings):
     host_hook: str = ""
     # Log file the System log viewer tails (read-only).
     log_file: str = ""
+    # Automated remote recovery (ADR-0012): when a recording instrument goes
+    # STALLED past self-heal, the acquire watchdog invokes the host hook to
+    # power-cycle it. Opt-in (needs host_hook + sudoers); bounded by the budget
+    # below so it alerts instead of looping power-cycles forever.
+    auto_recover: bool = False
+    # Engine-level stall bound = max(this, stall_sweeps / sweep_rate). Longer
+    # than the driver's own no-data timeout so the driver self-heals first.
+    stall_grace_seconds: float = 90.0
+    # Max automated recoveries per instrument per window, then alert + stop.
+    auto_recover_budget: int = 3
+    auto_recover_window_seconds: float = 3600.0
 
 
 @lru_cache

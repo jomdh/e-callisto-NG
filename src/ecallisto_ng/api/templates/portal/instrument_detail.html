@@ -34,7 +34,8 @@
         <button class="btn-text" data-act="overview">overview</button>
         <button class="btn-text" data-act="diagnose">diagnose</button>
         {% if inst.instrument_class == "heterodyne" %}
-        <button class="btn-text" data-act="reconnect">reconnect</button>
+        <button class="btn-text" data-act="reconnect"
+                title="Remote USB recovery: re-enumerate + power-cycle the receiver's port">recover device</button>
         {% endif %}
         <a class="btn-text" href="#live">live</a>
       </div>

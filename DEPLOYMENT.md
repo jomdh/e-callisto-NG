@@ -163,5 +163,5 @@ update never needs a DB wipe.
 | RX-888 stays `SYNTHETIC` | FX3 firmware not loaded / SoapyRX888 missing (§5). |
 | recording flagged/paused | clock not NTP-synced — `chronyc tracking` (§1). |
 | service won't start | `journalctl -u ecallisto-web -n50`; check `.env` + venv. |
-| "recording" but no files / empty live | run **Tools → Diagnostics** (§7b). If a recording is wedged, restart acquire: `sudo systemctl restart ecallisto-acquire` (restart units individually — a wedged unit can stall a combined restart). A hardware-stuck receiver may need a USB power-cycle. |
+| "recording" but no files / empty live | run **Tools → Diagnostics** (§7b). If a recording is wedged, restart acquire: `sudo systemctl restart ecallisto-acquire` (restart units individually — a wedged unit can stall a combined restart). A hardware-stuck receiver needs a USB power-cycle — see the remote-recovery runbook in [`OPERATIONS.md`](OPERATIONS.md) §5. |
 | only records when someone's active | idle power-saving — re-run `sudo ./scripts/install.sh` or reboot (§7b). |

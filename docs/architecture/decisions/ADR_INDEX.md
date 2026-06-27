@@ -16,3 +16,4 @@ index in the same commit.** Status: Proposed | Accepted | Superseded | Open.
 | [ADR-0009](ADR-0009-time-source-contract.md) | TimeSource contract (system clock vs GPS/PPS) | Accepted |
 | [ADR-0010](ADR-0010-instrument-driver-stability-contract.md) | InstrumentDriver stability contract: typed faults + bounded liveness | Accepted |
 | [ADR-0011](ADR-0011-operations-room-ia.md) | Operations-room IA: per-instrument workspace hub + station spine | Accepted |
+| [ADR-0012](ADR-0012-remote-instrument-recovery.md) | Remote instrument recovery: liveness escalation to a privileged power-cycle | Accepted |

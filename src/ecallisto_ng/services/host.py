@@ -16,8 +16,9 @@ from pathlib import Path
 
 from ecallisto_ng.api.settings import get_settings
 
-# The closed set of host verbs the hook accepts.
-_VERBS = {"reconnect", "reboot", "shutdown", "update", "rollback"}
+# The closed set of host verbs the hook accepts. "recover" walks the USB
+# recovery ladder for one instrument (ADR-0012); "reconnect" is its alias.
+_VERBS = {"recover", "reconnect", "reboot", "shutdown", "update", "rollback"}
 
 
 def tail_log(lines: int = 200) -> list[str]:
