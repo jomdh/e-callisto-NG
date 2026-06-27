@@ -366,6 +366,8 @@ body {
 }
 .cockpit-meta dd { margin: 0; }
 .cockpit-actions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.cockpit-msg { font-size: 0.8rem; min-height: 1em; }
+.cockpit-msg.error { color: var(--danger); }
 
 /* ---- data browser ---- */
 .cal-heatmap { display: flex; flex-wrap: wrap; gap: 3px; max-width: 26em; }
