@@ -50,12 +50,16 @@ def record(
     if max_frames < 1:
         raise ValueError("max_frames must be >= 1")
 
-    driver.connect()
-    driver.identify()
-    driver.configure(channels, sweeps_per_second)
-    driver.start()
     collected: list[SpectrumFrame] = []
     try:
+        # Handshake inside the try so a mute-at-startup failure (now bounded,
+        # ADR-0010) still releases the port via the finally -- otherwise the
+        # leaked fd collides with the scheduler's next rebuild ("multiple
+        # access on port").
+        driver.connect()
+        driver.identify()
+        driver.configure(channels, sweeps_per_second)
+        driver.start()
         for frame in itertools.islice(driver.stream(), max_frames):
             if watchdog is not None and watchdog.check(frame.values):
                 if on_data_loss is not None:
@@ -105,19 +109,25 @@ def record_continuous(
     operator Stop or the scheduler closing the window), then flushes the
     partial final file (degrade, don't die -- DESIGN 14a). Returns the paths.
 
-    NOTE (M34): a stalled-but-enumerated device makes ``stream()`` block here;
-    the no-data-timeout + self-heal that bounds this lives behind the
-    InstrumentDriver stability contract (ADR-0010), not yet implemented.
+    Bounded liveness (ADR-0010): a stalled-but-enumerated device cannot hang
+    here. ``stream()`` self-heals or raises ``FatalInstrumentError``, and the
+    ``connect/identify/configure/start`` handshake times out (mute-at-startup)
+    into a recoverable fault -- both inside the try, so the port is always
+    released for the scheduler's next rebuild.
     """
     if frames_per_file < 1:
         raise ValueError("frames_per_file must be >= 1")
 
-    driver.connect()
-    driver.identify()
-    driver.configure(channels, sweeps_per_second)
-    driver.start()
     paths: list[Path] = []
     try:
+        # Handshake inside the try so a mute-at-startup failure (now bounded,
+        # ADR-0010) still releases the port via the finally -- otherwise the
+        # leaked fd collides with the scheduler's next rebuild ("multiple
+        # access on port").
+        driver.connect()
+        driver.identify()
+        driver.configure(channels, sweeps_per_second)
+        driver.start()
         stream = driver.stream()
         while True:
             collected: list[SpectrumFrame] = []
