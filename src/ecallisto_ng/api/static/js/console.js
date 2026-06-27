@@ -83,7 +83,7 @@
       list: "/api/v1/programs",
       create: "/api/v1/programs",
       del: (r) => `/api/v1/programs/${r.id}`,
-      columns: ["id", "name", "start_mhz", "stop_mhz", "source"],
+      columns: ["id", "name", "start_mhz", "stop_mhz", "source", "used_by"],
       fields: [
         { name: "name", required: true, hint: "Name this plan; reference its id on the instrument." },
         { name: "frequencies", json: true, placeholder: "[45.0, 55.0, 65.0]", hint: "Or paste an explicit channel list (MHz)." },
@@ -97,7 +97,7 @@
       list: "/api/v1/calibration",
       create: "/api/v1/calibration",
       del: (r) => `/api/v1/calibration/${r.id}`,
-      columns: ["id", "name"],
+      columns: ["id", "name", "used_by"],
       fields: [
         { name: "name", required: true },
         { name: "coefficients", json: true, placeholder: "[[10,40,1,2.7]]" },
@@ -249,6 +249,11 @@
   }
   function renderCell(c, r) {
     if (c === "instrument_id" && r[c] != null) return instLabel(r[c]);
+    if (c === "used_by") {
+      const ids = r[c] || [];
+      if (!ids.length) return el("span", { class: "muted" }, "unused");
+      return ids.map(instLabel).join(", ");
+    }
     if (root.dataset.resource === "instruments" && c === "id" && r[c] != null) {
       return "#" + r[c];
     }
@@ -258,7 +263,8 @@
   async function refresh() {
     let rows;
     try { rows = await api("GET", listUrl()); } catch (e) { return note(e.message, "error"); }
-    if (cfg.columns.indexOf("instrument_id") !== -1) {
+    if (cfg.columns.indexOf("instrument_id") !== -1 ||
+        cfg.columns.indexOf("used_by") !== -1) {
       try {
         const insts = await api("GET", "/api/v1/instruments");
         instMap = {};

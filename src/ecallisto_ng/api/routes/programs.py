@@ -14,7 +14,7 @@ from sqlmodel import select
 
 from ecallisto_ng.api.auth import require_role
 from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import FrequencyProgram, Role
+from ecallisto_ng.api.models import FrequencyProgram, Instrument, Role
 from ecallisto_ng.services.freqgen import generate_frequencies, rf_to_if
 from ecallisto_ng.services.legacy_export import build_frequency_program_cfg
 
@@ -31,6 +31,7 @@ class ProgramOut(BaseModel):
     start_mhz: float
     stop_mhz: float
     source: str
+    used_by: list[int] = []  # ids of instruments referencing this program
 
 
 class ProgramIn(BaseModel):
@@ -78,7 +79,7 @@ def _save(db: DbSession, prog: FrequencyProgram) -> ProgramOut:
     return _out(prog)
 
 
-def _out(p: FrequencyProgram) -> ProgramOut:
+def _out(p: FrequencyProgram, used_by: list[int] | None = None) -> ProgramOut:
     return ProgramOut(
         id=p.id or 0,
         name=p.name,
@@ -86,12 +87,26 @@ def _out(p: FrequencyProgram) -> ProgramOut:
         start_mhz=p.start_mhz,
         stop_mhz=p.stop_mhz,
         source=p.source,
+        used_by=used_by or [],
     )
+
+
+def _users_by_program(db: DbSession) -> dict[int, list[int]]:
+    """Map program id -> the ids of instruments referencing it (one query)."""
+    out: dict[int, list[int]] = {}
+    for inst in db.exec(select(Instrument)).all():
+        if inst.program_id is not None and inst.id is not None:
+            out.setdefault(inst.program_id, []).append(inst.id)
+    return out
 
 
 @router.get("", dependencies=[Depends(_viewer)])
 def list_programs(db: DbSession = Depends(get_session)) -> list[ProgramOut]:
-    return [_out(p) for p in db.exec(select(FrequencyProgram)).all()]
+    users = _users_by_program(db)
+    return [
+        _out(p, users.get(p.id or 0, []))
+        for p in db.exec(select(FrequencyProgram)).all()
+    ]
 
 
 @router.post("", status_code=201, dependencies=[Depends(_operator)])
