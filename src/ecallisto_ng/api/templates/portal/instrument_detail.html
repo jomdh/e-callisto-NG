@@ -4,12 +4,15 @@
 <div class="portal-main" data-instrument="{{ inst.id }}">
   <p class="muted"><a href="/portal/manage/instruments">&larr; instruments</a></p>
   <div class="ws-head">
-    <h2>{{ inst.name }}</h2>
+    <h2><span class="inst-id">#{{ inst.id }}</span>{{ inst.name }}</h2>
     <span class="chip" id="d-state">&hellip;</span>
   </div>
-  <p class="muted">{{ inst.instrument_class }} &middot; {{ inst.channels }}
+  <p class="muted">instrument <strong>#{{ inst.id }}</strong> &middot;
+    {{ inst.instrument_class }} &middot; {{ inst.channels }}
     channels &middot; gain {{ inst.gain }}
     {% if inst.address %}&middot; {{ inst.address }}{% endif %}</p>
+  <p class="muted">Every tab below configures <strong>#{{ inst.id }}
+    {{ inst.name }}</strong> only.</p>
 
   <nav class="ws-tabs" id="ws-tabs">
     <a class="ws-tab" data-tab="overview" href="#overview">Overview</a>
@@ -65,27 +68,30 @@
   </section>
 
   <section class="ws-panel" data-panel="schedule" hidden>
-    <p class="muted">Recording windows for this instrument. Tracked = follow a
-      source's daily ephemeris (Sun = sunrise&rarr;sunset); fixed = set times;
-      manual = operator-driven. Preview shows the window + elevation arc.</p>
+    <p class="muted">Recording windows for <strong>#{{ inst.id }}
+      {{ inst.name }}</strong>. Tracked = follow a source's daily ephemeris
+      (Sun = sunrise&rarr;sunset); fixed = set times; manual = operator-driven.
+      Preview shows the window + elevation arc.</p>
     <div data-resource="schedules" data-instrument="{{ inst.id }}"></div>
   </section>
 
   <section class="ws-panel" data-panel="programs" hidden>
     <p class="muted">Frequency programs are a shared station library.
-      {% if inst.program_id is not none %}This instrument uses program
-      #{{ inst.program_id }}.{% else %}No program assigned (45+N MHz ramp); set
-      one in Config.{% endif %} Edits here affect every instrument referencing
-      the program.</p>
+      {% if inst.program_id is not none %}<strong>#{{ inst.id }}
+      {{ inst.name }}</strong> uses program #{{ inst.program_id }}.{% else %}
+      <strong>#{{ inst.id }} {{ inst.name }}</strong> has no program assigned
+      (45+N MHz ramp); set one in Config.{% endif %} Edits here affect every
+      instrument referencing the program.</p>
     <div data-resource="programs"></div>
   </section>
 
   <section class="ws-panel" data-panel="calibration" hidden>
     <p class="muted">Calibration sets are a shared station library.
-      {% if inst.calibration_set_id is not none %}This instrument uses set
-      #{{ inst.calibration_set_id }} (output unit {{ inst.unit }}).{% else %}No
-      set assigned -- output is raw ADC (DESIGN 6b).{% endif %} Assign one in
-      Config.</p>
+      {% if inst.calibration_set_id is not none %}<strong>#{{ inst.id }}
+      {{ inst.name }}</strong> uses set #{{ inst.calibration_set_id }} (output
+      unit {{ inst.unit }}).{% else %}<strong>#{{ inst.id }} {{ inst.name }}
+      </strong> has no set assigned -- output is raw ADC (DESIGN 6b).{% endif %}
+      Assign one in Config.</p>
     <div data-resource="calibration"></div>
   </section>
 

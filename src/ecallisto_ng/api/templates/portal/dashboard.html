@@ -15,7 +15,7 @@
     {% for i in cockpit %}
     <div class="card cockpit-card" data-instrument="{{ i.id }}">
       <div class="cockpit-head">
-        <a class="cockpit-name" href="/portal/instruments/{{ i.id }}">{{ i.name }}</a>
+        <a class="cockpit-name" href="/portal/instruments/{{ i.id }}"><span class="inst-id">#{{ i.id }}</span>{{ i.name }}</a>
         <span class="chip cockpit-state" data-state="{{ i.state }}">{{ i.state }}</span>
       </div>
       <canvas class="cockpit-wf" width="320" height="64"

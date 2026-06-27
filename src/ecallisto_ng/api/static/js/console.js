@@ -64,7 +64,7 @@
       },
       columns: ["id", "instrument_id", "kind", "source", "margin_minutes", "start_utc", "stop_utc", "program_id", "overview_at", "enabled"],
       fields: [
-        { name: "instrument_id", type: "number", required: true },
+        { name: "instrument_id", instSelect: true, required: true, hint: "Which instrument (#id) this schedule controls." },
         { name: "kind", select: "kind", hint: "tracked = follow a source's daily ephemeris (e.g. Sun = sunrise→sunset, all year) · fixed = set times · manual = operator drives it." },
         { name: "source", select: "source", hint: "Tracked target: the window is when this source is above the horizon (Sun uses true sunrise/sunset)." },
         { name: "margin_minutes", type: "number", value: 0, hint: "Trim both ends of a tracked window by this many minutes." },
@@ -239,9 +239,31 @@
     }
   }
 
+  // Resolve instrument_id -> "#id name" so every config names the instrument it
+  // applies to instead of showing a bare number (and badge the instruments' own
+  // id as #id).
+  let instMap = {};
+  function instLabel(id) {
+    return instMap[id] ? "#" + id + " " + instMap[id] : "#" + id;
+  }
+  function renderCell(c, r) {
+    if (c === "instrument_id" && r[c] != null) return instLabel(r[c]);
+    if (root.dataset.resource === "instruments" && c === "id" && r[c] != null) {
+      return "#" + r[c];
+    }
+    return cfg.cell ? cfg.cell(c, r) : fmt(r[c]);
+  }
+
   async function refresh() {
     let rows;
     try { rows = await api("GET", listUrl()); } catch (e) { return note(e.message, "error"); }
+    if (cfg.columns.indexOf("instrument_id") !== -1) {
+      try {
+        const insts = await api("GET", "/api/v1/instruments");
+        instMap = {};
+        insts.forEach((i) => { instMap[i.id] = i.name; });
+      } catch (e) { /* fall back to a bare #id */ }
+    }
     const table = el("table");
     const thead = el("tr");
     cfg.columns.forEach((c) => thead.append(el("th", {}, c)));
@@ -250,7 +272,7 @@
     rows.forEach((r) => {
       const tr = el("tr");
       cfg.columns.forEach((c) =>
-        tr.append(el("td", {}, cfg.cell ? cfg.cell(c, r) : fmt(r[c]))));
+        tr.append(el("td", {}, renderCell(c, r))));
       const td = el("td", {});
       (cfg.actions || []).forEach((a) => {
         if (a.href) {
@@ -300,7 +322,16 @@
     }
     form.append(el("label", { for: f.name }, f.name));
     let input;
-    if (f.select) {
+    if (f.instSelect) {
+      // Pick an instrument by "#id name" instead of typing a raw id.
+      input = el("select", { id: f.name, name: f.name });
+      api("GET", "/api/v1/instruments").then((list) => {
+        list.forEach((i) =>
+          input.append(
+            el("option", { value: String(i.id) }, "#" + i.id + " " + i.name)));
+        if (f.value != null) input.value = String(f.value);
+      }).catch(() => {});
+    } else if (f.select) {
       input = el("select", { id: f.name, name: f.name });
       SELECT[f.select].forEach((o) => input.append(el("option", {}, o)));
     } else if (f.json) {
@@ -368,7 +399,7 @@
       if (f.type === "checkbox") { payload[f.name] = elt.checked; return; }
       const v = elt.value;
       if (f.json) payload[f.name] = v ? JSON.parse(v) : [];
-      else if (f.type === "number") {
+      else if (f.type === "number" || f.instSelect) {
         if (v !== "") payload[f.name] = Number(v); // blank -> server default
       } else payload[f.name] = v;
     });
