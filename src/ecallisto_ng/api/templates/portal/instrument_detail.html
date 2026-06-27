@@ -14,6 +14,8 @@
   <nav class="ws-tabs" id="ws-tabs">
     <a class="ws-tab" data-tab="overview" href="#overview">Overview</a>
     <a class="ws-tab" data-tab="live" href="#live">Live</a>
+    <a class="ws-tab" data-tab="schedule" href="#schedule">Schedule</a>
+    <a class="ws-tab" data-tab="programs" href="#programs">Programs</a>
     {% if bench %}<a class="ws-tab" data-tab="bench" href="#bench">Bench</a>{% endif %}
     <a class="ws-tab" data-tab="config" href="#config">Config</a>
   </nav>
@@ -58,6 +60,22 @@
                 style="display:block;width:100%"></canvas>
       </div>
     </div>
+  </section>
+
+  <section class="ws-panel" data-panel="schedule" hidden>
+    <p class="muted">Recording windows for this instrument. Tracked = follow a
+      source's daily ephemeris (Sun = sunrise&rarr;sunset); fixed = set times;
+      manual = operator-driven. Preview shows the window + elevation arc.</p>
+    <div data-resource="schedules" data-instrument="{{ inst.id }}"></div>
+  </section>
+
+  <section class="ws-panel" data-panel="programs" hidden>
+    <p class="muted">Frequency programs are a shared station library.
+      {% if inst.program_id is not none %}This instrument uses program
+      #{{ inst.program_id }}.{% else %}No program assigned (45+N MHz ramp); set
+      one in Config.{% endif %} Edits here affect every instrument referencing
+      the program.</p>
+    <div data-resource="programs"></div>
   </section>
 
   {% if bench %}
@@ -255,5 +273,6 @@
   })();
 </script>
 <script src="/static/js/waterfall.js"></script>
+<script src="/static/js/console.js"></script>
 <script src="/static/js/instrument.js"></script>
 {% endblock %}

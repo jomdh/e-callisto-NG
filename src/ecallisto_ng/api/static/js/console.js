@@ -1,11 +1,15 @@
 // Generic management console: a config-driven CRUD island over the API.
 // CSP-safe (external file, same-origin fetch with the session cookie, no inline
-// handlers). The page sets data-resource on #console.
+// handlers). Every [data-resource] element on the page becomes an independent
+// console; add data-instrument to scope it to one instrument (ADR-0011).
 (function () {
   "use strict";
-  const root = document.getElementById("console");
-  if (!root) return;
+  const mounts = Array.prototype.slice.call(
+    document.querySelectorAll("[data-resource]"));
+  if (!mounts.length) return;
+  mounts.forEach(mountConsole);
 
+  function mountConsole(root) {
   const SELECT = {
     role: ["viewer", "operator", "admin"],
     instrument_class: ["heterodyne", "sdr_soft", "sdr_fpga"],
@@ -430,4 +434,5 @@
   card.append(form);
   root.replaceChildren(card, body, out);
   refresh();
+  }
 })();

@@ -82,6 +82,47 @@ def test_config_edit_patches_instrument(client: TestClient) -> None:
     assert r.json()["gain"] == 99
 
 
+def test_workspace_has_schedule_and_programs_tabs(client: TestClient) -> None:
+    _login(client)
+    het = _make(client, "WSSP", "heterodyne")
+    page = client.get(f"/portal/instruments/{het}").text
+    # schedule tab: a console scoped to this instrument
+    assert 'data-tab="schedule"' in page
+    assert f'data-resource="schedules" data-instrument="{het}"' in page
+    # programs tab: the shared library console (unscoped)
+    assert 'data-tab="programs"' in page
+    assert 'data-resource="programs"' in page
+    assert "/static/js/console.js" in page
+
+
+def test_schedules_list_filters_by_instrument(client: TestClient) -> None:
+    _login(client)
+    a = _make(client, "SCHA", "heterodyne")
+    b = _make(client, "SCHB", "heterodyne")
+    client.post(
+        "/api/v1/schedules",
+        json={"instrument_id": a, "kind": "manual"},
+    )
+    client.post(
+        "/api/v1/schedules",
+        json={"instrument_id": b, "kind": "manual"},
+    )
+    # unscoped -> both
+    assert len(client.get("/api/v1/schedules").json()) == 2
+    # scoped -> only that instrument's
+    only_a = client.get(f"/api/v1/schedules?instrument_id={a}").json()
+    assert len(only_a) == 1
+    assert only_a[0]["instrument_id"] == a
+
+
+def test_console_supports_multiple_mounts(client: TestClient) -> None:
+    # the workspace mounts a schedules console AND a programs console on one
+    # page, so the island must init every [data-resource], not just #console
+    js = client.get("/static/js/console.js").text
+    assert "querySelectorAll" in js
+    assert "mountConsole" in js
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text
