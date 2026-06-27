@@ -56,6 +56,32 @@ def test_serial_error_recovers() -> None:
     d.stop()
 
 
+def test_second_recovery_reopens_the_port() -> None:
+    # The first stall in the window is a cheap soft reset (no port reopen); a
+    # second escalates to closing+reopening the OS fd -- the rung that actually
+    # clears a mute/IO-errored port, as a process restart did (ADR-0012).
+    class _SpyConn(SimulatedCallisto):
+        def __init__(self, *a: object, **k: object) -> None:
+            super().__init__(*a, **k)
+            self.close_calls = 0
+
+        def close(self) -> None:
+            self.close_calls += 1
+            super().close()
+
+    sim = _SpyConn("1.8")
+    d = _driver(sim)
+    stream = d.stream()
+    next(stream)
+    sim.stall()
+    next(stream)  # 1st recovery: soft reset, no reopen
+    assert sim.close_calls == 0
+    sim.stall()
+    next(stream)  # 2nd recovery: escalate to port reopen
+    assert sim.close_calls == 1
+    d.stop()
+
+
 def test_dead_device_escalates_to_fatal() -> None:
     sim = SimulatedCallisto("1.8")
     d = _driver(sim)

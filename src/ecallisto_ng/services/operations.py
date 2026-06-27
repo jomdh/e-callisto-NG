@@ -64,7 +64,7 @@ def instrument_cockpit(db: Session, now: datetime) -> list[dict[str, Any]]:
     State/last-file come from the persisted runtime (cross-process, ADR-0007),
     falling back to this process's in-memory recorder view.
     """
-    from ecallisto_ng.services import recorder_state
+    from ecallisto_ng.services import liveness, recorder_state
 
     station = db.exec(select(Station)).first() or Station()
     recorder = get_recorder()
@@ -73,9 +73,13 @@ def instrument_cockpit(db: Session, now: datetime) -> list[dict[str, Any]]:
     for inst in db.exec(select(Instrument)).all():
         status = recorder.status(inst.id) if inst.id is not None else None
         runtime = runtimes.get(inst.id) if inst.id is not None else None
-        state = (
-            runtime.state if runtime else (status.state if status else "idle")
-        )
+        # State is empirical: a RECORDING instrument whose frame heartbeat has
+        # gone stale is surfaced as STALLED (ADR-0012), not a healthy-looking
+        # "recording" tile.
+        if runtime is not None:
+            state = liveness.effective_state(runtime, inst.sweep_rate_hz, now)
+        else:
+            state = status.state if status else "idle"
         last_file = (
             runtime.last_file
             if runtime

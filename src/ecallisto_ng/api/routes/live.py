@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from queue import Empty
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
@@ -11,6 +12,7 @@ from fastapi.responses import RedirectResponse
 
 from ecallisto_ng.api import auth
 from ecallisto_ng.api.models import User
+from ecallisto_ng.api.settings import get_settings
 from ecallisto_ng.services.hub import get_hub
 
 router = APIRouter(tags=["live"])
@@ -37,15 +39,34 @@ async def ws_live(websocket: WebSocket, instrument_id: int) -> None:
     await websocket.accept()
     hub = get_hub()
     queue = hub.subscribe(instrument_id)
+    # Surface liveness to the browser: when no frame arrives for the stall
+    # grace, emit a status message so the panel shows "not responding" instead
+    # of a frozen/blank canvas (ADR-0012). Self-contained -- driven by how
+    # recently this connection saw a frame, no DB read in the hot loop.
+    grace = get_settings().stall_grace_seconds
+    last_frame = time.monotonic()
+    sent_state: str | None = None
+
+    async def emit_status() -> None:
+        nonlocal sent_state
+        cur = "stalled" if (time.monotonic() - last_frame) > grace else "live"
+        if cur != sent_state:
+            sent_state = cur
+            await websocket.send_json({"type": "status", "state": cur})
+
     try:
         while True:
             try:
                 frame = queue.get_nowait()
             except Empty:
+                await emit_status()
                 await asyncio.sleep(_POLL_SECONDS)
                 continue
+            last_frame = time.monotonic()
+            await emit_status()
             await websocket.send_json(
                 {
+                    "type": "frame",
                     "t": frame.timestamp_utc.isoformat(),
                     "values": list(frame.values),
                 }

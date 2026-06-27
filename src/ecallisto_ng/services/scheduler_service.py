@@ -91,6 +91,9 @@ class SchedulerService:
     def __init__(self) -> None:
         self._thread: threading.Thread | None = None
         self._stop = threading.Event()
+        from ecallisto_ng.services.auto_recover import AutoRecover
+
+        self._auto_recover = AutoRecover()
 
     def tick(self, db: Session, now: datetime) -> None:
         from ecallisto_ng.services.clock import (
@@ -129,6 +132,11 @@ class SchedulerService:
                 recorder.stop(inst.id)
             else:
                 self._maybe_overview(db, inst, sched, now)
+            # Opt-in automated recovery (ADR-0012): if it should be recording
+            # but frames have stopped past self-heal, recover it. No-op unless
+            # auto_recover is enabled.
+            if desired and gate_ok:
+                self._auto_recover.consider(db, inst, now)
 
     def _active_schedule(
         self, db: Session, instrument_id: int
@@ -194,6 +202,7 @@ class SchedulerService:
             writer=get_writer(inst.output_mode),
             continuous=True,
             on_state=lambda st, lf: recorder_state.write(iid, st, lf),
+            on_heartbeat=lambda: recorder_state.touch_frame(iid),
         )
 
     def _channels(

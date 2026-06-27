@@ -152,48 +152,63 @@ def _newest_data_age_s(name: str) -> float | None:
 
 
 def _check_recorder_liveness(db: Session) -> list[Check]:
-    """A 'recording' whose newest data file is too old is likely wedged."""
+    """Is a 'recording' instrument actually producing frames?
+
+    The frame heartbeat (last_frame_at, ADR-0012) is the primary, near-live
+    signal -- unlike file age, which the in-RAM file buffer makes minutes-stale
+    even when healthy. File age is kept only as a fallback for a run that has
+    not stamped a heartbeat yet (just started, or an older deployment).
+    """
+    from ecallisto_ng.services import liveness
+
     checks: list[Check] = []
     for rt in recorder_state.read(db).values():
+        key = f"recorder:{rt.instrument_id}"
         if rt.state == "error":
-            checks.append(
-                Check(
-                    f"recorder:{rt.instrument_id}",
-                    WARN,
-                    "last run ended in error",
-                )
-            )
+            checks.append(Check(key, WARN, "last run ended in error"))
             continue
         if rt.state != "recording":
             continue
         inst = db.get(Instrument, rt.instrument_id)
-        period = inst.file_seconds if inst else 900
-        age = _newest_data_age_s(inst.name) if inst else None
-        if age is None:
+        rate = inst.sweep_rate_hz if inst else 4.0
+        frame_age = liveness.frame_age_seconds(rt)
+        if liveness.is_stalled(rt, rate):
+            shown = int(frame_age) if frame_age is not None else "?"
             checks.append(
                 Check(
-                    f"recorder:{rt.instrument_id}",
+                    key,
                     WARN,
-                    "recording but no data file on disk (wedged?)",
+                    f"recording but no frame for {shown}s (STALLED -- "
+                    "recover the receiver)",
                 )
             )
-        elif age > period * 1.5 + 120:
+        elif frame_age is not None:
             checks.append(
-                Check(
-                    f"recorder:{rt.instrument_id}",
-                    WARN,
-                    f"recording but newest file is {int(age // 60)} min old "
-                    f"(wedged -- power-cycle the receiver?)",
-                )
+                Check(key, OK, f"recording, last frame {int(frame_age)}s ago")
             )
         else:
-            checks.append(
-                Check(
-                    f"recorder:{rt.instrument_id}",
-                    OK,
-                    f"recording, newest file {int(age // 60)} min ago",
+            # No heartbeat yet -- fall back to the file-age proxy.
+            period = inst.file_seconds if inst else 900
+            age = _newest_data_age_s(inst.name) if inst else None
+            if age is None:
+                checks.append(
+                    Check(key, OK, "recording, awaiting first frame")
                 )
-            )
+            elif age > period * 1.5 + 120:
+                checks.append(
+                    Check(
+                        key,
+                        WARN,
+                        f"recording but newest file is {int(age // 60)} min "
+                        "old (wedged -- recover the receiver?)",
+                    )
+                )
+            else:
+                checks.append(
+                    Check(
+                        key, OK, f"recording, newest file {int(age//60)}m ago"
+                    )
+                )
     return checks
 
 

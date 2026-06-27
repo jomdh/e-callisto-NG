@@ -199,6 +199,7 @@ def record_instrument(
             on_state=lambda st, lf: recorder_state.write(
                 instrument_id, st, lf
             ),
+            on_heartbeat=lambda: recorder_state.touch_frame(instrument_id),
         )
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc

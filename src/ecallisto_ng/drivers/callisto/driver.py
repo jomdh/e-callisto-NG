@@ -228,13 +228,39 @@ class CallistoDriver:
                 f"unrecoverable after {len(resets)} resets in "
                 f"{int(_RESET_WINDOW_S)}s ({reason})"
             )
+        # First attempt in the window: a cheap soft reset (RESET bytes over the
+        # open fd). Subsequent attempts escalate to a full OS-level port reopen
+        # -- some wedges (the device goes mute, an I/O error latches on the fd)
+        # only clear when the file handle itself is closed and reopened, which
+        # is what a process restart does. Doing it inside the driver lets the
+        # stall self-heal unattended (ADR-0012).
+        escalate = len(resets) >= 1
         resets.append(now)
-        _log.warning("callisto self-heal: soft reset (%s)", reason)
         try:
-            self._soft_reset()
+            if escalate:
+                _log.warning("callisto self-heal: port reopen (%s)", reason)
+                self._reopen()
+            else:
+                _log.warning("callisto self-heal: soft reset (%s)", reason)
+                self._soft_reset()
         except OSError:
             pass  # the reset itself failed; the next read re-enters recovery
         return StreamParser(self._nchannels, self._firmware.data10bit)
+
+    def _reopen(self) -> None:
+        """Close and reopen the OS serial port, then re-arm acquisition.
+
+        Unlike ``_soft_reset`` (which writes RESET over the *existing* fd),
+        this drops the file handle so a fresh one is opened on the next write
+        -- clearing a mute or IO-errored port the way a process restart does,
+        without leaving the driver. The EEPROM channel table survives, so only
+        init + start are resent.
+        """
+        try:
+            self._conn.close()
+        except OSError:
+            pass  # already gone; the reopen on next write is what matters
+        self._soft_reset()  # first write lazily reopens the port, then re-arms
 
     def _soft_reset(self) -> None:
         """Re-arm acquisition without re-writing the EEPROM channel table.

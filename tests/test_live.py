@@ -58,6 +58,12 @@ def test_ws_streams_live_recording(client: TestClient) -> None:
 
     with client.websocket_connect(f"/ws/live/{iid}") as ws:
         client.post(f"/api/v1/instruments/{iid}/record?frames=15")
-        msg = ws.receive_json()
+        # the connection may emit liveness status frames (ADR-0012) before the
+        # first data frame; read until a data frame arrives.
+        for _ in range(30):
+            msg = ws.receive_json()
+            if msg.get("type") == "status":
+                continue
+            break
         assert "values" in msg and len(msg["values"]) == 8
         assert "t" in msg
