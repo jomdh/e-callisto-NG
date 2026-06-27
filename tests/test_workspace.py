@@ -51,6 +51,37 @@ def test_workspace_bench_tab_gated_by_class(client: TestClient) -> None:
     assert "heterodyne (e-Callisto) instruments only" in page.text
 
 
+def test_workspace_has_live_and_config_tabs(client: TestClient) -> None:
+    _login(client)
+    het = _make(client, "WSLC", "heterodyne")
+    page = client.get(f"/portal/instruments/{het}").text
+    # Live tab + its panels (waterfall island), lazy-started on activation
+    assert 'data-tab="live"' in page
+    assert 'id="waterfall"' in page
+    assert "window.startWaterfall" in page
+    assert "/static/js/waterfall.js" in page
+    # Config tab: a real edit form that PATCHes the instrument
+    assert 'data-tab="config"' in page
+    assert 'id="ws-config-form"' in page
+    assert "PATCH" in page
+
+
+def test_config_edit_patches_instrument(client: TestClient) -> None:
+    _login(client)
+    iid = _make(client, "WSCFG", "heterodyne")
+    # the form pre-fills current values
+    page = client.get(f"/portal/instruments/{iid}").text
+    assert 'value="WSCFG"' in page
+    # and the PATCH endpoint the form posts to actually updates
+    r = client.patch(
+        f"/api/v1/instruments/{iid}",
+        json={"name": "WSCFG2", "gain": 99, "channels": 8},
+    )
+    assert r.status_code == 200
+    assert r.json()["name"] == "WSCFG2"
+    assert r.json()["gain"] == 99
+
+
 def test_sidebar_three_groups(client: TestClient) -> None:
     _login(client)
     text = client.get("/portal").text

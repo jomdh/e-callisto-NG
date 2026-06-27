@@ -13,6 +13,7 @@
 
   <nav class="ws-tabs" id="ws-tabs">
     <a class="ws-tab" data-tab="overview" href="#overview">Overview</a>
+    <a class="ws-tab" data-tab="live" href="#live">Live</a>
     {% if bench %}<a class="ws-tab" data-tab="bench" href="#bench">Bench</a>{% endif %}
     <a class="ws-tab" data-tab="config" href="#config">Config</a>
   </nav>
@@ -28,9 +29,34 @@
         {% if inst.instrument_class == "heterodyne" %}
         <button class="btn-text" data-act="reconnect">reconnect</button>
         {% endif %}
-        <a class="btn-text" href="/portal/live/{{ inst.id }}">live</a>
+        <a class="btn-text" href="#live">live</a>
       </div>
       <pre id="d-out" class="muted" style="white-space:pre-wrap"></pre>
+    </div>
+  </section>
+
+  <section class="ws-panel" data-panel="live" hidden>
+    <p class="muted">
+      <span id="live-status">connecting&hellip;</span>
+      &middot; {{ inst.channels }} channels
+      &middot; <label><input type="checkbox" id="live-db"> dB</label>
+    </p>
+    <div class="card" style="padding:0;overflow:hidden">
+      <canvas id="waterfall" width="800" height="320"
+              data-instrument="{{ inst.id }}"
+              style="display:block;width:100%;background:#000"></canvas>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:1rem">
+      <div class="card" style="flex:1;min-width:280px">
+        <h3 style="margin-top:0">Spectrum y(f)</h3>
+        <canvas id="spectrum" width="400" height="180"
+                style="display:block;width:100%"></canvas>
+      </div>
+      <div class="card" style="flex:1;min-width:280px">
+        <h3 style="margin-top:0">Light curve y(t) &mdash; peak channel</h3>
+        <canvas id="lightcurve" width="400" height="180"
+                style="display:block;width:100%"></canvas>
+      </div>
     </div>
   </section>
 
@@ -67,11 +93,81 @@
 
   <section class="ws-panel" data-panel="config" hidden>
     <div class="card">
-      <h3 style="margin-top:0">Configure</h3>
-      <p class="muted">
-        <a href="/portal/manage/schedules">schedules</a> &middot;
-        <a href="/portal/manage/programs">frequency programs</a> &middot;
-        <a href="/portal/manage/calibration">calibration</a>
+      <h3 style="margin-top:0">Configuration</h3>
+      <form id="ws-config-form" class="ws-form">
+        <label for="cf-name">name</label>
+        <input id="cf-name" name="name" value="{{ inst.name }}" required>
+
+        <label for="cf-class">instrument_class</label>
+        <select id="cf-class" name="instrument_class">
+          {% for c in ["heterodyne", "sdr_soft", "sdr_fpga"] %}
+          <option {{ 'selected' if inst.instrument_class == c }}>{{ c }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="cf-address">address</label>
+        <input id="cf-address" name="address" value="{{ inst.address }}"
+               placeholder="/dev/ttyUSB0 · rx888 · host:port · blank=simulator">
+
+        <label for="cf-focus">focus_code</label>
+        <input id="cf-focus" name="focus_code" type="number"
+               value="{{ inst.focus_code }}">
+
+        <label for="cf-gain">gain</label>
+        <input id="cf-gain" name="gain" type="number" value="{{ inst.gain }}">
+
+        <label for="cf-channels">channels</label>
+        <input id="cf-channels" name="channels" type="number"
+               value="{{ inst.channels }}" min="1">
+
+        <label for="cf-rate">sweep_rate_hz</label>
+        <input id="cf-rate" name="sweep_rate_hz" type="number" step="0.1"
+               value="{{ inst.sweep_rate_hz }}">
+
+        <label for="cf-fs">file_seconds</label>
+        <input id="cf-fs" name="file_seconds" type="number" min="1"
+               value="{{ inst.file_seconds }}">
+
+        <label for="cf-unit">unit</label>
+        <select id="cf-unit" name="unit">
+          {% for u in ["raw", "sfu", "kelvin"] %}
+          <option {{ 'selected' if inst.unit == u }}>{{ u }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="cf-mode">output_mode</label>
+        <select id="cf-mode" name="output_mode">
+          {% for m in ["standard", "legacy", "custom"] %}
+          <option {{ 'selected' if inst.output_mode == m }}>{{ m }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="cf-prog">program_id</label>
+        <input id="cf-prog" name="program_id" type="number"
+               value="{{ inst.program_id if inst.program_id is not none }}"
+               placeholder="blank = 45+N MHz ramp">
+
+        <label for="cf-cal">calibration_set_id</label>
+        <input id="cf-cal" name="calibration_set_id" type="number"
+               value="{{ inst.calibration_set_id if inst.calibration_set_id is not none }}"
+               placeholder="blank = raw">
+
+        <label><input type="checkbox" name="enabled"
+               {{ 'checked' if inst.enabled }}> enabled</label>
+        <label><input type="checkbox" name="start_on_boot"
+               {{ 'checked' if inst.start_on_boot }}> start_on_boot
+               (free-run, survives reboot)</label>
+
+        <button class="btn-filled" type="submit" style="margin-top:1rem">
+          Save</button>
+        <span id="ws-config-msg" class="muted"></span>
+      </form>
+      <p class="muted" style="margin-top:.6rem">
+        Frequency programs and calibration sets are shared station libraries:
+        manage them under <a href="/portal/manage/programs">Programs</a> and
+        <a href="/portal/manage/calibration">Calibration</a>, then reference an
+        id above. Schedules for this instrument:
+        <a href="/portal/manage/schedules">Schedules</a>.
       </p>
     </div>
   </section>
@@ -80,33 +176,84 @@
   (function () {
     "use strict";
     var tabsEl = document.getElementById("ws-tabs");
-    if (!tabsEl) return;
-    var panels = Array.prototype.slice.call(
-      document.querySelectorAll(".ws-panel"));
-    var links = Array.prototype.slice.call(
-      tabsEl.querySelectorAll(".ws-tab"));
-    function activate(name) {
-      var matched = false;
-      panels.forEach(function (pn) {
-        var on = pn.getAttribute("data-panel") === name;
-        pn.hidden = !on;
-        if (on) matched = true;
-      });
-      links.forEach(function (a) {
-        a.classList.toggle("active", a.getAttribute("data-tab") === name);
-      });
-      if (!matched && panels.length) {
-        panels[0].hidden = false;
-        if (links[0]) links[0].classList.add("active");
-      }
+    if (tabsEl) {
+      var panels = Array.prototype.slice.call(
+        document.querySelectorAll(".ws-panel"));
+      var links = Array.prototype.slice.call(
+        tabsEl.querySelectorAll(".ws-tab"));
+      var activate = function (name) {
+        var matched = false;
+        panels.forEach(function (pn) {
+          var on = pn.getAttribute("data-panel") === name;
+          pn.hidden = !on;
+          if (on) matched = true;
+        });
+        links.forEach(function (a) {
+          a.classList.toggle("active", a.getAttribute("data-tab") === name);
+        });
+        if (!matched && panels.length) {
+          panels[0].hidden = false;
+          if (links[0]) links[0].classList.add("active");
+          name = links[0] && links[0].getAttribute("data-tab");
+        }
+        // The live WS is opened lazily, only when its tab is first shown.
+        if (name === "live" && window.startWaterfall) window.startWaterfall();
+      };
+      var fromHash = function () {
+        var h = (location.hash || "").replace("#", "");
+        activate(h || (links[0] && links[0].getAttribute("data-tab")));
+      };
+      window.addEventListener("hashchange", fromHash);
+      fromHash();
     }
-    function fromHash() {
-      var h = (location.hash || "").replace("#", "");
-      activate(h || (links[0] && links[0].getAttribute("data-tab")));
+
+    // Config tab: PATCH the full instrument body (the API does a full replace).
+    var form = document.getElementById("ws-config-form");
+    if (form) {
+      var root = document.querySelector(".portal-main[data-instrument]");
+      var id = root && root.dataset.instrument;
+      var msg = document.getElementById("ws-config-msg");
+      form.addEventListener("submit", async function (ev) {
+        ev.preventDefault();
+        var g = function (n) { return form.elements[n]; };
+        var numOrNull = function (n) {
+          return g(n).value === "" ? null : Number(g(n).value);
+        };
+        var body = {
+          name: g("name").value,
+          instrument_class: g("instrument_class").value,
+          address: g("address").value,
+          focus_code: Number(g("focus_code").value),
+          gain: Number(g("gain").value),
+          channels: Number(g("channels").value),
+          sweep_rate_hz: Number(g("sweep_rate_hz").value),
+          file_seconds: Number(g("file_seconds").value),
+          unit: g("unit").value,
+          output_mode: g("output_mode").value,
+          program_id: numOrNull("program_id"),
+          calibration_set_id: numOrNull("calibration_set_id"),
+          enabled: g("enabled").checked,
+          start_on_boot: g("start_on_boot").checked,
+        };
+        msg.textContent = "saving...";
+        try {
+          var r = await fetch("/api/v1/instruments/" + id, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          var t = await r.text();
+          var d;
+          try { d = JSON.parse(t); } catch (e) { d = t; }
+          if (!r.ok) throw new Error((d && d.detail) || r.status);
+          msg.textContent = "saved";
+        } catch (e) {
+          msg.textContent = e.message;
+        }
+      });
     }
-    window.addEventListener("hashchange", fromHash);
-    fromHash();
   })();
 </script>
+<script src="/static/js/waterfall.js"></script>
 <script src="/static/js/instrument.js"></script>
 {% endblock %}

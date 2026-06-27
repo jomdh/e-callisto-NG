@@ -6,14 +6,11 @@ from __future__ import annotations
 import asyncio
 from queue import Empty
 
-from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlmodel import Session as DbSession
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi.responses import RedirectResponse
 
 from ecallisto_ng.api import auth
-from ecallisto_ng.api.db import get_session
-from ecallisto_ng.api.models import Instrument, User
-from ecallisto_ng.api.templating import templates
+from ecallisto_ng.api.models import User
 from ecallisto_ng.services.hub import get_hub
 
 router = APIRouter(tags=["live"])
@@ -21,20 +18,17 @@ router = APIRouter(tags=["live"])
 _POLL_SECONDS = 0.05
 
 
-@router.get("/portal/live/{instrument_id}", response_class=HTMLResponse)
+@router.get("/portal/live/{instrument_id}")
 def live_page(
     instrument_id: int,
-    request: Request,
     user: User | None = Depends(auth.optional_user),
-    db: DbSession = Depends(get_session),
 ) -> object:
+    # The live viewer is now the workspace's Live tab (ADR-0011); keep this
+    # path working for bookmarks/links by redirecting into the workspace.
     if user is None:
         return RedirectResponse("/", status_code=303)
-    inst = db.get(Instrument, instrument_id)
-    if inst is None:
-        return RedirectResponse("/portal", status_code=303)
-    return templates.TemplateResponse(
-        request, "portal/live.html", {"instrument": inst, "user": user}
+    return RedirectResponse(
+        f"/portal/instruments/{instrument_id}#live", status_code=303
     )
 
 

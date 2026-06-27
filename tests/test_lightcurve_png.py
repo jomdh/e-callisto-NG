@@ -56,12 +56,19 @@ def test_lightcurve_endpoints(client: TestClient) -> None:
 
 
 def test_live_page_has_panels(client: TestClient) -> None:
+    # The live viewer is the workspace Live tab now (ADR-0011); the old
+    # /portal/live/{id} path redirects there for bookmarks.
     _login(client)
     iid = client.post(
         "/api/v1/instruments", json={"name": "LIVE", "channels": 16}
     ).json()["id"]
-    page = client.get(f"/portal/live/{iid}")
+    redirect = client.get(f"/portal/live/{iid}", follow_redirects=False)
+    assert redirect.status_code == 303
+    assert redirect.headers["location"] == f"/portal/instruments/{iid}#live"
+
+    page = client.get(f"/portal/instruments/{iid}")
     assert page.status_code == 200
+    assert 'data-tab="live"' in page.text
     assert 'id="spectrum"' in page.text
     assert 'id="lightcurve"' in page.text
     assert 'id="live-db"' in page.text  # dB toggle

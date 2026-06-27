@@ -195,6 +195,12 @@ body {
   border-bottom-color: var(--primary, currentColor);
 }
 .ws-panel[hidden] { display: none; }
+.ws-form label { display: block; margin: 0.5rem 0 0.15rem; font-size: 0.85rem; }
+.ws-form input[type="text"],
+.ws-form input[type="number"],
+.ws-form input:not([type]),
+.ws-form select { width: 100%; max-width: 22rem; }
+.ws-form label > input[type="checkbox"] { width: auto; margin-right: 0.4rem; }
 .portal-main .card { margin-bottom: 1rem; }
 /* compact row-action buttons in console tables */
 .portal-main table .btn-text {
